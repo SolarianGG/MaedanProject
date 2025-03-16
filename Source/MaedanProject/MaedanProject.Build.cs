@@ -22,6 +22,7 @@ public class MaedanProject : ModuleRules
 			"MaedanProject/Public/Characters",
 			"MaedanProject/Public/Player",
 			"MaedanProject/Public/Abilities",
+			"MaedanProject/Public/AI",
 		});
 
 		// Uncomment if you are using Slate UI
