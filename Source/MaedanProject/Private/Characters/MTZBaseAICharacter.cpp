@@ -4,6 +4,7 @@
 #include "Characters/MTZBaseAICharacter.h"
 #include "Abilities/MTZAbilitySystemComponent.h"
 
+
 AMTZBaseAICharacter::AMTZBaseAICharacter() : Super()
 {
 	AbilitySystemComponent = CreateDefaultSubobject<UMTZAbilitySystemComponent>("MTZAbilitySystemComponent");
