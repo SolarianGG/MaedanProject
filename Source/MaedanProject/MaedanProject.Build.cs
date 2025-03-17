@@ -8,13 +8,21 @@ public class MaedanProject : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG" });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG",
+			"GameplayAbilities", "GameplayTasks", "GameplayTags",
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 		
 		PublicIncludePaths.AddRange(new string[]
 		{
-			// TODO: Add some include stuff
+			"MaedanProject/Public",
+			"MaedanProject/Public/Characters",
+			"MaedanProject/Public/Player",
+			"MaedanProject/Public/Abilities",
+			"MaedanProject/Public/AI",
 		});
 
 		// Uncomment if you are using Slate UI
