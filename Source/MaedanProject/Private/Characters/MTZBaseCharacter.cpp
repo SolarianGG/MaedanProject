@@ -13,4 +13,5 @@ AMTZBaseCharacter::AMTZBaseCharacter()
 void AMTZBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
