@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class MaedanProject : ModuleRules
+public class Maedan : ModuleRules
 {
-	public MaedanProject(ReadOnlyTargetRules Target) : base(Target)
+	public Maedan(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
