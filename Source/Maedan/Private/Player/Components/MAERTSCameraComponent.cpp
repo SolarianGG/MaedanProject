@@ -31,8 +31,8 @@ void UMAERTSCameraComponent::HandleEdgeScrolling(float DeltaTime)
     APawn* OwnerPawn = Cast<APawn>(GetOwner());
     if (!OwnerPawn) return;
 
-    FVector2D MousePosition;
-    FVector2D ViewportSize;
+    FVector2D MousePosition{};
+    FVector2D ViewportSize{};
     
     if (!PC->GetMousePosition(MousePosition.X, MousePosition.Y)) return;
     

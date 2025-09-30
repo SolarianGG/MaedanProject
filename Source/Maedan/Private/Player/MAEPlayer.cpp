@@ -11,6 +11,9 @@ AMAEPlayer::AMAEPlayer()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("PlayerRoot"));
+	SetRootComponent(SceneComponent);
+	
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("Spring Arm Component");
 	SpringArmComponent->SetupAttachment(GetRootComponent());
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>("Camera Component");
