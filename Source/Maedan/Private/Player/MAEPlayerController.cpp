@@ -12,24 +12,6 @@
 #include "Units/MAEUnitController.h"
 #include "MAEGameMode.h"
 
-void UMAEMoveCommand::Initialize(const FCommandData& Data)
-{
-	UMAECommand::Initialize(Data);
-
-	MovePosition = Data.Location;
-}
-
-void UMAEMoveCommand::Execute(AActor* MoveActor)
-{
-	if (MoveActor)
-	{
-		auto* Controller = Cast<AMAEUnitController>(MoveActor->GetOwner());
-		if (Controller)
-		{
-			Controller->MoveToLocation(MovePosition);
-		}
-	}
-}
 
 AMAEPlayerController::AMAEPlayerController()
 {
@@ -45,8 +27,6 @@ void AMAEPlayerController::BeginPlay()
 	SetInputMode(InputMode);
 	SetShowMouseCursor(true);
 
-	GameMode = Cast<AMAEGameMode>(GetWorld()->GetAuthGameMode());
-	check(GameMode);
 	if (CameraInputMappings)
 	{
 		if (auto* EIS = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -75,15 +55,7 @@ void AMAEPlayerController::SetupInputComponent()
 		EnhancedInput->BindAction(SelectAction, ETriggerEvent::Completed, this, &ThisClass::OnSelectActor);
 		EnhancedInput->BindAction(MultipleSelection, ETriggerEvent::Started, this, &ThisClass::OnSelectionStart);
 		EnhancedInput->BindAction(MultipleSelection, ETriggerEvent::Completed, this, &ThisClass::OnSelectionEnd);
-		EnhancedInput->BindAction(MoveAction, ETriggerEvent::Started, this, &ThisClass::OnMoveCommand);
 	}
-}
-
-
-void AMAEPlayerController::ServerIssueCommands_Implementation(const TArray<AActor*>& Actors,
-	TSubclassOf<UMAECommand> Command, const FCommandData& Data)
-{
-	// TODO: Think about how to pass it to game mode  
 }
 
 void AMAEPlayerController::OnSelectionStart()
@@ -109,30 +81,40 @@ void AMAEPlayerController::OnSelectionEnd()
 	SelectionComponent->EndSelectionRectangle();
 	bIsSelecting = false;
 
-	for (const AActor* SelectedActor : SelectionComponent->CurrentlySelectedActors)
-		UE_LOG(LogTemp, Warning, TEXT("Selected: %s"), *SelectedActor->GetName());
-}
-
-void AMAEPlayerController::OnSelectActor()
-{
-	const AActor* SelectedActor = SelectionComponent->SelectActorUnderCursor();
-	if (SelectedActor)
+	for (const auto* SelectedActor : SelectionComponent->CurrentlySelectedActors)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Selected: %s"), *SelectedActor->GetName());
 	}
 }
 
-void AMAEPlayerController::OnMoveCommand()
+void AMAEPlayerController::OnSelectActor()
 {
-	FVector2D MousePosition;
-	GetMousePosition(MousePosition.X, MousePosition.Y);
-	FVector MoveToPosition;
+	AActor* SelectedActor = SelectionComponent->SelectActorUnderCursor();
+	if (!SelectedActor) return;
 
-	// TODO: Create Helper and Use it here and in Selection Component
-	if (MAEHelpers::GetWorldPositionFromMouse(this, MousePosition, MoveToPosition) && !bIsSelecting)
+	UE_LOG(LogTemp, Warning, TEXT("Selected: %s"), *SelectedActor->GetName());
+
+	if (auto* EIS = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
-		FCommandData Data;
-		Data.Location = MoveToPosition;
-		ServerIssueCommands(SelectionComponent->CurrentlySelectedActors, UMAEMoveCommand::StaticClass(), Data);
+		EIS->ClearAllMappings();
+		if (CameraInputMappings)
+			EIS->AddMappingContext(CameraInputMappings, 0);
+	}
+
+	if (auto* InputComp = Cast<UEnhancedInputComponent>(InputComponent))
+	{
+		if (auto* Selectable = Cast<IMAESelectableInterface>(SelectedActor))
+		{
+			if (auto* Context = Selectable->Execute_GetInputMapping(SelectedActor))
+			{
+				if (auto* EIS = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+				{
+					EIS->AddMappingContext(Context, 1);
+				}
+			}
+
+			Selectable->Execute_SetupSelectionInput(SelectedActor, InputComp, this);
+			Selectable->Execute_OnSelected(SelectedActor, this);
+		}
 	}
 }

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "MAESelectableInterface.h"
 #include "MAESelectionComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActorSelected, AActor*, SelectedActor);
@@ -39,7 +40,7 @@ protected:
 	AActor* GetActorUnderCursor() const;
     
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Selection")
-	TEnumAsByte<ECollisionChannel> SelectionChannel = ECC_Visibility;
+	TEnumAsByte<ECollisionChannel> SelectionChannel = ECC_Pawn;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Selection")
 	float DeprojectLineLength = 100000.f;
