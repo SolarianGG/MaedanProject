@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Animation/AnimMontage.h"
 
 #include "GameFramework/DamageType.h"
 #include "Templates/SubclassOf.h"
@@ -31,6 +32,10 @@ public:
 	/** Range of this attack, in cm. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
 	float Range;
+
+	/** Anime montage that is executed on unit attack */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "RTS")
+	UAnimMontage* AttackMontage = nullptr;
 
 	/** Type of the projectile to spawn. If not set, damage will be dealt instantly. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")

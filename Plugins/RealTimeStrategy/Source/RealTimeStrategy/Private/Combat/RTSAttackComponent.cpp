@@ -6,7 +6,12 @@
 
 #include "RTSLog.h"
 #include "RTSPlayerAdvantageComponent.h"
+#include "Animation/AnimInstance.h"
 #include "Combat/RTSProjectile.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/Character.h"
+#include "Animation/AnimMontage.h"
+#include "Animation/AnimInstance.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
 
 
@@ -18,7 +23,7 @@ URTSAttackComponent::URTSAttackComponent(const FObjectInitializer& ObjectInitial
 	// Set reasonable default values.
 	AcquisitionRadius = 1000.0f;
 	ChaseRadius = 1000.0f;
-	
+
 	FRTSAttackData DefaultAttack;
 	DefaultAttack.Cooldown = 0.5f;
 	DefaultAttack.Damage = 10.0f;
@@ -26,10 +31,11 @@ URTSAttackComponent::URTSAttackComponent(const FObjectInitializer& ObjectInitial
 
 	Attacks.Add(DefaultAttack);
 
-    InitialGameplayTags.AddTag(URTSGameplayTagLibrary::Status_Permanent_CanAttack());
+	InitialGameplayTags.AddTag(URTSGameplayTagLibrary::Status_Permanent_CanAttack());
 }
 
-void URTSAttackComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
+void URTSAttackComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
+                                        FActorComponentTickFunction* ThisTickFunction)
 {
 	// Update cooldown timer.
 	if (RemainingCooldown > 0)
@@ -63,31 +69,44 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 		return;
 	}
 
-    // Calculate damage.
-    if (!Attacks.IsValidIndex(AttackIndex))
-    {
-        return;
-    }
+	// Calculate damage.
+	if (!Attacks.IsValidIndex(AttackIndex))
+	{
+		return;
+	}
 
-    const FRTSAttackData& Attack = Attacks[AttackIndex];
+	const FRTSAttackData& Attack = Attacks[AttackIndex];
 
-    float Damage = Attack.Damage;
+	float Damage = Attack.Damage;
 
-    if (IsValid(OwnerController))
-    {
-        URTSPlayerAdvantageComponent* PlayerAdvantageComponent = OwnerController->FindComponentByClass<URTSPlayerAdvantageComponent>();
+	if (IsValid(OwnerController))
+	{
+		URTSPlayerAdvantageComponent* PlayerAdvantageComponent = OwnerController->FindComponentByClass<
+			URTSPlayerAdvantageComponent>();
 
-        if (IsValid(PlayerAdvantageComponent))
-        {
-            Damage *= PlayerAdvantageComponent->GetOutgoingDamageFactor();
-        }
-    }
+		if (IsValid(PlayerAdvantageComponent))
+		{
+			Damage *= PlayerAdvantageComponent->GetOutgoingDamageFactor();
+		}
+	}
 
 	// Use attack.
 	UE_LOG(LogRTS, Log, TEXT("Actor %s attacks %s."), *Owner->GetName(), *Target->GetName());
 
-	ARTSProjectile* SpawnedProjectile = nullptr;
+	if (Attack.AttackMontage)
+	{
+		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+		{
+			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+			{
+				const float Duration = AnimInstance->Montage_Play(Attack.AttackMontage, 1.0f);
+				UE_LOG(LogTemp, Warning, TEXT("Playing montage: %s (duration: %.2f)"), *Attack.AttackMontage->GetName(),
+				       Duration);
+			}
+		}
+	}
 
+	ARTSProjectile* SpawnedProjectile = nullptr;
 	if (Attack.ProjectileClass != nullptr)
 	{
 		// Fire projectile.
@@ -106,7 +125,8 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 
 		if (SpawnedProjectile)
 		{
-			UE_LOG(LogRTS, Log, TEXT("%s fired projectile %s at target %s."), *Owner->GetName(), *SpawnedProjectile->GetName(), *Target->GetName());
+			UE_LOG(LogRTS, Log, TEXT("%s fired projectile %s at target %s."), *Owner->GetName(),
+			       *SpawnedProjectile->GetName(), *Target->GetName());
 
 			// Aim at target.
 			SpawnedProjectile->FireAt(
@@ -132,20 +152,20 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 
 float URTSAttackComponent::GetAcquisitionRadius() const
 {
-    return AcquisitionRadius;
+	return AcquisitionRadius;
 }
 
 float URTSAttackComponent::GetChaseRadius() const
 {
-    return ChaseRadius;
+	return ChaseRadius;
 }
 
 TArray<FRTSAttackData> URTSAttackComponent::GetAttacks() const
 {
-    return Attacks;
+	return Attacks;
 }
 
 float URTSAttackComponent::GetRemainingCooldown() const
 {
-    return RemainingCooldown;
+	return RemainingCooldown;
 }
