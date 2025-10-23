@@ -365,7 +365,7 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 	}
 
     TSubclassOf<AActor> ProductClass = Queue[0];
-
+#if 0
     // Determine spawn location: Start at producing actor location.
     FVector SpawnLocation = GetOwner()->GetActorLocation();
 
@@ -381,6 +381,12 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 
     // Prevent spawn collision or spawning at wrong side of the world.
     SpawnLocation.Z += URTSCollisionLibrary::GetCollisionHeight(ProductClass) * 1.1f;
+#endif
+	FVector Forward = GetOwner()->GetActorForwardVector();
+	float SpawnOffset = (URTSCollisionLibrary::GetActorCollisionSize(GetOwner()) / 2.f) +
+						(URTSCollisionLibrary::GetCollisionSize(ProductClass) / 2.f) + 20.f;
+	FVector SpawnLocation = GetOwner()->GetActorLocation() + Forward * SpawnOffset;
+
 
 	// Spawn product.
 	AActor* Product = GameMode->SpawnActorForPlayer(
@@ -503,6 +509,7 @@ void URTSProductionComponent::SetRallyPointToLocation(const FVector& TargetLocat
     RallyPoint.TargetActor = nullptr;
     RallyPoint.TargetLocation = TargetLocation;
     RallyPoint.bIsSet = true;
+	UE_LOG(LogRTS, Log, TEXT("Set Rally point to location: %s"), *TargetLocation.ToString());
 }
 
 void URTSProductionComponent::ClearRallyPoint()

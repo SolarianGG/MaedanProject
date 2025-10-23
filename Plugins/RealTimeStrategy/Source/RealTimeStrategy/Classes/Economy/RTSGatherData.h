@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Animation/AnimMontage.h"
 
 #include "Templates/SubclassOf.h"
 
@@ -30,6 +31,10 @@ public:
 	/** Time between two gatherings, in seconds. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
 	float Cooldown;
+
+	/** Anim montage to play when unit is collecting resources */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
+	UAnimMontage* CollectingAnimMontage = nullptr;
 
 	/** Whether the actor needs to return to the drain in order to drop resources. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
