@@ -95,7 +95,7 @@ void URTSSelectableComponent::DeselectActor()
 	OnDeselected.Broadcast(GetOwner());
 }
 
-bool URTSSelectableComponent::IsSelected() const
+bool URTSSelectableComponent::IsObjectSelected() const
 {
 	return bSelected;
 }

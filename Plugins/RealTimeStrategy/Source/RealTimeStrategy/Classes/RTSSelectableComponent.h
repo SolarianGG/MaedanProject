@@ -41,7 +41,7 @@ public:
 
 	/** Checks whether the unit is currently selected by the local player, or not. */
 	UFUNCTION(BlueprintPure)
-	bool IsSelected() const;
+	bool IsObjectSelected() const;
 
     /** Hovers the unit for the local player. */
     void HoverActor();
