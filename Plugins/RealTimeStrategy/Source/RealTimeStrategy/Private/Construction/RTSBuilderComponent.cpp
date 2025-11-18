@@ -79,14 +79,14 @@ bool URTSBuilderComponent::BeginConstruction(TSubclassOf<AActor> BuildingClass, 
 		return false;
 	}
 
-    auto Pawn = Cast<APawn>(GetOwner());
+    auto* Pawn = Cast<APawn>(GetOwner());
 
     if (!Pawn)
     {
         return false;
     }
 
-    auto PawnController = Cast<ARTSPawnAIController>(Pawn->GetController());
+    auto* PawnController = Cast<ARTSPawnAIController>(Pawn->GetController());
 
     if (!PawnController)
     {

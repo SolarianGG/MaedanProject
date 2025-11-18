@@ -10,10 +10,5 @@
 			"LoadingPhase": "Default"
 		}
 	],
-	"Plugins": [
-		{
-			"Name": "DaedalicTestAutomationPlugin",
-			"Enabled": true
-		}
-	]
+	"Plugins": []
 }

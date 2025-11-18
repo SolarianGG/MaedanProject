@@ -29,7 +29,7 @@ class REALTIMESTRATEGY_API URTSProductionComponent : public URTSActorComponent
 public:
 	URTSProductionComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 
 	virtual void BeginPlay() override;

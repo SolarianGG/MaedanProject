@@ -365,27 +365,17 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 	}
 
     TSubclassOf<AActor> ProductClass = Queue[0];
-#if 0
-    // Determine spawn location: Start at producing actor location.
-    FVector SpawnLocation = GetOwner()->GetActorLocation();
-
-    // Spawn next to production actor.
-    float SpawnOffset = 0.0f;
-    SpawnOffset += URTSCollisionLibrary::GetActorCollisionSize(GetOwner()) / 2;
-    SpawnOffset += URTSCollisionLibrary::GetCollisionSize(ProductClass) / 2;
-    SpawnOffset *= 1.05f;
-    SpawnLocation.X -= SpawnOffset;
-
-    // Calculate location on the ground.
-    SpawnLocation = URTSCollisionLibrary::GetGroundLocation(this, SpawnLocation);
-
-    // Prevent spawn collision or spawning at wrong side of the world.
-    SpawnLocation.Z += URTSCollisionLibrary::GetCollisionHeight(ProductClass) * 1.1f;
-#endif
+	const FVector ActorLocation = GetOwner()->GetActorLocation();
 	FVector Forward = GetOwner()->GetActorForwardVector();
-	float SpawnOffset = (URTSCollisionLibrary::GetActorCollisionSize(GetOwner()) / 2.f) +
+	if (RallyPoint.bIsSet)
+	{
+		Forward = RallyPoint.TargetActor ?
+			(RallyPoint.TargetActor->GetActorLocation() - ActorLocation).GetSafeNormal() : 
+			(RallyPoint.TargetLocation - ActorLocation).GetSafeNormal();	
+	}
+	const float SpawnOffset = (URTSCollisionLibrary::GetActorCollisionSize(GetOwner()) / 2.f) +
 						(URTSCollisionLibrary::GetCollisionSize(ProductClass) / 2.f) + 20.f;
-	FVector SpawnLocation = GetOwner()->GetActorLocation() + Forward * SpawnOffset;
+	const FVector SpawnLocation = ActorLocation + Forward * SpawnOffset;
 
 
 	// Spawn product.
