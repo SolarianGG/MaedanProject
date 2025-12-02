@@ -95,15 +95,7 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 
 	if (Attack.AttackMontage)
 	{
-		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
-		{
-			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
-			{
-				const float Duration = AnimInstance->Montage_Play(Attack.AttackMontage, 1.0f);
-				UE_LOG(LogTemp, Warning, TEXT("Playing montage: %s (duration: %.2f)"), *Attack.AttackMontage->GetName(),
-				       Duration);
-			}
-		}
+		MulticastPlayAttackMontage(Attack.AttackMontage);
 	}
 
 	ARTSProjectile* SpawnedProjectile = nullptr;
@@ -168,4 +160,11 @@ TArray<FRTSAttackData> URTSAttackComponent::GetAttacks() const
 float URTSAttackComponent::GetRemainingCooldown() const
 {
 	return RemainingCooldown;
+}
+
+void URTSAttackComponent::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage)
+{
+	if (auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+		if (auto* Anim = Mesh->GetAnimInstance())
+			Anim->Montage_Play(Montage);
 }

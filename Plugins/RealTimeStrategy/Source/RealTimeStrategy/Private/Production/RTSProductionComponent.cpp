@@ -40,6 +40,7 @@ void URTSProductionComponent::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(URTSProductionComponent, ProductionQueues);
     DOREPLIFETIME(URTSProductionComponent, MostRecentProduct);
     DOREPLIFETIME(URTSProductionComponent, RallyPoint);
+	DOREPLIFETIME(URTSProductionComponent, SafeSpawningDirection);
 }
 
 void URTSProductionComponent::BeginPlay()
@@ -52,6 +53,8 @@ void URTSProductionComponent::BeginPlay()
 		FRTSProductionQueue NewQueue;
 		ProductionQueues.Add(NewQueue);
 	}
+	
+	SafeSpawningDirection = GetOwner()->GetActorForwardVector();
 }
 
 void URTSProductionComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction)
@@ -366,7 +369,7 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 
     TSubclassOf<AActor> ProductClass = Queue[0];
 	const FVector ActorLocation = GetOwner()->GetActorLocation();
-	FVector Forward = GetOwner()->GetActorForwardVector();
+	FVector Forward = SafeSpawningDirection;
 	if (RallyPoint.bIsSet)
 	{
 		Forward = RallyPoint.TargetActor ?
@@ -375,8 +378,13 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 	}
 	const float SpawnOffset = (URTSCollisionLibrary::GetActorCollisionSize(GetOwner()) / 2.f) +
 						(URTSCollisionLibrary::GetCollisionSize(ProductClass) / 2.f) + 20.f;
-	const FVector SpawnLocation = ActorLocation + Forward * SpawnOffset;
-
+	FVector SpawnLocation = ActorLocation + Forward * SpawnOffset;
+	while (URTSCollisionLibrary::GetGroundHitResults(GetOwner(), SpawnLocation).Num() == 0)
+	{
+		FRotator Rotation = FRotator(0, FMath::RandRange(0.0f, 360.0f), 0); 
+		SafeSpawningDirection = Forward = Rotation.RotateVector(Forward);	
+		SpawnLocation = ActorLocation + Forward * SpawnOffset;
+	}
 
 	// Spawn product.
 	AActor* Product = GameMode->SpawnActorForPlayer(

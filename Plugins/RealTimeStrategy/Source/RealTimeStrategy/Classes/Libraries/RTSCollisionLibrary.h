@@ -50,6 +50,10 @@ public:
     /** Gets the approximated collision height of the specified shape. */
     UFUNCTION(BlueprintPure, Category = "RTS")
     static float GetShapeCollisionHeight(UShapeComponent* ShapeComponent);
+	
+	/** Gets all hit result from location to ground */
+	UFUNCTION(BlueprintPure, Category = "RTS", meta = (WorldContext = "WorldContextObject"))
+	static TArray<FHitResult> GetGroundHitResults(UObject* WorldContextObject, FVector Location);
 
     /** Casts a ray to determine the z coordinate of the specified location on ground level. */
     UFUNCTION(BlueprintPure, Category = "RTS", meta = (WorldContext = "WorldContextObject"))

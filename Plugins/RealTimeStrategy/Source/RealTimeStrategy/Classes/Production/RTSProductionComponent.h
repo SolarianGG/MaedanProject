@@ -159,6 +159,9 @@ private:
     /** Actor or location to send new actors to. */
     UPROPERTY(Replicated)
     FRTSProductionRallyPoint RallyPoint;
+	
+	UPROPERTY(Replicated)
+	FVector SafeSpawningDirection = FVector::ZeroVector;
 
 	void DequeueProduct(int32 QueueIndex = 0, int32 ProductIndex = 0);
 	void StartProductionInQueue(int32 QueueIndex = 0);

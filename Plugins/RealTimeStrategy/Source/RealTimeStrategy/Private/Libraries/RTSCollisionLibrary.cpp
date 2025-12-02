@@ -136,11 +136,11 @@ float URTSCollisionLibrary::GetShapeCollisionHeight(UShapeComponent* ShapeCompon
     }
 }
 
-FVector URTSCollisionLibrary::GetGroundLocation(UObject* WorldContextObject, FVector Location)
+TArray<FHitResult> URTSCollisionLibrary::GetGroundHitResults(UObject* WorldContextObject, FVector Location)
 {
     if (!WorldContextObject)
     {
-        return Location;
+        return {}; 
     }
 
     // Cast ray to hit world.
@@ -151,7 +151,13 @@ FVector URTSCollisionLibrary::GetGroundLocation(UObject* WorldContextObject, FVe
         HitResults,
         FVector(Location.X, Location.Y, 10000.0f),
         FVector(Location.X, Location.Y, -10000.0f),
-        Params);
+        Params); 
+    return HitResults;
+}
+
+FVector URTSCollisionLibrary::GetGroundLocation(UObject* WorldContextObject, FVector Location)
+{
+    TArray<FHitResult> HitResults = GetGroundHitResults(WorldContextObject, Location); 
 
     for (auto& HitResult : HitResults)
     {

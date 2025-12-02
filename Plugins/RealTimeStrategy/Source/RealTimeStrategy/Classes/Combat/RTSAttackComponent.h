@@ -71,4 +71,7 @@ private:
 
     /** Time before the next attack can be used, in seconds. This is shared between attacks.*/
     float RemainingCooldown;
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayAttackMontage(UAnimMontage* Montage);
 };
