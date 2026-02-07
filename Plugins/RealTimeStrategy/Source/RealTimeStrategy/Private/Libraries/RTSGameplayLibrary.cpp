@@ -209,7 +209,7 @@ bool URTSGameplayLibrary::GetMissingRequirementFor(UObject* WorldContextObject, 
     return true;
 }
 
-bool URTSGameplayLibrary::IsOwnedByLocalPlayer(AActor* Actor)
+bool URTSGameplayLibrary::IsOwnedByLocalPlayer(const AActor* Actor)
 {
     if (!IsValid(Actor))
     {

@@ -78,7 +78,7 @@ public:
     TSubclassOf<AActor> DesiredProduct, TSubclassOf<AActor>& OutMissingRequirement);
 
     /** Checks whether the specified actor is owned by the local player. */
-    static bool IsOwnedByLocalPlayer(AActor* Actor);
+    static bool IsOwnedByLocalPlayer(const AActor* Actor);
 
 private:
 	/** Helper function - check if owner is a bot */

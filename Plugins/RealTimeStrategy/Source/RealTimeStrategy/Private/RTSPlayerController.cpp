@@ -917,6 +917,16 @@ void ARTSPlayerController::SelectActors(TArray<AActor*> Actors, ERTSSelectionCam
 		{
 			return true;
 		}
+		
+		if (URTSGameplayLibrary::IsOwnedByLocalPlayer(&Lhs) && !URTSGameplayLibrary::IsOwnedByLocalPlayer(&Rhs))
+		{
+			return true;
+		}
+		
+		if (!URTSGameplayLibrary::IsOwnedByLocalPlayer(&Lhs) && URTSGameplayLibrary::IsOwnedByLocalPlayer(&Rhs))
+		{
+			return false;
+		}
 
 		if (FirstSelectableComponent->GetSelectionPriority() < SecondSelectableComponent->GetSelectionPriority())
 		{
@@ -943,11 +953,24 @@ void ARTSPlayerController::SelectActors(TArray<AActor*> Actors, ERTSSelectionCam
 	if (Actors.Num() > 0)
 	{
 		const int32 HighestPriority = Actors[0]->FindComponentByClass<URTSSelectableComponent>()->GetSelectionPriority();
-		Actors.RemoveAll([HighestPriority](AActor* Lhs) -> bool
+		const bool IsControlledByPlayer = URTSGameplayLibrary::IsOwnedByLocalPlayer(Actors[0]);
+
+		Actors.RemoveAll([HighestPriority, IsControlledByPlayer](AActor* Lhs) -> bool
 		{
 			const auto* SelectableComponent = Lhs->FindComponentByClass<URTSSelectableComponent>();
+
+			if (URTSGameplayLibrary::IsOwnedByLocalPlayer(Lhs) != IsControlledByPlayer)
+			{
+				return true;
+			}
+
 			return SelectableComponent->GetSelectionPriority() > HighestPriority;
 		});
+
+		if (!IsControlledByPlayer && Actors.Num() > 1)
+		{
+			Actors.SetNum(1);
+		}
 	}
 
 	// Apply new selection.
