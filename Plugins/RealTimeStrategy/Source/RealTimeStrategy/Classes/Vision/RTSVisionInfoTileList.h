@@ -14,7 +14,7 @@ struct REALTIMESTRATEGY_API FRTSVisionInfoTileList
 
 public:
     UPROPERTY()
-    ARTSVisionInfo* VisionInfo;
+    ARTSVisionInfo* VisionInfo = nullptr;
 
     TArray<int32> VisibleTiles;
 };

@@ -19,7 +19,7 @@ struct REALTIMESTRATEGY_API FRTSOrderTargetData
 public:
     /** Target actor. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
-    AActor* Actor;
+    AActor* Actor = nullptr;
 
     /** Target location. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")

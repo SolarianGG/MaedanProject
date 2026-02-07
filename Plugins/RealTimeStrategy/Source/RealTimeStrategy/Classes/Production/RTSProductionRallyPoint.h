@@ -20,7 +20,7 @@ public:
 
     /** Actor to send new actors to. */
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "RTS")
-    AActor* TargetActor;
+    AActor* TargetActor = nullptr;
 
     /** Whether this rally is currently active. */
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "RTS")
