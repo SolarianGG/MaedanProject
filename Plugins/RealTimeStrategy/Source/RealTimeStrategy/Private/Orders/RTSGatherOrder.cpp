@@ -32,5 +32,5 @@ bool URTSGatherOrder::IsValidTarget(const AActor* OrderedActor, const FRTSOrderT
     }
 
     URTSGathererComponent* GathererComponent = OrderedActor->FindComponentByClass<URTSGathererComponent>();
-    return IsValid(GathererComponent) && GathererComponent->CanGatherFrom(TargetData.Actor);
+    return IsValid(GathererComponent) && GathererComponent->IsValidResourceToGather(TargetData.Actor);
 }

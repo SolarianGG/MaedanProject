@@ -38,7 +38,11 @@ public:
 	/** Checks whether the actor can gather from the specified source, e.g. is allowed to gather, and is not at capacity limit. */
 	UFUNCTION(BlueprintPure)
 	virtual bool CanGatherFrom(AActor* ResourceSource) const;
-
+	
+	/** Check whether the actor is allowed to gather this resource */
+	UFUNCTION(BlueprintPure)
+	virtual bool IsValidResourceToGather(AActor* ResourceSource) const;
+	
 	/** Finds the closest resource drain for returning currently carried resources. */
 	UFUNCTION(BlueprintPure)
 	virtual AActor* FindClosestResourceDrain() const;

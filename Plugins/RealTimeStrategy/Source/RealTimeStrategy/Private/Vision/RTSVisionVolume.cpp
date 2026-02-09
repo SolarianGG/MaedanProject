@@ -34,8 +34,8 @@ void ARTSVisionVolume::Initialize()
     {
         for (int32 TileX = 0; TileX < SizeInTiles; ++TileX)
         {
-            float RelativeWorldX = (float)TileX / SizeInTiles;
-            float RelativeWorldY = (float)TileY / SizeInTiles;
+            float RelativeWorldX = static_cast<float>(TileX) / SizeInTiles;
+            float RelativeWorldY = static_cast<float>(TileY) / SizeInTiles;
 
             float TranslatedWorldPositionX = (RelativeWorldX - 0.5f) * SizeInWorld.X;
             float TranslatedWorldPositionY = (RelativeWorldY - 0.5f) * SizeInWorld.Y;

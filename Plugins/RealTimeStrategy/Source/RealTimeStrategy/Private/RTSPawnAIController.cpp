@@ -98,7 +98,7 @@ TSubclassOf<URTSOrder> ARTSPawnAIController::GetCurrentOrder() const
 bool ARTSPawnAIController::HasOrder(ERTSOrderType OrderType) const
 {
     UE_LOG(LogRTS, Warning, TEXT("ARTSPawnAIController::HasOrder has been deprecated as of plugin version 1.2. Please use HasOrderByClass instead."));
-    return Blackboard->GetValueAsEnum(TEXT("OrderType")) == (uint8)OrderType;
+    return Blackboard->GetValueAsEnum(TEXT("OrderType")) == static_cast<uint8>(OrderType);
 }
 
 bool ARTSPawnAIController::HasOrderByClass(TSubclassOf<URTSOrder> OrderClass) const
@@ -122,7 +122,7 @@ void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order)
     // Update blackboard.
     ERTSOrderType OrderType = OrderClassToType(Order.OrderClass);
     
-    Blackboard->SetValueAsEnum(TEXT("OrderType"), (uint8)OrderType);
+    Blackboard->SetValueAsEnum(TEXT("OrderType"), static_cast<uint8>(OrderType));
     Blackboard->SetValueAsClass(TEXT("OrderClass"), Order.OrderClass);
     Blackboard->SetValueAsObject(TEXT("TargetActor"), Order.TargetActor);
     Blackboard->SetValueAsVector(TEXT("TargetLocation"), Order.TargetLocation);

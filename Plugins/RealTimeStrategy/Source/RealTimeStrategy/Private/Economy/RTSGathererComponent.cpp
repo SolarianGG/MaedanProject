@@ -57,6 +57,22 @@ void URTSGathererComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 		return;
 	}
 
+	// Ensure animation is playing while gathering.
+	FRTSGatherData GatherData;
+	if (GetGatherDataForResourceSource(CurrentResourceSource, &GatherData) && GatherData.CollectingAnimMontage)
+	{
+		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+		{
+			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+			{
+				if (!AnimInstance->Montage_IsPlaying(GatherData.CollectingAnimMontage))
+				{
+					AnimInstance->Montage_Play(GatherData.CollectingAnimMontage, 1.0f);
+				}
+			}
+		}
+	}
+
 	// Update cooldown timer.
 	if (RemainingCooldown > 0)
 	{
@@ -71,6 +87,23 @@ void URTSGathererComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 
 bool URTSGathererComponent::CanGatherFrom(AActor* ResourceSource) const
 {
+	if (!IsValidResourceToGather(ResourceSource))
+	{
+		return false;
+	}
+	
+	// Check capacity.
+	FRTSGatherData GatherData;
+	if (!GetGatherDataForResourceSource(ResourceSource, &GatherData))
+	{
+		return false;
+	}
+
+	return CarriedResourceAmount < GatherData.Capacity;
+}
+
+bool URTSGathererComponent::IsValidResourceToGather(AActor* ResourceSource) const
+{
 	if (!IsValid(ResourceSource))
 	{
 		return false;
@@ -81,16 +114,10 @@ bool URTSGathererComponent::CanGatherFrom(AActor* ResourceSource) const
 	{
 		return false;
 	}
-
-	// Check capacity.
-	FRTSGatherData GatherData;
-	if (!GetGatherDataForResourceSource(ResourceSource, &GatherData))
-	{
-		return false;
-	}
-
-	return CarriedResourceAmount < GatherData.Capacity;
+	
+	return true;
 }
+
 
 AActor* URTSGathererComponent::FindClosestResourceDrain() const
 {
@@ -270,6 +297,19 @@ void URTSGathererComponent::StartGatheringResources(AActor* ResourceSource)
 			ContainerComponent->LoadActor(GetOwner());
 		}
 	}
+	else if (GatherData.CollectingAnimMontage)
+	{
+		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+		{
+			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+			{
+				const float Duration = AnimInstance->Montage_Play(GatherData.CollectingAnimMontage, 1.0f);
+				UE_LOG(LogTemp, Warning, TEXT("Playing montage: %s (duration: %.2f)"),
+				       *GatherData.CollectingAnimMontage->GetName(),
+				       Duration);
+			}
+		}
+	}
 }
 
 float URTSGathererComponent::GatherResources(AActor* ResourceSource)
@@ -310,19 +350,6 @@ float URTSGathererComponent::GatherResources(AActor* ResourceSource)
 	// Start cooldown timer.
 	RemainingCooldown = GatherData.Cooldown;
 
-	if (GatherData.CollectingAnimMontage)
-	{
-		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
-		{
-			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
-			{
-				const float Duration = AnimInstance->Montage_Play(GatherData.CollectingAnimMontage, 1.0f);
-				UE_LOG(LogTemp, Warning, TEXT("Playing montage: %s (duration: %.2f)"),
-				       *GatherData.CollectingAnimMontage->GetName(),
-				       Duration);
-			}
-		}
-	}
 
 	UE_LOG(LogRTS, Log, TEXT("Actor %s gathered %f %s from %s."),
 	       *GetOwner()->GetName(),
