@@ -138,4 +138,10 @@ private:
 	bool GetGatherDataForResourceSource(AActor* ResourceSource, FRTSGatherData* OutGatherData) const;
 	bool GetGatherDataForResourceType(TSubclassOf<URTSResourceType> ResourceType, FRTSGatherData* OutGatherData) const;
     void SetCarriedResourceAmount(float NewAmount);
+
+    bool bIsReturningResources = false;
+
+public:
+    /** Whether the gatherer is currently in the process of returning resources to a drain. */
+    bool IsReturningResources() const { return bIsReturningResources; }
 };

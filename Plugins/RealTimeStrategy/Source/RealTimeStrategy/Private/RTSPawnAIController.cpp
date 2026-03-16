@@ -219,6 +219,16 @@ void ARTSPawnAIController::ValidateCurrentOrder()
         return;
     }
 
+    // Don't interrupt the order while the gatherer is returning resources —
+    // removing the CarryingResources tag is the normal outcome of that action, not an external invalidation.
+    if (URTSGathererComponent* GathererComp = GetPawn()->FindComponentByClass<URTSGathererComponent>())
+    {
+        if (GathererComp->IsReturningResources())
+        {
+            return;
+        }
+    }
+
     if (!URTSOrderLibrary::CanObeyOrder(CurrentOrder.OrderClass, GetPawn(), CurrentOrder.Index))
     {
         UE_LOG(LogRTS, Log, TEXT("%s: current order invalidated by tag change, stopping."), *GetPawn()->GetName());

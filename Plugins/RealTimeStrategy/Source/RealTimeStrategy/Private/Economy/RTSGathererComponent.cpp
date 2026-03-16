@@ -427,6 +427,8 @@ float URTSGathererComponent::ReturnResources(AActor* ResourceDrain)
 		return 0.0f;
 	}
 
+	bIsReturningResources = true;
+
 	// Return resources.
 	auto* ResourceDrainComponent = ResourceDrain->FindComponentByClass<URTSResourceDrainComponent>();
 	ResourceDrainComponent->RegisterGatherer(GetOwner());
@@ -444,6 +446,8 @@ float URTSGathererComponent::ReturnResources(AActor* ResourceDrain)
 
 	// Notify listeners.
 	OnResourcesReturned.Broadcast(GetOwner(), ResourceDrain, CarriedResourceType, ReturnedResources);
+
+	bIsReturningResources = false;
 	return ReturnedResources;
 }
 
