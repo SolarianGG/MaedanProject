@@ -194,8 +194,11 @@ void ARTSPlayerController::SetupInputComponent()
 	// Get camera bounds.
 	for (TActorIterator<ARTSCameraBoundsVolume> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
-		CameraBoundsVolume = *ActorItr;
-		break;
+		if (ActorItr)
+		{
+			CameraBoundsVolume = *ActorItr;
+			break;
+		}
 	}
 
 	if (!CameraBoundsVolume)
