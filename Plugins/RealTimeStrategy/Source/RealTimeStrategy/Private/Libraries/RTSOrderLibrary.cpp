@@ -7,6 +7,20 @@
 #include "Orders/RTSOrderTagRequirements.h"
 
 
+// CDO cache: order class → issue tag requirements. Populated on first access; safe since CDO data is immutable.
+static TMap<UClass*, FRTSOrderTagRequirements> GOrderTagRequirementsCache;
+
+static const FRTSOrderTagRequirements& GetCachedOrderTagRequirements(UClass* OrderClass)
+{
+    if (FRTSOrderTagRequirements* Cached = GOrderTagRequirementsCache.Find(OrderClass))
+    {
+        return *Cached;
+    }
+    FRTSOrderTagRequirements Reqs = OrderClass->GetDefaultObject<URTSOrder>()->GetIssueTagRequirements();
+    return GOrderTagRequirementsCache.Add(OrderClass, Reqs);
+}
+
+
 bool URTSOrderLibrary::CanObeyOrder(TSubclassOf<URTSOrder> OrderClass, const AActor* OrderedActor, int32 Index)
 {
     if (OrderClass == nullptr)
@@ -22,7 +36,7 @@ bool URTSOrderLibrary::CanObeyOrder(TSubclassOf<URTSOrder> OrderClass, const AAc
     const URTSOrder* Order = OrderClass->GetDefaultObject<URTSOrder>();
 
     FGameplayTagContainer OrderedActorTags = URTSGameplayTagLibrary::GetGameplayTags(OrderedActor);
-    FRTSOrderTagRequirements TagRequirements = Order->GetIssueTagRequirements();
+    const FRTSOrderTagRequirements& TagRequirements = GetCachedOrderTagRequirements(OrderClass);
 
     if (!URTSGameplayTagLibrary::MeetsTagRequirements(OrderedActorTags, TagRequirements.SourceRequiredTags, TagRequirements.SourceBlockedTags))
     {
@@ -50,7 +64,7 @@ bool URTSOrderLibrary::IsValidOrderTarget(TSubclassOf<URTSOrder> OrderClass, con
             return false;
         }
 
-        FRTSOrderTagRequirements TagRequirements = Order->GetIssueTagRequirements();
+        const FRTSOrderTagRequirements& TagRequirements = GetCachedOrderTagRequirements(OrderClass);
 
         if (!URTSGameplayTagLibrary::MeetsTagRequirements(TargetData.TargetTags, TagRequirements.TargetRequiredTags, TagRequirements.TargetBlockedTags))
         {

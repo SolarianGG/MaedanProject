@@ -87,6 +87,10 @@ public:
     UFUNCTION(BlueprintPure)
     float GetRemainingCooldown() const;
 
+	/** Leaves the current resource source, unloading from container and decrementing gatherer count. */
+	UFUNCTION(BlueprintCallable)
+	void LeaveCurrentResourceSource();
+
 	/** Event when the actor has gathered resources from a source. */
 	UPROPERTY(BlueprintAssignable, Category = "RTS")
 	FRTSGathererComponentResourcesGatheredSignature OnResourcesGathered;
@@ -133,6 +137,5 @@ private:
 
 	bool GetGatherDataForResourceSource(AActor* ResourceSource, FRTSGatherData* OutGatherData) const;
 	bool GetGatherDataForResourceType(TSubclassOf<URTSResourceType> ResourceType, FRTSGatherData* OutGatherData) const;
-	void LeaveCurrentResourceSource();
     void SetCarriedResourceAmount(float NewAmount);
 };

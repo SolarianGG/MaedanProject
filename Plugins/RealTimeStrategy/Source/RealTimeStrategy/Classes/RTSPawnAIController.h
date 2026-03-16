@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "AIController.h"
+#include "GameplayTagContainer.h"
 #include "Templates/SubclassOf.h"
 
 #include "Orders/RTSOrder.h"
@@ -13,10 +14,12 @@
 
 
 class URTSAttackComponent;
+class URTSGameplayTagsComponent;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRTSPawnAIControllerOrderChangedSignature, AActor*, Actor, ERTSOrderType, NewOrder);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRTSPawnAIControllerCurrentOrderChangedSignature, AActor*, Actor, const FRTSOrderData&, NewOrder);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRTSOrderQueueChangedSignature, AActor*, Pawn, const TArray<FRTSOrderData>&, Queue);
 
 
 /**
@@ -51,6 +54,21 @@ public:
     /** Makes the pawn carry out the specified order. */
     UFUNCTION(BlueprintCallable)
     void IssueOrder(const FRTSOrderData& Order);
+
+    /** Makes the pawn carry out the specified order, optionally appending to the queue instead of replacing the current order. */
+    void IssueOrder(const FRTSOrderData& Order, bool bAppendToQueue);
+
+    /** Called when the current order completes; pops and issues the next queued order, or issues stop if the queue is empty. */
+    UFUNCTION(BlueprintCallable)
+    void FinishCurrentOrder();
+
+    /** Clears the order queue without issuing any new orders. */
+    UFUNCTION(BlueprintCallable)
+    void ClearOrderQueue();
+
+    /** Gets the pending order queue. */
+    UFUNCTION(BlueprintPure)
+    const TArray<FRTSOrderData>& GetOrderQueue() const;
 
 	/** Makes the pawn attack the specified target. */
 	UFUNCTION(BlueprintCallable)
@@ -89,6 +107,10 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "RTS")
     FRTSPawnAIControllerCurrentOrderChangedSignature OnCurrentOrderChanged;
 
+    /** Event when the pawn's order queue has changed. */
+    UPROPERTY(BlueprintAssignable, Category = "RTS")
+    FRTSOrderQueueChangedSignature OnOrderQueueChanged;
+
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 
@@ -107,6 +129,30 @@ private:
 	
     UPROPERTY()
 	URTSAttackComponent* AttackComponent;
+
+    /** Queue of pending orders to execute after the current one completes. */
+    TArray<FRTSOrderData> OrderQueue;
+
+    /** The order currently being executed, stored for live validation. */
+    FRTSOrderData CurrentOrder;
+
+    /** Re-validates the current order against live tags; issues stop if it is no longer valid. */
+    void ValidateCurrentOrder();
+
+    /** Binds tag-change and destroy delegates for the current order's actors. */
+    void BindOrderValidationDelegates(const FRTSOrderData& Order);
+
+    /** Unbinds all validation delegates. Must be called before issuing any new order. */
+    void UnbindOrderValidationDelegates();
+
+    UFUNCTION()
+    void OnUnitTagsChanged(AActor* Actor, FGameplayTagContainer CurrentTags);
+
+    UFUNCTION()
+    void OnTargetTagsChanged(AActor* Actor, FGameplayTagContainer CurrentTags);
+
+    UFUNCTION()
+    void OnTargetDestroyed(AActor* DestroyedActor);
 
     ERTSOrderType OrderClassToType(UClass* OrderClass) const;
 };

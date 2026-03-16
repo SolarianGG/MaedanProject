@@ -21,21 +21,21 @@ URTSResourceDrainComponent::URTSResourceDrainComponent(const FObjectInitializer&
 float URTSResourceDrainComponent::ReturnResources(AActor* Gatherer, TSubclassOf<URTSResourceType> ResourceType, float ResourceAmount)
 {
 	// Notify player.
-	auto Owner = GetOwner()->GetOwner();
+	const auto Owner = GetOwner()->GetOwner();
 
 	if (!Owner)
 	{
 		return 0.0f;
 	}
 
-    auto PlayerResourcesComponent = Owner->FindComponentByClass<URTSPlayerResourcesComponent>();
+    const auto PlayerResourcesComponent = Owner->FindComponentByClass<URTSPlayerResourcesComponent>();
 
     if (!PlayerResourcesComponent)
     {
         return 0.0f;
     }
 
-	float ReturnedResources = PlayerResourcesComponent->AddResources(ResourceType, ResourceAmount);
+	const float ReturnedResources = PlayerResourcesComponent->AddResources(ResourceType, ResourceAmount);
 
 	if (ReturnedResources <= 0.0f)
 	{
@@ -60,6 +60,40 @@ bool URTSResourceDrainComponent::MustGathererEnter() const
 int32 URTSResourceDrainComponent::GetGathererCapacity() const
 {
     return GathererCapacity;
+}
+
+bool URTSResourceDrainComponent::CanAcceptGatherer() const
+{
+    return RegisteredGatherers.Num() < GathererCapacity;
+}
+
+void URTSResourceDrainComponent::RegisterGatherer(AActor* Gatherer)
+{
+    if (!IsValid(Gatherer))
+    {
+        return;
+    }
+
+    RegisteredGatherers.Add(Gatherer);
+    Gatherer->OnDestroyed.AddDynamic(this, &URTSResourceDrainComponent::OnRegisteredGathererDestroyed);
+}
+
+void URTSResourceDrainComponent::UnregisterGatherer(AActor* Gatherer)
+{
+    if (!IsValid(Gatherer))
+    {
+        return;
+    }
+
+    if (RegisteredGatherers.Remove(Gatherer) > 0)
+    {
+        Gatherer->OnDestroyed.RemoveDynamic(this, &URTSResourceDrainComponent::OnRegisteredGathererDestroyed);
+    }
+}
+
+void URTSResourceDrainComponent::OnRegisteredGathererDestroyed(AActor* DestroyedActor)
+{
+    RegisteredGatherers.Remove(DestroyedActor);
 }
 
 void URTSResourceDrainComponent::NotifyOnResourcesReturned_Implementation(AActor* Gatherer, TSubclassOf<URTSResourceType> ResourceType, float ResourceAmount)

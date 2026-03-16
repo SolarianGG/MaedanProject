@@ -42,6 +42,16 @@ public:
     UFUNCTION(BlueprintPure)
     int32 GetGathererCapacity() const;
 
+    /** Returns true if this drain can accept another gatherer (has capacity remaining). */
+    UFUNCTION(BlueprintPure)
+    bool CanAcceptGatherer() const;
+
+    /** Registers a gatherer as currently returning resources here. */
+    void RegisterGatherer(AActor* Gatherer);
+
+    /** Unregisters a gatherer from this drain. */
+    void UnregisterGatherer(AActor* Gatherer);
+
 
     /** Event when resources have been returned to the actor. */
     UFUNCTION(NetMulticast, reliable)
@@ -64,4 +74,10 @@ private:
     /** How many gatherers may enter at the same time. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 1))
     int32 GathererCapacity;
+
+    /** Gatherers currently registered as returning resources here. */
+    TSet<TWeakObjectPtr<AActor>> RegisteredGatherers;
+
+    UFUNCTION()
+    void OnRegisteredGathererDestroyed(AActor* DestroyedActor);
 };

@@ -87,9 +87,25 @@ void ARTSPlayerState::DiscoverOwnActors()
 
         if (IsValid(OwnerComponent) && OwnerComponent->GetPlayerOwner() == this)
         {
-            OwnActors.AddUnique(Actor);
+            RegisterOwnedActor(Actor);
         }
     }
+}
+
+void ARTSPlayerState::RegisterOwnedActor(AActor* Actor)
+{
+    if (!IsValid(Actor) || OwnActors.Contains(Actor))
+    {
+        return;
+    }
+
+    OwnActors.Add(Actor);
+    Actor->OnDestroyed.AddDynamic(this, &ARTSPlayerState::OnOwnedActorDestroyed);
+}
+
+void ARTSPlayerState::OnOwnedActorDestroyed(AActor* DestroyedActor)
+{
+    OwnActors.Remove(DestroyedActor);
 }
 
 void ARTSPlayerState::NotifyOnTeamChanged(ARTSTeamInfo* NewTeam)
@@ -120,10 +136,14 @@ void ARTSPlayerState::NotifyOnActorOwnerChanged(AActor* Actor, ARTSPlayerState* 
     // Update list of own actors.
     if (NewOwner == this)
     {
-        OwnActors.AddUnique(Actor);
+        RegisterOwnedActor(Actor);
     }
     else
     {
+        if (IsValid(Actor))
+        {
+            Actor->OnDestroyed.RemoveDynamic(this, &ARTSPlayerState::OnOwnedActorDestroyed);
+        }
         OwnActors.Remove(Actor);
     }
 

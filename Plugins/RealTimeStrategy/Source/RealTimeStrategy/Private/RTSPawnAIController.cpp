@@ -4,6 +4,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
+#include "RTSGameplayTagsComponent.h"
 #include "RTSLog.h"
 #include "RTSOwnerComponent.h"
 #include "Economy/RTSGathererComponent.h"
@@ -113,15 +114,36 @@ bool ARTSPawnAIController::IsIdle() const
 
 void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order)
 {
+    IssueOrder(Order, false);
+}
+
+void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order, bool bAppendToQueue)
+{
+    // When queuing, append the order if we are currently doing something.
+    if (bAppendToQueue && Blackboard && !IsIdle())
+    {
+        OrderQueue.Add(Order);
+        OnOrderQueueChanged.Broadcast(GetOwner(), OrderQueue);
+        return;
+    }
+
     if (!Blackboard)
     {
         UE_LOG(LogRTS, Warning, TEXT("Blackboard not set up for %s, can't receive orders. Check AI Controller Class and Auto Possess AI."), *GetPawn()->GetName());
         return;
     }
 
+    // Non-queued orders clear any pending queue.
+    ClearOrderQueue();
+
+    // Unbind delegates from the previous order before updating CurrentOrder.
+    UnbindOrderValidationDelegates();
+    CurrentOrder = Order;
+    BindOrderValidationDelegates(Order);
+
     // Update blackboard.
     ERTSOrderType OrderType = OrderClassToType(Order.OrderClass);
-    
+
     Blackboard->SetValueAsEnum(TEXT("OrderType"), static_cast<uint8>(OrderType));
     Blackboard->SetValueAsClass(TEXT("OrderClass"), Order.OrderClass);
     Blackboard->SetValueAsObject(TEXT("TargetActor"), Order.TargetActor);
@@ -137,6 +159,15 @@ void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order)
         Blackboard->ClearValue(TEXT("HomeLocation"));
     }
 
+    // Clean up any active gather state before interrupting with a new order.
+    if (APawn* MyPawn = GetPawn())
+    {
+        if (URTSGathererComponent* GathererComp = MyPawn->FindComponentByClass<URTSGathererComponent>())
+        {
+            GathererComp->LeaveCurrentResourceSource();
+        }
+    }
+
     // Update behavior tree.
     UBehaviorTreeComponent* BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
     if (BehaviorTreeComponent)
@@ -150,6 +181,138 @@ void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order)
     // Notify listeners.
     OnOrderChanged.Broadcast(GetOwner(), OrderType);
     OnCurrentOrderChanged.Broadcast(GetOwner(), Order);
+}
+
+void ARTSPawnAIController::FinishCurrentOrder()
+{
+    if (OrderQueue.Num() > 0)
+    {
+        FRTSOrderData NextOrder = OrderQueue[0];
+        OrderQueue.RemoveAt(0);
+        OnOrderQueueChanged.Broadcast(GetOwner(), OrderQueue);
+        IssueOrder(NextOrder, false);
+    }
+    else
+    {
+        IssueStopOrder();
+    }
+}
+
+void ARTSPawnAIController::ClearOrderQueue()
+{
+    if (OrderQueue.Num() > 0)
+    {
+        OrderQueue.Empty();
+        OnOrderQueueChanged.Broadcast(GetOwner(), OrderQueue);
+    }
+}
+
+const TArray<FRTSOrderData>& ARTSPawnAIController::GetOrderQueue() const
+{
+    return OrderQueue;
+}
+
+void ARTSPawnAIController::ValidateCurrentOrder()
+{
+    if (!Blackboard || !GetPawn() || IsIdle())
+    {
+        return;
+    }
+
+    if (!URTSOrderLibrary::CanObeyOrder(CurrentOrder.OrderClass, GetPawn(), CurrentOrder.Index))
+    {
+        UE_LOG(LogRTS, Log, TEXT("%s: current order invalidated by tag change, stopping."), *GetPawn()->GetName());
+        IssueStopOrder();
+        return;
+    }
+
+    if (IsValid(CurrentOrder.TargetActor))
+    {
+        FRTSOrderTargetData TargetData = URTSOrderLibrary::GetOrderTargetData(
+            GetPawn(), CurrentOrder.TargetActor, CurrentOrder.TargetLocation);
+        if (!URTSOrderLibrary::IsValidOrderTarget(CurrentOrder.OrderClass, GetPawn(), TargetData, CurrentOrder.Index))
+        {
+            UE_LOG(LogRTS, Log, TEXT("%s: current order target invalidated by tag change, stopping."), *GetPawn()->GetName());
+            IssueStopOrder();
+        }
+    }
+}
+
+void ARTSPawnAIController::BindOrderValidationDelegates(const FRTSOrderData& Order)
+{
+    APawn* Unit = GetPawn();
+    if (!IsValid(Unit))
+    {
+        return;
+    }
+
+    URTSGameplayTagsComponent* UnitTagsComp = Unit->FindComponentByClass<URTSGameplayTagsComponent>();
+    if (IsValid(UnitTagsComp))
+    {
+        UnitTagsComp->CurrentTagsChanged.AddDynamic(this, &ARTSPawnAIController::OnUnitTagsChanged);
+    }
+
+    if (IsValid(Order.TargetActor))
+    {
+        URTSGameplayTagsComponent* TargetTagsComp = Order.TargetActor->FindComponentByClass<URTSGameplayTagsComponent>();
+        if (IsValid(TargetTagsComp))
+        {
+            TargetTagsComp->CurrentTagsChanged.AddDynamic(this, &ARTSPawnAIController::OnTargetTagsChanged);
+        }
+        Order.TargetActor->OnDestroyed.AddDynamic(this, &ARTSPawnAIController::OnTargetDestroyed);
+    }
+}
+
+void ARTSPawnAIController::UnbindOrderValidationDelegates()
+{
+    APawn* Unit = GetPawn();
+    if (IsValid(Unit))
+    {
+        URTSGameplayTagsComponent* UnitTagsComp = Unit->FindComponentByClass<URTSGameplayTagsComponent>();
+        if (IsValid(UnitTagsComp))
+        {
+            UnitTagsComp->CurrentTagsChanged.RemoveDynamic(this, &ARTSPawnAIController::OnUnitTagsChanged);
+        }
+    }
+
+    if (IsValid(CurrentOrder.TargetActor))
+    {
+        URTSGameplayTagsComponent* TargetTagsComp = CurrentOrder.TargetActor->FindComponentByClass<URTSGameplayTagsComponent>();
+        if (IsValid(TargetTagsComp))
+        {
+            TargetTagsComp->CurrentTagsChanged.RemoveDynamic(this, &ARTSPawnAIController::OnTargetTagsChanged);
+        }
+        CurrentOrder.TargetActor->OnDestroyed.RemoveDynamic(this, &ARTSPawnAIController::OnTargetDestroyed);
+    }
+}
+
+void ARTSPawnAIController::OnUnitTagsChanged(AActor* Actor, FGameplayTagContainer CurrentTags)
+{
+    ValidateCurrentOrder();
+}
+
+void ARTSPawnAIController::OnTargetTagsChanged(AActor* Actor, FGameplayTagContainer CurrentTags)
+{
+    ValidateCurrentOrder();
+}
+
+void ARTSPawnAIController::OnTargetDestroyed(AActor* DestroyedActor)
+{
+    if (CurrentOrder.TargetActor != DestroyedActor)
+    {
+        return;
+    }
+
+    // Unbind the target's delegates manually since it is being destroyed.
+    URTSGameplayTagsComponent* TargetTagsComp = DestroyedActor->FindComponentByClass<URTSGameplayTagsComponent>();
+    if (IsValid(TargetTagsComp))
+    {
+        TargetTagsComp->CurrentTagsChanged.RemoveDynamic(this, &ARTSPawnAIController::OnTargetTagsChanged);
+    }
+    DestroyedActor->OnDestroyed.RemoveDynamic(this, &ARTSPawnAIController::OnTargetDestroyed);
+    CurrentOrder.TargetActor = nullptr;
+
+    IssueStopOrder();
 }
 
 void ARTSPawnAIController::IssueAttackOrder(AActor* Target)

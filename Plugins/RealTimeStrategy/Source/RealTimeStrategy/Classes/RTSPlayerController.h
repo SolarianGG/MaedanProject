@@ -542,7 +542,7 @@ private:
 
     /** Issues the specified order to the passed pawn. */
     UFUNCTION(Reliable, Server, WithValidation)
-    void ServerIssueOrder(APawn* OrderedPawn, const FRTSOrderData& Order);
+    void ServerIssueOrder(APawn* OrderedPawn, const FRTSOrderData& Order, bool bAppendToQueue);
 
 	/** Start producing the specified product at the specified actor. */
 	UFUNCTION(Reliable, Server, WithValidation)

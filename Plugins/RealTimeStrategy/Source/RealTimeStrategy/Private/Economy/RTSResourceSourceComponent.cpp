@@ -27,6 +27,7 @@ void URTSResourceSourceComponent::GetLifetimeReplicatedProps(TArray<FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(URTSResourceSourceComponent, CurrentResources);
+	DOREPLIFETIME(URTSResourceSourceComponent, CurrentGathererCapacity);
 }
 
 void URTSResourceSourceComponent::BeginPlay()
@@ -42,7 +43,7 @@ void URTSResourceSourceComponent::BeginPlay()
     }
 
     // Set container size.
-	auto ContainerComponent = GetOwner()->FindComponentByClass<URTSContainerComponent>();
+	const auto ContainerComponent = GetOwner()->FindComponentByClass<URTSContainerComponent>();
 
 	if (ContainerComponent)
 	{
@@ -56,6 +57,8 @@ void URTSResourceSourceComponent::BeginPlay()
 
 	 // Set initial resources.
 	CurrentResources = MaximumResources;
+	
+	CurrentGathererCapacity = 0;
 }
 
 float URTSResourceSourceComponent::ExtractResources(AActor* Gatherer, float ResourceAmount)
@@ -69,9 +72,9 @@ float URTSResourceSourceComponent::ExtractResources(AActor* Gatherer, float Reso
 	}
 
 	// Deduct resources.
-	float OldResources = CurrentResources;
+	const float OldResources = CurrentResources;
 	CurrentResources -= GatheredAmount;
-	float NewResources = CurrentResources;
+	const float NewResources = CurrentResources;
 
 	UE_LOG(LogRTS, Log, TEXT("Actor %s has gathered %f resources of type %s from %s, reducing remaining resources to %f."),
 		*Gatherer->GetName(),
@@ -98,9 +101,21 @@ float URTSResourceSourceComponent::ExtractResources(AActor* Gatherer, float Reso
 	return GatheredAmount;
 }
 
+void URTSResourceSourceComponent::AddGatherer()
+{
+	if (CurrentGathererCapacity >= GathererCapacity) return;
+	CurrentGathererCapacity++;
+}
+
+void URTSResourceSourceComponent::RemoveGatherer()
+{
+	if (CurrentGathererCapacity <= 0) return;
+	CurrentGathererCapacity--;
+}
+
 bool URTSResourceSourceComponent::CanGathererEnter(AActor* Gatherer) const
 {
-	auto ContainerComponent = GetOwner()->FindComponentByClass<URTSContainerComponent>();
+	const auto* ContainerComponent = GetOwner()->FindComponentByClass<URTSContainerComponent>();
 	return !ContainerComponent || ContainerComponent->GetContainedActors().Contains(Gatherer) || ContainerComponent->CanLoadActor(Gatherer);
 }
 

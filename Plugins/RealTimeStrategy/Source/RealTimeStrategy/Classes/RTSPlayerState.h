@@ -79,4 +79,9 @@ private:
 
     UFUNCTION()
     void OnTeamChanged();
+
+    UFUNCTION()
+    void OnOwnedActorDestroyed(AActor* DestroyedActor);
+
+    void RegisterOwnedActor(AActor* Actor);
 };

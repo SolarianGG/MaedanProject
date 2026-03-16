@@ -25,8 +25,8 @@ void URTSPlayerResourcesComponent::BeginPlay()
     Super::BeginPlay();
 
     // Check resource types.
-    int32 ResourceTypeNum = ResourceTypes.Num();
-    int32 ResourceAmountNum = ResourceAmounts.Num();
+    const int32 ResourceTypeNum = ResourceTypes.Num();
+    const int32 ResourceAmountNum = ResourceAmounts.Num();
 
     for (int32 Index = ResourceAmountNum; Index < ResourceTypeNum; ++Index)
     {
@@ -41,7 +41,7 @@ void URTSPlayerResourcesComponent::BeginPlay()
 float URTSPlayerResourcesComponent::GetResources(TSubclassOf<URTSResourceType> ResourceType) const
 {
     // Get current resource amount.
-    int32 ResourceIndex = ResourceTypes.IndexOfByKey(ResourceType);
+    const int32 ResourceIndex = ResourceTypes.IndexOfByKey(ResourceType);
 
     if (ResourceIndex == INDEX_NONE)
     {
@@ -62,13 +62,13 @@ TArray<TSubclassOf<URTSResourceType>> URTSPlayerResourcesComponent::GetResourceT
 
 bool URTSPlayerResourcesComponent::CanPayResources(TSubclassOf<URTSResourceType> ResourceType, float ResourceAmount) const
 {
-    float AvailableResources = GetResources(ResourceType);
+    const float AvailableResources = GetResources(ResourceType);
     return AvailableResources >= ResourceAmount;
 }
 
 bool URTSPlayerResourcesComponent::CanPayAllResources(TMap<TSubclassOf<URTSResourceType>, float> Resources) const
 {
-    for (auto& Resource : Resources)
+    for (const auto& Resource : Resources)
     {
         if (!CanPayResources(Resource.Key, Resource.Value))
         {
@@ -81,7 +81,7 @@ bool URTSPlayerResourcesComponent::CanPayAllResources(TMap<TSubclassOf<URTSResou
 
 float URTSPlayerResourcesComponent::AddResources(TSubclassOf<URTSResourceType> ResourceType, float ResourceAmount)
 {
-    int32 ResourceIndex = ResourceTypes.IndexOfByKey(ResourceType);
+    const int32 ResourceIndex = ResourceTypes.IndexOfByKey(ResourceType);
 
     if (ResourceIndex == INDEX_NONE)
     {
@@ -89,10 +89,10 @@ float URTSPlayerResourcesComponent::AddResources(TSubclassOf<URTSResourceType> R
     }
 
     // Get current resource amount.
-    float OldResourceAmount = GetResources(ResourceType);
+    const float OldResourceAmount = GetResources(ResourceType);
 
     // Add resources.
-    float NewResourceAmount = OldResourceAmount + ResourceAmount;
+    const float NewResourceAmount = OldResourceAmount + ResourceAmount;
     ResourceAmounts[ResourceIndex] = NewResourceAmount;
 
     UE_LOG(LogRTS, Verbose, TEXT("Player %s stock of %s has changed to %f."),
@@ -108,7 +108,7 @@ float URTSPlayerResourcesComponent::AddResources(TSubclassOf<URTSResourceType> R
 float URTSPlayerResourcesComponent::PayResources(TSubclassOf<URTSResourceType> ResourceType, float ResourceAmount)
 {
     // Get current resource amount.
-    float OldResourceAmount = GetResources(ResourceType);
+    const float OldResourceAmount = GetResources(ResourceType);
 
     if (OldResourceAmount < ResourceAmount)
     {
@@ -121,7 +121,7 @@ float URTSPlayerResourcesComponent::PayResources(TSubclassOf<URTSResourceType> R
 
 void URTSPlayerResourcesComponent::PayAllResources(TMap<TSubclassOf<URTSResourceType>, float> Resources)
 {
-    for (auto& Resource : Resources)
+    for (const auto& Resource : Resources)
     {
         PayResources(Resource.Key, Resource.Value);
     }

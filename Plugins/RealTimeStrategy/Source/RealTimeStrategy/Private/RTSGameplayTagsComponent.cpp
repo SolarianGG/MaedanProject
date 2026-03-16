@@ -63,9 +63,12 @@ void URTSGameplayTagsComponent::GetOwnedGameplayTags(FGameplayTagContainer& TagC
 
 FGameplayTagContainer URTSGameplayTagsComponent::GetCurrentTags() const
 {
-    FGameplayTagContainer GameplayTagContainer;
-    GetOwnedGameplayTags(GameplayTagContainer);
-    return GameplayTagContainer;
+    if (bTagsCacheDirty)
+    {
+        CachedTags = CurrentTags;
+        bTagsCacheDirty = false;
+    }
+    return CachedTags;
 }
 
 void URTSGameplayTagsComponent::AddGameplayTag(const FGameplayTag& NewTag)
@@ -111,6 +114,7 @@ void URTSGameplayTagsComponent::RemoveGameplayTags(const FGameplayTagContainer& 
 
 void URTSGameplayTagsComponent::NotifyOnCurrentTagsChanged()
 {
+    bTagsCacheDirty = true;
     CurrentTagsChanged.Broadcast(GetOwner(), CurrentTags);
 }
 

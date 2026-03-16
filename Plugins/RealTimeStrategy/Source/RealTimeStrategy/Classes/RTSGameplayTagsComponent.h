@@ -63,6 +63,12 @@ private:
     UPROPERTY(ReplicatedUsing = ReceivedCurrentTags)
     FGameplayTagContainer CurrentTags;
 
+    /** Cached copy of CurrentTags, rebuilt only when bTagsCacheDirty is true. */
+    mutable FGameplayTagContainer CachedTags;
+
+    /** Whether CachedTags needs to be rebuilt from CurrentTags. */
+    mutable bool bTagsCacheDirty = true;
+
     /** Event when the current gameplay tags of the actor have changed. */
     virtual void NotifyOnCurrentTagsChanged();
 

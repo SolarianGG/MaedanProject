@@ -32,11 +32,19 @@ public:
 	/** Extracts resources from this actor, applying gathering factor and checking remaining amount. */
 	UFUNCTION(BlueprintCallable)
 	virtual float ExtractResources(AActor* Gatherer, float ResourceAmount);
+	
+	UFUNCTION(BlueprintCallable)
+	virtual void AddGatherer();
+	
+	UFUNCTION(BlueprintCallable)
+	virtual void RemoveGatherer();
 
 	/** Checks whether the specified gatherer can enter the resource source right now. */
 	UFUNCTION(BlueprintPure)
 	virtual bool CanGathererEnter(AActor* Gatherer) const;
-
+	
+	UFUNCTION(BlueprintPure)
+	virtual int32 GetCurrentGathererCapacity() const { return CurrentGathererCapacity; }
 
     /** Gets type of resources to be gathered from the actor. */
     UFUNCTION(BlueprintPure)
@@ -95,4 +103,7 @@ private:
     /** Current resources available at the actor. */
     UPROPERTY(Replicated)
     float CurrentResources;
+	
+	UPROPERTY(Replicated)
+	int32 CurrentGathererCapacity;
 };

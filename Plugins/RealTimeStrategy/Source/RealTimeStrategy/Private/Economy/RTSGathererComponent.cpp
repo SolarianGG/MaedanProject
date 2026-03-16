@@ -48,12 +48,12 @@ void URTSGathererComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	}
 
 	// Check range.
-	float GatherRange = GetGatherRange(CurrentResourceSource);
+	const float GatherRange = GetGatherRange(CurrentResourceSource);
 
 	if (URTSCollisionLibrary::GetActorDistance(GetOwner(), CurrentResourceSource, true) > GatherRange)
 	{
-		// Stop gathering.
-		CurrentResourceSource = nullptr;
+		// Stop gathering — full cleanup including container unload and gatherer count.
+		LeaveCurrentResourceSource();
 		return;
 	}
 
@@ -61,7 +61,7 @@ void URTSGathererComponent::TickComponent(float DeltaTime, enum ELevelTick TickT
 	FRTSGatherData GatherData;
 	if (GetGatherDataForResourceSource(CurrentResourceSource, &GatherData) && GatherData.CollectingAnimMontage)
 	{
-		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+		if (const auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
 		{
 			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
 			{
@@ -91,7 +91,7 @@ bool URTSGathererComponent::CanGatherFrom(AActor* ResourceSource) const
 	{
 		return false;
 	}
-	
+
 	// Check capacity.
 	FRTSGatherData GatherData;
 	if (!GetGatherDataForResourceSource(ResourceSource, &GatherData))
@@ -114,7 +114,7 @@ bool URTSGathererComponent::IsValidResourceToGather(AActor* ResourceSource) cons
 	{
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -127,11 +127,11 @@ AActor* URTSGathererComponent::FindClosestResourceDrain() const
 
 	for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
-		auto Gatherer = GetOwner();
-		auto ResourceDrain = *ActorItr;
+		const auto Gatherer = GetOwner();
+		const auto ResourceDrain = *ActorItr;
 
 		// Check if found resource drain.
-		auto ResourceDrainComponent = ResourceDrain->FindComponentByClass<URTSResourceDrainComponent>();
+		const auto ResourceDrainComponent = ResourceDrain->FindComponentByClass<URTSResourceDrainComponent>();
 
 		if (!ResourceDrainComponent)
 		{
@@ -139,7 +139,7 @@ AActor* URTSGathererComponent::FindClosestResourceDrain() const
 		}
 
 		// Check owner.
-		auto GathererOwnerComponent = Gatherer->FindComponentByClass<URTSOwnerComponent>();
+		const auto GathererOwnerComponent = Gatherer->FindComponentByClass<URTSOwnerComponent>();
 
 		if (!GathererOwnerComponent || !GathererOwnerComponent->IsSameTeamAsActor(ResourceDrain))
 		{
@@ -158,8 +158,14 @@ AActor* URTSGathererComponent::FindClosestResourceDrain() const
 			continue;
 		}
 
+		// Check gatherer capacity.
+		if (!ResourceDrainComponent->CanAcceptGatherer())
+		{
+			continue;
+		}
+
 		// Check distance.
-		float Distance = Gatherer->GetDistanceTo(ResourceDrain);
+		const float Distance = Gatherer->GetDistanceTo(ResourceDrain);
 
 		if (!ClosestResourceDrain || Distance < ClosestResourceDrainDistance)
 		{
@@ -190,11 +196,11 @@ AActor* URTSGathererComponent::GetClosestResourceSource(TSubclassOf<class URTSRe
 
 	for (TActorIterator<AActor> ActorItr(GetWorld()); ActorItr; ++ActorItr)
 	{
-		auto Gatherer = GetOwner();
-		auto ResourceSource = *ActorItr;
+		const auto Gatherer = GetOwner();
+		const auto ResourceSource = *ActorItr;
 
 		// Check if found resource source.
-		auto ResourceSourceComponent = ResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
+		const auto ResourceSourceComponent = ResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
 
 		if (!ResourceSourceComponent)
 		{
@@ -208,7 +214,7 @@ AActor* URTSGathererComponent::GetClosestResourceSource(TSubclassOf<class URTSRe
 		}
 
 		// Check distance.
-		float Distance = Gatherer->GetDistanceTo(ResourceSource);
+		const float Distance = Gatherer->GetDistanceTo(ResourceSource);
 
 		if (MaxDistance > 0.0f && Distance > MaxDistance)
 		{
@@ -263,10 +269,8 @@ void URTSGathererComponent::StartGatheringResources(AActor* ResourceSource)
 		return;
 	}
 
-	CurrentResourceSource = ResourceSource;
-
 	// Get resource type.
-	auto ResourceSourceComponent = ResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
+	auto* ResourceSourceComponent = ResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
 
 	if (!ResourceSourceComponent)
 	{
@@ -274,14 +278,31 @@ void URTSGathererComponent::StartGatheringResources(AActor* ResourceSource)
 	}
 
 	FRTSGatherData GatherData;
-	if (!GetGatherDataForResourceSource(ResourceSource, &GatherData))
+	if (!GetGatherDataForResourceType(ResourceSourceComponent->GetResourceType(), &GatherData))
 	{
 		return;
 	}
 
-	// Reset carried amount.
-	SetCarriedResourceAmount(0.0f);
-	CarriedResourceType = ResourceSourceComponent->GetResourceType();
+	if (ResourceSourceComponent->GetCurrentGathererCapacity() >= ResourceSourceComponent->GetGathererCapacity())
+		return;
+
+	// Don't enter the resource source if we're not in range yet.
+	const float GatherRange = GetGatherRange(ResourceSource);
+	if (URTSCollisionLibrary::GetActorDistance(GetOwner(), ResourceSource, true) > GatherRange)
+	{
+		return;
+	}
+
+	CurrentResourceSource = ResourceSource;
+	
+	ResourceSourceComponent->AddGatherer();
+
+	if (CarriedResourceType != ResourceSourceComponent->GetResourceType())
+	{
+		// Reset carried amount.
+		SetCarriedResourceAmount(0.0f);
+		CarriedResourceType = ResourceSourceComponent->GetResourceType();
+	}
 
 	// Start cooldown before first gathering.
 	RemainingCooldown = GatherData.Cooldown;
@@ -289,25 +310,12 @@ void URTSGathererComponent::StartGatheringResources(AActor* ResourceSource)
 	if (ResourceSourceComponent->MustGathererEnter())
 	{
 		// Enter resource source.
-		auto ContainerComponent = ResourceSource->FindComponentByClass<URTSContainerComponent>();
+		auto* ContainerComponent = ResourceSource->FindComponentByClass<URTSContainerComponent>();
 
 		if (ContainerComponent &&
 			URTSGameplayTagLibrary::HasGameplayTag(ResourceSource, URTSGameplayTagLibrary::Container_ResourceSource()))
 		{
 			ContainerComponent->LoadActor(GetOwner());
-		}
-	}
-	else if (GatherData.CollectingAnimMontage)
-	{
-		if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
-		{
-			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
-			{
-				const float Duration = AnimInstance->Montage_Play(GatherData.CollectingAnimMontage, 1.0f);
-				UE_LOG(LogTemp, Warning, TEXT("Playing montage: %s (duration: %.2f)"),
-				       *GatherData.CollectingAnimMontage->GetName(),
-				       Duration);
-			}
 		}
 	}
 }
@@ -375,15 +383,15 @@ float URTSGathererComponent::GatherResources(AActor* ResourceSource)
 		if (CarriedResourceAmount >= GatherData.Capacity || !IsValid(ResourceSource))
 		{
 			// Return immediately.
-			auto Owner = GetOwner()->GetOwner();
+			const auto Owner = GetOwner()->GetOwner();
 
 			if (Owner)
 			{
-				auto PlayerResourcesComponent = Owner->FindComponentByClass<URTSPlayerResourcesComponent>();
+				const auto PlayerResourcesComponent = Owner->FindComponentByClass<URTSPlayerResourcesComponent>();
 
 				if (PlayerResourcesComponent)
 				{
-					float ReturnedResources = PlayerResourcesComponent->AddResources(
+					const float ReturnedResources = PlayerResourcesComponent->AddResources(
 						CarriedResourceType, CarriedResourceAmount);
 
 					if (ReturnedResources > 0.0f)
@@ -420,9 +428,11 @@ float URTSGathererComponent::ReturnResources(AActor* ResourceDrain)
 	}
 
 	// Return resources.
-	auto ResourceDrainComponent = ResourceDrain->FindComponentByClass<URTSResourceDrainComponent>();
-	float ReturnedResources = ResourceDrainComponent->ReturnResources(GetOwner(), CarriedResourceType,
+	auto* ResourceDrainComponent = ResourceDrain->FindComponentByClass<URTSResourceDrainComponent>();
+	ResourceDrainComponent->RegisterGatherer(GetOwner());
+	const float ReturnedResources = ResourceDrainComponent->ReturnResources(GetOwner(), CarriedResourceType,
 	                                                                  CarriedResourceAmount);
+	ResourceDrainComponent->UnregisterGatherer(GetOwner());
 
 	SetCarriedResourceAmount(CarriedResourceAmount - ReturnedResources);
 
@@ -449,7 +459,7 @@ bool URTSGathererComponent::GetGatherDataForResourceSource(AActor* ResourceSourc
 		return false;
 	}
 
-	auto ResourceSourceComponent = ResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
+	const auto ResourceSourceComponent = ResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
 
 	if (!ResourceSourceComponent)
 	{
@@ -486,7 +496,7 @@ void URTSGathererComponent::LeaveCurrentResourceSource()
 	{
 		return;
 	}
-	if (auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+	if (const auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
 	{
 		if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
 		{
@@ -495,13 +505,30 @@ void URTSGathererComponent::LeaveCurrentResourceSource()
 	}
 
 	// Leave resource source.
-	auto ContainerComponent = CurrentResourceSource->FindComponentByClass<URTSContainerComponent>();
+#if 0
+	auto* ResourceComponent = CurrentResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
+
+	if (ResourceComponent)
+	{
+		ResourceComponent->UnloadActor(GetOwner());
+	}
+
+#else
+	auto* ResourceComponent = CurrentResourceSource->FindComponentByClass<URTSResourceSourceComponent>();
+	auto* ContainerComponent = CurrentResourceSource->FindComponentByClass<URTSContainerComponent>();
 
 	if
 	(ContainerComponent)
 	{
 		ContainerComponent->UnloadActor(GetOwner());
 	}
+
+	if (ResourceComponent)
+	{
+		ResourceComponent->RemoveGatherer();
+	}
+
+#endif
 
 	// Store data about resource source for future reference (e.g. return here, or find similar).
 	PreviousResourceSource = CurrentResourceSource;

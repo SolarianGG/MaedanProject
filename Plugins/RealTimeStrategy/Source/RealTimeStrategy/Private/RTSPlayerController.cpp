@@ -322,6 +322,8 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 {
 	ERTSOrderGroupExecutionType GroupExecutionType = URTSOrderLibrary::GetOrderGroupExecutionType(Order.OrderClass);
 
+	const bool bAppendToQueue = IsInputKeyDown(EKeys::LeftShift) || IsInputKeyDown(EKeys::RightShift);
+
 	bool bSuccess = false;
 
 	for (auto SelectedActor : SelectedActors)
@@ -352,7 +354,7 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 		}
 
 		// Send order to server.
-		ServerIssueOrder(SelectedPawn, Order);
+		ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
 
 		if (IsNetMode(NM_Client))
 		{
@@ -401,29 +403,37 @@ void ARTSPlayerController::IssueDefaultOrderToActor(AActor* Actor, AActor* Targe
 		Order.TargetActor = TargetActor;
 		Order.TargetLocation = TargetLocation;
 
-		ServerIssueOrder(IssuedPawn, Order);
+		ServerIssueOrder(IssuedPawn, Order, false);
 		return;
 	}
 }
 
-void ARTSPlayerController::ServerIssueOrder_Implementation(APawn* OrderedPawn, const FRTSOrderData& Order)
+void ARTSPlayerController::ServerIssueOrder_Implementation(APawn* OrderedPawn, const FRTSOrderData& Order, bool bAppendToQueue)
 {
 	if (!Order.OrderClass)
 	{
 		return;
 	}
 
-	FRTSOrderTargetData OrderTargetData;
-	OrderTargetData.Actor = Order.TargetActor;
-	OrderTargetData.Location = Order.TargetLocation;
-
-	Order.OrderClass->GetDefaultObject<URTSOrder>()->IssueOrder(OrderedPawn, OrderTargetData, Order.Index);
+	// Route through the AI controller so order queuing is handled correctly.
+	ARTSPawnAIController* AIController = Cast<ARTSPawnAIController>(OrderedPawn->GetController());
+	if (IsValid(AIController))
+	{
+		AIController->IssueOrder(Order, bAppendToQueue);
+	}
+	else
+	{
+		FRTSOrderTargetData OrderTargetData;
+		OrderTargetData.Actor = Order.TargetActor;
+		OrderTargetData.Location = Order.TargetLocation;
+		Order.OrderClass->GetDefaultObject<URTSOrder>()->IssueOrder(OrderedPawn, OrderTargetData, Order.Index);
+	}
 
 	// Notify listeners.
 	NotifyOnIssuedOrder(OrderedPawn, Order);
 }
 
-bool ARTSPlayerController::ServerIssueOrder_Validate(APawn* OrderedPawn, const FRTSOrderData& Order)
+bool ARTSPlayerController::ServerIssueOrder_Validate(APawn* OrderedPawn, const FRTSOrderData& Order, bool bAppendToQueue)
 {
 	// Verify owner to prevent cheating.
 	return OrderedPawn->GetOwner() == this;

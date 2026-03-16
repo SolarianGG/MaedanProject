@@ -8,6 +8,22 @@
 #include "Libraries/RTSGameplayLibrary.h"
 
 
+struct FActorPairKey
+{
+    const AActor* A;
+    const AActor* B;
+    bool operator==(const FActorPairKey& Other) const { return A == Other.A && B == Other.B; }
+};
+
+FORCEINLINE uint32 GetTypeHash(const FActorPairKey& Key)
+{
+    return HashCombine(GetTypeHash(Key.A), GetTypeHash(Key.B));
+}
+
+static TMap<FActorPairKey, FGameplayTagContainer> GRelationshipTagCache;
+static uint64 GRelationshipTagCacheFrame = 0;
+
+
 void URTSGameplayTagLibrary::AddGameplayTag(const AActor* Actor, const FGameplayTag& Tag)
 {
     URTSGameplayTagsComponent* GameplayTagsComponent = Actor->FindComponentByClass<URTSGameplayTagsComponent>();
@@ -58,6 +74,20 @@ void URTSGameplayTagLibrary::RemoveGameplayTag(const AActor* Actor, const FGamep
 
 FGameplayTagContainer URTSGameplayTagLibrary::GetActorRelationshipTags(const AActor* Actor, const AActor* Other)
 {
+    // Per-frame cache: relationships between two actors cannot change within a single frame.
+    const uint64 CurrentFrame = GFrameCounter;
+    if (CurrentFrame != GRelationshipTagCacheFrame)
+    {
+        GRelationshipTagCache.Reset();
+        GRelationshipTagCacheFrame = CurrentFrame;
+    }
+
+    const FActorPairKey Key{Actor, Other};
+    if (const FGameplayTagContainer* Cached = GRelationshipTagCache.Find(Key))
+    {
+        return *Cached;
+    }
+
     FGameplayTagContainer RelationshipTags;
 
     if (!IsValid(Actor) || !IsValid(Other))
@@ -94,6 +124,7 @@ FGameplayTagContainer URTSGameplayTagLibrary::GetActorRelationshipTags(const AAc
         }
     }
 
+    GRelationshipTagCache.Add(Key, RelationshipTags);
     return RelationshipTags;
 }
 
