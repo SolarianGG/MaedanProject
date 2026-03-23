@@ -28,6 +28,7 @@
 #include "Construction/RTSBuildingCursor.h"
 #include "Construction/RTSConstructionSiteComponent.h"
 #include "Economy/RTSGathererComponent.h"
+#include "UI/RTSOrderTargetCircle.h"
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
@@ -328,6 +329,7 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 	const bool bAppendToQueue = IsInputKeyDown(EKeys::LeftShift) || IsInputKeyDown(EKeys::RightShift);
 
 	bool bSuccess = false;
+	bool bMarkerNotified = false;
 
 	for (auto SelectedActor : SelectedActors)
 	{
@@ -359,10 +361,11 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 		// Send order to server.
 		ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
 
-		if (IsNetMode(NM_Client))
+		// Notify listeners. Only fire marker events once per command.
+		if (!bMarkerNotified)
 		{
-			// Notify listeners.
 			NotifyOnIssuedOrder(SelectedPawn, Order);
+			bMarkerNotified = true;
 		}
 
 		if (GroupExecutionType == ERTSOrderGroupExecutionType::ORDERGROUPEXECUTION_Any)
@@ -407,6 +410,9 @@ void ARTSPlayerController::IssueDefaultOrderToActor(AActor* Actor, AActor* Targe
 		Order.TargetLocation = TargetLocation;
 
 		ServerIssueOrder(IssuedPawn, Order, false);
+
+		// Notify listeners (e.g. click marker, target circle).
+		NotifyOnIssuedOrder(IssuedPawn, Order);
 		return;
 	}
 }
@@ -432,8 +438,6 @@ void ARTSPlayerController::ServerIssueOrder_Implementation(APawn* OrderedPawn, c
 		Order.OrderClass->GetDefaultObject<URTSOrder>()->IssueOrder(OrderedPawn, OrderTargetData, Order.Index);
 	}
 
-	// Notify listeners.
-	NotifyOnIssuedOrder(OrderedPawn, Order);
 }
 
 bool ARTSPlayerController::ServerIssueOrder_Validate(APawn* OrderedPawn, const FRTSOrderData& Order, bool bAppendToQueue)
@@ -1777,6 +1781,14 @@ void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrd
 
 void ARTSPlayerController::NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target)
 {
+    if (IsValid(Target) && EnemyOrderCircleClass)
+    {
+        GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
+            EnemyOrderCircleClass,
+            Target->GetActorLocation(),
+            FRotator::ZeroRotator);
+    }
+
 	ReceiveOnIssuedAttackOrder(OrderedPawn, Target);
 }
 
@@ -1793,6 +1805,14 @@ void ARTSPlayerController::NotifyOnIssuedContinueConstructionOrder(APawn* Ordere
 
 void ARTSPlayerController::NotifyOnIssuedGatherOrder(APawn* OrderedPawn, AActor* ResourceSource)
 {
+    if (IsValid(ResourceSource) && ResourceOrderCircleClass)
+    {
+        GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
+            ResourceOrderCircleClass,
+            ResourceSource->GetActorLocation(),
+            FRotator::ZeroRotator);
+    }
+
 	ReceiveOnIssuedGatherOrder(OrderedPawn, ResourceSource);
 }
 

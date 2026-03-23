@@ -17,6 +17,7 @@ class USkeletalMesh;
 
 class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
+class ARTSOrderTargetCircle;
 class URTSPlayerAdvantageComponent;
 class URTSPlayerResourcesComponent;
 class ARTSPlayerState;
@@ -429,6 +430,14 @@ private:
     /** Orders that should be tried to apply for the input action IssueOrder, in order. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")
     TArray<TSubclassOf<URTSOrder>> DefaultOrders;
+
+    /** Class to spawn as a circle indicator when an attack order is issued. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
+    TSubclassOf<ARTSOrderTargetCircle> EnemyOrderCircleClass;
+
+    /** Class to spawn as a circle indicator when a gather order is issued. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
+    TSubclassOf<ARTSOrderTargetCircle> ResourceOrderCircleClass;
 
     /** Actor classes which should be ignored when tracing for default order targets. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")
