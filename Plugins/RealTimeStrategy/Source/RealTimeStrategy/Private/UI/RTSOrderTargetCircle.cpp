@@ -24,17 +24,35 @@ void ARTSOrderTargetCircle::BeginPlay()
         DecalComponent->SetDecalMaterial(CircleMaterial);
     }
 
-    // Size the decal based on the collision of the actor at this location.
-    TArray<AActor*> Overlapping;
-    GetOverlappingActors(Overlapping);
-    if (Overlapping.Num() > 0)
+    // Size the decal using the attached parent actor when available (attach happens before BeginPlay).
+    AActor* Parent = GetAttachParentActor();
+    if (IsValid(Parent))
     {
-        float Radius = URTSCollisionLibrary::GetActorCollisionSize(Overlapping[0]);
-        float Height = URTSCollisionLibrary::GetActorCollisionHeight(Overlapping[0]);
+        float Radius = URTSCollisionLibrary::GetActorCollisionSize(Parent);
+        float Height = URTSCollisionLibrary::GetActorCollisionHeight(Parent);
         DecalComponent->DecalSize = FVector(Height, Radius, Radius);
     }
+    else
+    {
+        // Fallback: sphere overlap for cases where the circle is not attached.
+        TArray<FOverlapResult> OverlapResults;
+        FCollisionObjectQueryParams ObjectQueryParams;
+        ObjectQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+        ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+        FCollisionQueryParams QueryParams;
+        QueryParams.AddIgnoredActor(this);
+        if (GetWorld()->OverlapMultiByObjectType(OverlapResults, GetActorLocation(), FQuat::Identity,
+            ObjectQueryParams, FCollisionShape::MakeSphere(500.0f), QueryParams))
+        {
+            if (OverlapResults[0].GetActor())
+            {
+                float Radius = URTSCollisionLibrary::GetActorCollisionSize(OverlapResults[0].GetActor());
+                float Height = URTSCollisionLibrary::GetActorCollisionHeight(OverlapResults[0].GetActor());
+                DecalComponent->DecalSize = FVector(Height, Radius, Radius);
+            }
+        }
+    }
 
-    // Fade out over Duration starting now. FadeStartDelay is absolute world time.
     DecalComponent->SetFadeOut(GetWorld()->GetTimeSeconds(), Duration, false);
     SetLifeSpan(Duration + 0.1f);
 }

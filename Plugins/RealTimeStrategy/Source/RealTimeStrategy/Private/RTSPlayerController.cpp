@@ -48,6 +48,8 @@
 #include "Production/RTSProductionComponent.h"
 #include "Production/RTSProductionCostComponent.h"
 #include "UI/RTSMinimapVolume.h"
+#include "Vision/RTSVisibleComponent.h"
+#include "TimerManager.h"
 #include "Vision/RTSFogOfWarActor.h"
 #include "Vision/RTSVisionInfo.h"
 #include "Vision/RTSVisionManager.h"
@@ -120,8 +122,10 @@ void ARTSPlayerController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("SelectPreviousSubgroup"), IE_Pressed, this,
 	                           &ARTSPlayerController::SelectPreviousSubgroup);
 
+	InputComponent->BindAction(TEXT("IssueOrder"), IE_Pressed, this,
+	                           &ARTSPlayerController::StartContinuousOrder);
 	InputComponent->BindAction(TEXT("IssueOrder"), IE_Released, this,
-	                           &ARTSPlayerController::IssueDefaultOrderToSelectedActors);
+	                           &ARTSPlayerController::StopContinuousOrder);
 	InputComponent->BindAction(TEXT("IssueStopOrder"), IE_Released, this, &ARTSPlayerController::IssueStopOrder);
 
 	InputComponent->BindAction(TEXT("SaveControlGroup0"), IE_Released, this, &ARTSPlayerController::SaveControlGroup0);
@@ -549,6 +553,18 @@ bool ARTSPlayerController::IsSelectableActor(AActor* Actor) const
 	return true;
 }
 
+void ARTSPlayerController::StartContinuousOrder()
+{
+	IssueDefaultOrderToSelectedActors();
+	GetWorld()->GetTimerManager().SetTimer(ContinuousOrderTimerHandle, this,
+		&ARTSPlayerController::IssueDefaultOrderToSelectedActors, 0.2f, true);
+}
+
+void ARTSPlayerController::StopContinuousOrder()
+{
+	GetWorld()->GetTimerManager().ClearTimer(ContinuousOrderTimerHandle);
+}
+
 void ARTSPlayerController::IssueDefaultOrderToSelectedActors()
 {
 	// Get objects at pointer position.
@@ -587,6 +603,13 @@ void ARTSPlayerController::IssueOrderTargetingObjectsToSelectedActors(TArray<FHi
 			}
 
 			if (bIsIgnoredClass)
+			{
+				continue;
+			}
+
+			// Skip actors hidden by fog of war so terrain clicks near invisible enemies produce a move order.
+			URTSVisibleComponent* VisibleComp = HitResult.Actor->FindComponentByClass<URTSVisibleComponent>();
+			if (IsValid(VisibleComp) && !VisibleComp->IsVisibleForLocalClient())
 			{
 				continue;
 			}
@@ -1783,10 +1806,14 @@ void ARTSPlayerController::NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor*
 {
     if (IsValid(Target) && EnemyOrderCircleClass)
     {
-        GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
+        ARTSOrderTargetCircle* Circle = GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
             EnemyOrderCircleClass,
             Target->GetActorLocation(),
             FRotator::ZeroRotator);
+        if (IsValid(Circle))
+        {
+            Circle->AttachToActor(Target, FAttachmentTransformRules::KeepWorldTransform);
+        }
     }
 
 	ReceiveOnIssuedAttackOrder(OrderedPawn, Target);
@@ -1807,10 +1834,14 @@ void ARTSPlayerController::NotifyOnIssuedGatherOrder(APawn* OrderedPawn, AActor*
 {
     if (IsValid(ResourceSource) && ResourceOrderCircleClass)
     {
-        GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
+        ARTSOrderTargetCircle* Circle = GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
             ResourceOrderCircleClass,
             ResourceSource->GetActorLocation(),
             FRotator::ZeroRotator);
+        if (IsValid(Circle))
+        {
+            Circle->AttachToActor(ResourceSource, FAttachmentTransformRules::KeepWorldTransform);
+        }
     }
 
 	ReceiveOnIssuedGatherOrder(OrderedPawn, ResourceSource);

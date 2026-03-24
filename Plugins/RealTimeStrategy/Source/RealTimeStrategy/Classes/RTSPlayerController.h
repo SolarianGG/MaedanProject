@@ -519,6 +519,9 @@ private:
     /** Time to wait before playing the next selection sound, in seconds. */
     float SelectionSoundCooldownRemaining;
 
+    /** Timer handle for continuous order issuing while IssueOrder is held. */
+    FTimerHandle ContinuousOrderTimerHandle;
+
 
     /** Casts a ray from the current mouse position and collects the results. */
     bool GetObjectsAtPointerPosition(TArray<FHitResult>& OutHitResults) const;
@@ -531,6 +534,14 @@ private:
 
 	/** Checks whether the specified actor is valid and selectable. */
 	bool IsSelectableActor(AActor* Actor) const;
+
+    /** Starts issuing the default order repeatedly while the button is held (every 200ms). */
+    UFUNCTION()
+    void StartContinuousOrder();
+
+    /** Stops the continuous order timer when the button is released. */
+    UFUNCTION()
+    void StopContinuousOrder();
 
     /** Automatically issues the most reasonable order for the current pointer position. */
     UFUNCTION()

@@ -6,7 +6,11 @@
       "Bash(find \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Content\" -iname \"*niagara*\" -o -iname \"*particle*\" -o -iname \"*effect*\" 2>/dev/null | head -50)",
       "Bash(find /c/Users/nazar/UE4/MaedanProject/Content -type f -name \"*.uasset\" 2>/dev/null | grep -iE \"\\(niagara|particle|effect|blueprint|BP_\\)\" | sort)",
       "Bash(find /c/Users/nazar/UE4/MaedanProject/Content -type f -name \"BP_*.uasset\" 2>/dev/null | sort)",
-      "Bash(find /c/Users/nazar/UE4/MaedanProject/Content -type f \\\\\\( -iname \"*particle*\" -o -iname \"*niagara*\" -o -iname \"*fx*\" -o -iname \"*effect*\" \\\\\\) 2>/dev/null | sort)"
+      "Bash(find /c/Users/nazar/UE4/MaedanProject/Content -type f \\\\\\( -iname \"*particle*\" -o -iname \"*niagara*\" -o -iname \"*fx*\" -o -iname \"*effect*\" \\\\\\) 2>/dev/null | sort)",
+      "Bash(grep -r M_RTSSelectionCircle /c/Users/nazar/UE4/MaedanProject/Plugins/RealTimeStrategy/Source --include=*.cpp --include=*.h)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -E \"\\\\.\\(uasset|umap|cpp|h\\)$\")",
+      "Bash(grep -rn \"URTSSelectableComponent\\\\|SelectionCircle\" /c/Users/nazar/UE4/MaedanProject/Content --include=*.uasset)"
     ]
   }
 }
