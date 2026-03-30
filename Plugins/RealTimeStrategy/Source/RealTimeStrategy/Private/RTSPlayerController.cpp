@@ -28,7 +28,8 @@
 #include "Construction/RTSBuildingCursor.h"
 #include "Construction/RTSConstructionSiteComponent.h"
 #include "Economy/RTSGathererComponent.h"
-#include "UI/RTSOrderTargetCircle.h"
+#include "NiagaraFunctionLibrary.h"
+#include "UI/RTSRallyPointIndicator.h"
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
@@ -557,7 +558,7 @@ void ARTSPlayerController::StartContinuousOrder()
 {
 	IssueDefaultOrderToSelectedActors();
 	GetWorld()->GetTimerManager().SetTimer(ContinuousOrderTimerHandle, this,
-		&ARTSPlayerController::IssueDefaultOrderToSelectedActors, 0.2f, true);
+		&ARTSPlayerController::IssueDefaultOrderToSelectedActors, 0.1f, true);
 }
 
 void ARTSPlayerController::StopContinuousOrder()
@@ -1800,20 +1801,30 @@ void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrd
 	{
 		NotifyOnIssuedStopOrder(OrderedPawn);
 	}
+	else if (Order.OrderClass == URTSSetRallyPointToLocationOrder::StaticClass())
+	{
+		NotifyOnIssuedSetRallyPoint(OrderedPawn, Order.TargetLocation);
+	}
+	else if (Order.OrderClass == URTSSetRallyPointToActorOrder::StaticClass())
+	{
+		FVector TargetLoc = IsValid(Order.TargetActor) ?
+			Order.TargetActor->GetActorLocation() : Order.TargetLocation;
+		NotifyOnIssuedSetRallyPoint(OrderedPawn, TargetLoc);
+	}
 }
 
 void ARTSPlayerController::NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target)
 {
-    if (IsValid(Target) && EnemyOrderCircleClass)
+    if (IsValid(Target) && EnemyOrderEffect)
     {
-        ARTSOrderTargetCircle* Circle = GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
-            EnemyOrderCircleClass,
-            Target->GetActorLocation(),
-            FRotator::ZeroRotator);
-        if (IsValid(Circle))
-        {
-            Circle->AttachToActor(Target, FAttachmentTransformRules::KeepWorldTransform);
-        }
+        UNiagaraFunctionLibrary::SpawnSystemAttached(
+            EnemyOrderEffect,
+            Target->GetRootComponent(),
+            NAME_None,
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            EAttachLocation::KeepRelativeOffset,
+            true);
     }
 
 	ReceiveOnIssuedAttackOrder(OrderedPawn, Target);
@@ -1832,16 +1843,13 @@ void ARTSPlayerController::NotifyOnIssuedContinueConstructionOrder(APawn* Ordere
 
 void ARTSPlayerController::NotifyOnIssuedGatherOrder(APawn* OrderedPawn, AActor* ResourceSource)
 {
-    if (IsValid(ResourceSource) && ResourceOrderCircleClass)
+    if (IsValid(ResourceSource) && ResourceOrderEffect)
     {
-        ARTSOrderTargetCircle* Circle = GetWorld()->SpawnActor<ARTSOrderTargetCircle>(
-            ResourceOrderCircleClass,
+        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+            GetWorld(),
+            ResourceOrderEffect,
             ResourceSource->GetActorLocation(),
             FRotator::ZeroRotator);
-        if (IsValid(Circle))
-        {
-            Circle->AttachToActor(ResourceSource, FAttachmentTransformRules::KeepWorldTransform);
-        }
     }
 
 	ReceiveOnIssuedGatherOrder(OrderedPawn, ResourceSource);
@@ -1850,6 +1858,38 @@ void ARTSPlayerController::NotifyOnIssuedGatherOrder(APawn* OrderedPawn, AActor*
 void ARTSPlayerController::NotifyOnIssuedMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation)
 {
 	ReceiveOnIssuedMoveOrder(OrderedPawn, TargetLocation);
+}
+
+void ARTSPlayerController::NotifyOnIssuedSetRallyPoint(AActor* OrderedActor, const FVector& TargetLocation)
+{
+    // Destroy previous indicator.
+    if (IsValid(ActiveRallyPointIndicator))
+    {
+        ActiveRallyPointIndicator->Destroy();
+        ActiveRallyPointIndicator = nullptr;
+    }
+
+    if (IsValid(OrderedActor) && RallyPointTravelEffect)
+    {
+        FVector StartLocation = OrderedActor->GetActorLocation();
+
+        ActiveRallyPointIndicator = GetWorld()->SpawnActor<ARTSRallyPointIndicator>(
+            ARTSRallyPointIndicator::StaticClass(),
+            StartLocation,
+            FRotator::ZeroRotator);
+
+        if (IsValid(ActiveRallyPointIndicator))
+        {
+            ActiveRallyPointIndicator->Initialize(
+                RallyPointTravelEffect,
+                RallyPointArrivalEffect,
+                StartLocation,
+                TargetLocation,
+                OrderedActor);
+        }
+    }
+
+    ReceiveOnIssuedSetRallyPoint(OrderedActor, TargetLocation);
 }
 
 void ARTSPlayerController::NotifyOnIssuedProductionOrder(AActor* OrderedActor, TSubclassOf<AActor> ProductClass)

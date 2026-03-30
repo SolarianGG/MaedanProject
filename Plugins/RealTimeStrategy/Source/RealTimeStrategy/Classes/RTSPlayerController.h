@@ -17,7 +17,8 @@ class USkeletalMesh;
 
 class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
-class ARTSOrderTargetCircle;
+class UNiagaraSystem;
+class ARTSRallyPointIndicator;
 class URTSPlayerAdvantageComponent;
 class URTSPlayerResourcesComponent;
 class ARTSPlayerState;
@@ -284,6 +285,9 @@ public:
     /** Event when an actor has received a move order. */
     virtual void NotifyOnIssuedMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation);
 
+    /** Event when a rally point has been set on a production building. */
+    virtual void NotifyOnIssuedSetRallyPoint(AActor* OrderedActor, const FVector& TargetLocation);
+
     /** Event when an actor has received a production order. */
     virtual void NotifyOnIssuedProductionOrder(AActor* OrderedActor, TSubclassOf<AActor> ProductClass);
 
@@ -356,6 +360,10 @@ public:
     /** Event when an actor has received a move order. */
     UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedMoveOrder"))
     void ReceiveOnIssuedMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation);
+
+    /** Event when a rally point has been set on a production building. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedSetRallyPoint"))
+    void ReceiveOnIssuedSetRallyPoint(AActor* OrderedActor, const FVector& TargetLocation);
 
     /** Event when an actor has received a production order. */
     UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedProductionOrder"))
@@ -431,13 +439,25 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")
     TArray<TSubclassOf<URTSOrder>> DefaultOrders;
 
-    /** Class to spawn as a circle indicator when an attack order is issued. */
+    /** Niagara effect to spawn when an attack order is issued on an enemy. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
-    TSubclassOf<ARTSOrderTargetCircle> EnemyOrderCircleClass;
+    UNiagaraSystem* EnemyOrderEffect;
 
-    /** Class to spawn as a circle indicator when a gather order is issued. */
+    /** Niagara effect to spawn when a gather order is issued on a resource. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
-    TSubclassOf<ARTSOrderTargetCircle> ResourceOrderCircleClass;
+    UNiagaraSystem* ResourceOrderEffect;
+
+    /** Niagara effect that travels from building to rally point. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
+    UNiagaraSystem* RallyPointTravelEffect;
+
+    /** Niagara effect spawned at the rally point destination. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
+    UNiagaraSystem* RallyPointArrivalEffect;
+
+    /** Active rally point indicator, destroyed when rally point changes. */
+    UPROPERTY()
+    ARTSRallyPointIndicator* ActiveRallyPointIndicator;
 
     /** Actor classes which should be ignored when tracing for default order targets. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")

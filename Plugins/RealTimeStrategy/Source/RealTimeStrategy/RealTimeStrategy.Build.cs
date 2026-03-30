@@ -29,7 +29,8 @@ namespace UnrealBuildTool.Rules
                     "RenderCore",
                     "Landscape",
                     "GameplayTags",
-                    "NavigationSystem"
+                    "NavigationSystem",
+                    "Niagara"
                 });
 
             // Setup Gameplay Debugger.

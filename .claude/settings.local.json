@@ -10,7 +10,16 @@
       "Bash(grep -r M_RTSSelectionCircle /c/Users/nazar/UE4/MaedanProject/Plugins/RealTimeStrategy/Source --include=*.cpp --include=*.h)",
       "Bash(xargs grep:*)",
       "Bash(grep -E \"\\\\.\\(uasset|umap|cpp|h\\)$\")",
-      "Bash(grep -rn \"URTSSelectableComponent\\\\|SelectionCircle\" /c/Users/nazar/UE4/MaedanProject/Content --include=*.uasset)"
+      "Bash(grep -rn \"URTSSelectableComponent\\\\|SelectionCircle\" /c/Users/nazar/UE4/MaedanProject/Content --include=*.uasset)",
+      "Bash(grep -r \"NS_ClickMarker\\\\|SpawnSystemAtLocation\\\\|GetWorld.*Spawn\" /c/Users/nazar/UE4/MaedanProject/Plugins/RealTimeStrategy/Source --include=*.cpp --include=*.h)",
+      "Bash(find C:UsersnazarUE4MaedanProjectSourceRTSProject -type f -name *.cpp -o -name *.h)",
+      "Bash(find C:UsersnazarUE4MaedanProject -name *ClickMarker* -o -name *MoveMarker*)",
+      "Bash(find C:UsersnazarUE4MaedanProject -name *.uasset -path *Niagara*)",
+      "Bash(grep -r \"Content/UI\\\\|/UI/\" C:UsersnazarUE4MaedanProjectPluginsRealTimeStrategySource --include=*.cpp --include=*.h)",
+      "Bash(find C:UsersnazarUE4MaedanProjectContent -name BP_* -type f)",
+      "Bash(find C:UsersnazarUE4MaedanProjectContent -type f -name *allypoint* -o -name *RallyPoint*)",
+      "Bash(xargs ls:*)",
+      "Bash(find C:UsersnazarUE4MaedanProjectContent -name *Production* -type f)"
     ]
   }
 }
