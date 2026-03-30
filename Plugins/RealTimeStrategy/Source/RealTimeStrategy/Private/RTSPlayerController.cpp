@@ -4,6 +4,8 @@
 #include "Landscape.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BrushComponent.h"
+#include "Components/ShapeComponent.h"
+#include "GameFramework/Pawn.h"
 #include "Components/InputComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
@@ -1264,6 +1266,10 @@ bool ARTSPlayerController::CheckCanBeginBuildingPlacement(TSubclassOf<AActor> Bu
 		ConstructionSiteComponent->GetConstructionCosts()))
 	{
 		NotifyOnErrorOccurred(TEXT("Not enough resources."));
+		if (IsValid(BuildingPlacementFailedSound))
+		{
+			UGameplayStatics::PlaySound2D(this, BuildingPlacementFailedSound);
+		}
 		return false;
 	}
 
@@ -1288,6 +1294,10 @@ bool ARTSPlayerController::CheckCanBeginBuildingPlacement(TSubclassOf<AActor> Bu
 				NotifyOnErrorOccurred("Missing requirement.");
 			}
 
+			if (IsValid(BuildingPlacementFailedSound))
+			{
+				UGameplayStatics::PlaySound2D(this, BuildingPlacementFailedSound);
+			}
 			return false;
 		}
 	}
@@ -1499,6 +1509,26 @@ void ARTSPlayerController::ConfirmBuildingPlacement()
 
 		// Notify listeners.
 		NotifyOnBuildingPlacementError(BuildingBeingPlacedClass, HoveredWorldPosition);
+		NotifyOnErrorOccurred(TEXT("Can't place building here."));
+
+		// Play failure sound: prefer the selected builder's ConstructionFailedSounds, fall back to the generic UI sound.
+		bool bBuilderSoundPlayed = false;
+		for (AActor* SelectedActor : SelectedActors)
+		{
+			URTSBuilderComponent* BuilderComponent = SelectedActor ? SelectedActor->FindComponentByClass<URTSBuilderComponent>() : nullptr;
+			if (BuilderComponent && BuilderComponent->GetConstructionFailedSounds().Num() > 0)
+			{
+				TArray<USoundBase*> Sounds = BuilderComponent->GetConstructionFailedSounds();
+				int32 Index = FMath::RandRange(0, Sounds.Num() - 1);
+				UGameplayStatics::PlaySoundAtLocation(this, Sounds[Index], SelectedActor->GetActorLocation());
+				bBuilderSoundPlayed = true;
+				break;
+			}
+		}
+		if (!bBuilderSoundPlayed && IsValid(BuildingPlacementFailedSound))
+		{
+			UGameplayStatics::PlaySound2D(this, BuildingPlacementFailedSound);
+		}
 		return;
 	}
 
@@ -1508,6 +1538,57 @@ void ARTSPlayerController::ConfirmBuildingPlacement()
 	// Remove dummy building.
 	BuildingCursor->Destroy();
 	BuildingCursor = nullptr;
+
+	// Push own-team units out of the build zone immediately so they clear the area while the builder walks there.
+	{
+		UShapeComponent* BuildingShape =
+			URTSGameplayLibrary::FindDefaultComponentByClass<UShapeComponent>(BuildingBeingPlacedClass);
+
+		if (BuildingShape)
+		{
+			FCollisionObjectQueryParams OverlapParams(FCollisionObjectQueryParams::AllDynamicObjects);
+			TArray<FOverlapResult> Overlaps;
+			GetWorld()->OverlapMultiByObjectType(
+				Overlaps, HoveredWorldPosition, FQuat::Identity,
+				OverlapParams, BuildingShape->GetCollisionShape());
+
+			float BuildingRadius = URTSCollisionLibrary::GetCollisionSize(BuildingBeingPlacedClass) / 2.0f;
+
+			for (const FOverlapResult& Overlap : Overlaps)
+			{
+				AActor* Actor = Overlap.Actor.Get();
+				if (!Actor || !Actor->IsA<APawn>())
+				{
+					continue;
+				}
+
+				URTSOwnerComponent* OwnerComp = Actor->FindComponentByClass<URTSOwnerComponent>();
+				if (!OwnerComp || !OwnerComp->IsSameTeamAsController(this))
+				{
+					continue;
+				}
+
+				ARTSPawnAIController* UnitController =
+					Cast<ARTSPawnAIController>(Cast<APawn>(Actor)->GetController());
+				if (!UnitController)
+				{
+					continue;
+				}
+
+				FVector ToUnit = Actor->GetActorLocation() - HoveredWorldPosition;
+				ToUnit.Z = 0.0f;
+				FVector ExitDirection = ToUnit.IsNearlyZero()
+					? FVector(1.0f, 0.0f, 0.0f)
+					: ToUnit.GetSafeNormal();
+				float UnitRadius = URTSCollisionLibrary::GetActorCollisionSize(Actor) / 2.0f;
+				FVector ExitLocation = HoveredWorldPosition
+					+ ExitDirection * (BuildingRadius + UnitRadius + 50.0f);
+				ExitLocation.Z = Actor->GetActorLocation().Z;
+
+				UnitController->IssueMoveOrder(ExitLocation);
+			}
+		}
+	}
 
 	// Notify listeners.
 	NotifyOnBuildingPlacementConfirmed(BuildingBeingPlacedClass, HoveredWorldPosition);

@@ -14,6 +14,7 @@
 
 
 class USkeletalMesh;
+class USoundBase;
 
 class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
@@ -425,6 +426,10 @@ private:
     /** Preview to use for placing buildings. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Construction")
     TSubclassOf<ARTSBuildingCursor> BuildingCursorClass;
+
+    /** Sound to play when building placement fails (not enough resources, location blocked, missing requirements). */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Construction")
+    USoundBase* BuildingPlacementFailedSound;
 
     /** Orders that should be tried to apply for the input action IssueOrder, in order. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd /c/Users/margaryta/Documents/\"Unreal Projects\"/RTSProject)",
+      "Bash(xargs grep:*)"
+    ]
+  }
+}

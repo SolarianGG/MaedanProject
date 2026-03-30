@@ -22,6 +22,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRTSConstructionSiteComponentConstru
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRTSConstructionSiteComponentConstructionCanceledSignature, AActor*, ConstructionSite);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRTSConstructionSiteComponentBuilderConsumedSignature, AActor*, ConstructionSite, AActor*, Builder);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FRTSConstructionSiteComponentConstructionCostRefundedSignature, AActor*, ConstructionSite, TSubclassOf<URTSResourceType>, ResourceType, float, ResourceAmount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRTSConstructionSiteComponentConstructionStalledSignature, AActor*, ConstructionSite);
 
 
 /** Allows constructing the actor over time. */
@@ -157,6 +158,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "RTS")
 	FRTSConstructionSiteComponentConstructionCostRefundedSignature OnConstructionCostRefunded;
 
+	/** Event when construction is stalled due to insufficient resources (PayOverTime). Fires at most once per StalledNotificationInterval. */
+	UPROPERTY(BlueprintAssignable, Category = "RTS")
+	FRTSConstructionSiteComponentConstructionStalledSignature OnConstructionStalled;
+
 private:
     /** When to pay resources for construction. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
@@ -209,6 +214,17 @@ private:
     /** Sound to play when the actor finished construction. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     USoundCue* FinishedSound;
+
+    /** Sound to play when construction stalls due to insufficient resources (PayOverTime). */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    USoundCue* StalledSound;
+
+    /** Minimum interval in seconds between repeated stall notifications. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 0))
+    float StalledNotificationInterval;
+
+    /** Internal timer: time elapsed since last stall notification. */
+    float TimeSinceLastStalledNotification;
 
 	/** Whether the construction timer is currently being ticked, or not. */
     UPROPERTY(EditInstanceOnly, Replicated, Category = "RTS")

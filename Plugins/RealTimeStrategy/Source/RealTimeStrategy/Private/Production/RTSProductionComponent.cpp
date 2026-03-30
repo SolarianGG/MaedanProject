@@ -379,6 +379,7 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 	const float SpawnOffset = (URTSCollisionLibrary::GetActorCollisionSize(GetOwner()) / 2.f) +
 						(URTSCollisionLibrary::GetCollisionSize(ProductClass) / 2.f) + 20.f;
 	FVector SpawnLocation = ActorLocation + Forward * SpawnOffset;
+	SpawnLocation.Z = ActorLocation.Z;
 	while (URTSCollisionLibrary::GetGroundHitResults(GetOwner(), SpawnLocation).Num() == 0)
 	{
 		FRotator Rotation = FRotator(0, FMath::RandRange(0.0f, 360.0f), 0); 

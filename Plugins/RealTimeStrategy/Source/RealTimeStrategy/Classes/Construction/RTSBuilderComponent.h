@@ -4,6 +4,8 @@
 
 #include "RTSActorComponent.h"
 
+class USoundBase;
+
 #include "Templates/SubclassOf.h"
 
 #include "RTSBuilderComponent.generated.h"
@@ -63,6 +65,10 @@ public:
     UFUNCTION(BlueprintPure)
     AActor* GetAssignedConstructionSite() const;
 
+    /** Gets the sounds to play when construction fails. */
+    UFUNCTION(BlueprintPure)
+    TArray<USoundBase*> GetConstructionFailedSounds() const;
+
     /** Event when the builder failed to create a new construction site. */
     virtual void NotifyOnConstructionFailed(AActor* Builder, TSubclassOf<AActor> BuildingClass, const FVector& Location);
 
@@ -103,6 +109,10 @@ private:
     /** Distance of the builder to the construction site while building. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     float ConstructionSiteOffset;
+
+    /** Sounds to play when the builder fails to start construction. A random one is picked. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    TArray<USoundBase*> ConstructionFailedSounds;
 
 	/** Construction site the builder is currently working on. */
     UPROPERTY()

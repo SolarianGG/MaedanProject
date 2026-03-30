@@ -2,15 +2,21 @@
 
 #include "GameFramework/Controller.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Pawn.h"
 
 #include "RTSPawnAIController.h"
+#include "RTSPlayerController.h"
 #include "RTSContainerComponent.h"
 #include "RTSGameMode.h"
 #include "RTSGameplayTagsComponent.h"
 #include "RTSLog.h"
 #include "Construction/RTSConstructionSiteComponent.h"
+#include "Economy/RTSPlayerResourcesComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
 #include "Libraries/RTSGameplayLibrary.h"
+#include "Components/ShapeComponent.h"
+#include "Engine/World.h"
+#include "RTSOwnerComponent.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
 
 
@@ -106,6 +112,13 @@ bool URTSBuilderComponent::BeginConstruction(TSubclassOf<AActor> BuildingClass, 
     {
         UE_LOG(LogRTS, Error, TEXT("Builder %s wants to build %s, but is missing requirement %s."), *GetOwner()->GetName(), *BuildingClass->GetName(), *MissingRequirement->GetName());
 
+        auto* OwnerController = Cast<ARTSPlayerController>(GetOwner()->GetOwner());
+        if (OwnerController)
+        {
+            OwnerController->NotifyOnErrorOccurred(
+                FString::Printf(TEXT("Missing requirement: %s"), *MissingRequirement->GetName()));
+        }
+
         NotifyOnConstructionFailed(Pawn, BuildingClass, Pawn->GetActorLocation());
 
         // Player is missing a required actor. Stop.
@@ -118,7 +131,7 @@ bool URTSBuilderComponent::BeginConstruction(TSubclassOf<AActor> BuildingClass, 
     FVector ToTargetLocation = TargetLocation - BuilderLocation;
     ToTargetLocation.Z = 0.0f;
     FVector ToTargetLocationNormalized = ToTargetLocation.GetSafeNormal();
-    float SafetyDistance = 
+    float SafetyDistance =
         (URTSCollisionLibrary::GetActorCollisionSize(Pawn) / 2 +
          URTSCollisionLibrary::GetCollisionSize(BuildingClass) / 2)
         + ConstructionSiteOffset;
@@ -127,6 +140,133 @@ bool URTSBuilderComponent::BeginConstruction(TSubclassOf<AActor> BuildingClass, 
     SafeBuilderLocation.Z = BuilderLocation.Z;
 
     Pawn->SetActorLocation(SafeBuilderLocation);
+
+    // Re-validate build location after builder has moved aside.
+    // Friendly pawns are allowed (they will be pushed out); only enemy/neutral obstacles block construction.
+    {
+        UShapeComponent* BuildingShape =
+            URTSGameplayLibrary::FindDefaultComponentByClass<UShapeComponent>(BuildingClass);
+
+        if (BuildingShape)
+        {
+            FCollisionObjectQueryParams Params(FCollisionObjectQueryParams::AllDynamicObjects);
+            TArray<FOverlapResult> Overlaps;
+            GetWorld()->OverlapMultiByObjectType(
+                Overlaps, TargetLocation, FQuat::Identity, Params, BuildingShape->GetCollisionShape());
+
+            bool bLocationBlocked = false;
+            for (const FOverlapResult& Overlap : Overlaps)
+            {
+                AActor* Actor = Overlap.Actor.Get();
+                if (!Actor || Actor == GetOwner())
+                {
+                    continue;
+                }
+
+                // Friendly pawns are acceptable — they will be pushed aside below.
+                if (Actor->IsA<APawn>())
+                {
+                    URTSOwnerComponent* OwnerComp = Actor->FindComponentByClass<URTSOwnerComponent>();
+                    if (OwnerComp && OwnerComp->IsSameTeamAsActor(GetOwner()))
+                    {
+                        continue;
+                    }
+                }
+
+                bLocationBlocked = true;
+                break;
+            }
+
+            if (bLocationBlocked)
+            {
+                UE_LOG(LogRTS, Error, TEXT("Builder %s cannot place %s at %s - location is now obstructed."),
+                    *GetOwner()->GetName(), *BuildingClass->GetName(), *TargetLocation.ToString());
+
+                auto* OwnerController = Cast<ARTSPlayerController>(GetOwner()->GetOwner());
+                if (OwnerController)
+                {
+                    OwnerController->NotifyOnErrorOccurred(TEXT("Build location is obstructed."));
+                }
+
+                NotifyOnConstructionFailed(Pawn, BuildingClass, TargetLocation);
+                PawnController->IssueStopOrder();
+                return false;
+            }
+        }
+    }
+
+    // Resource pre-check to prevent race condition (building flickering then vanishing).
+    URTSConstructionSiteComponent* SiteComponent =
+        URTSGameplayLibrary::FindDefaultComponentByClass<URTSConstructionSiteComponent>(BuildingClass);
+
+    if (SiteComponent && SiteComponent->GetConstructionCostType() == ERTSPaymentType::PAYMENT_PayImmediately)
+    {
+        auto* OwnerController = Cast<ARTSPlayerController>(GetOwner()->GetOwner());
+        if (OwnerController)
+        {
+            auto* PlayerResourcesComp = OwnerController->FindComponentByClass<URTSPlayerResourcesComponent>();
+            if (PlayerResourcesComp && !PlayerResourcesComp->CanPayAllResources(SiteComponent->GetConstructionCosts()))
+            {
+                UE_LOG(LogRTS, Error, TEXT("Builder %s wants to build %s, but does not have enough resources."),
+                    *GetOwner()->GetName(), *BuildingClass->GetName());
+                NotifyOnConstructionFailed(Pawn, BuildingClass, Pawn->GetActorLocation());
+                OwnerController->NotifyOnErrorOccurred(TEXT("Not enough resources."));
+                PawnController->IssueStopOrder();
+                return false;
+            }
+        }
+    }
+
+    // Push own-team units out of the building footprint before spawning.
+    {
+        UShapeComponent* BuildingShape =
+            URTSGameplayLibrary::FindDefaultComponentByClass<UShapeComponent>(BuildingClass);
+
+        if (BuildingShape)
+        {
+            FCollisionObjectQueryParams OverlapParams(FCollisionObjectQueryParams::AllDynamicObjects);
+            TArray<FOverlapResult> Overlaps;
+            GetWorld()->OverlapMultiByObjectType(
+                Overlaps, TargetLocation, FQuat::Identity,
+                OverlapParams, BuildingShape->GetCollisionShape());
+
+            float BuildingRadius = URTSCollisionLibrary::GetCollisionSize(BuildingClass) / 2.0f;
+
+            for (const FOverlapResult& Overlap : Overlaps)
+            {
+                AActor* Actor = Overlap.Actor.Get();
+                if (!Actor || !Actor->IsA<APawn>() || Actor == GetOwner())
+                {
+                    continue;
+                }
+
+                URTSOwnerComponent* OwnerComp = Actor->FindComponentByClass<URTSOwnerComponent>();
+                if (!OwnerComp || !OwnerComp->IsSameTeamAsActor(GetOwner()))
+                {
+                    continue; // don't push enemy units
+                }
+
+                ARTSPawnAIController* UnitController =
+                    Cast<ARTSPawnAIController>(Cast<APawn>(Actor)->GetController());
+                if (!UnitController)
+                {
+                    continue;
+                }
+
+                FVector ToUnit = Actor->GetActorLocation() - TargetLocation;
+                ToUnit.Z = 0.0f;
+                FVector ExitDirection = ToUnit.IsNearlyZero()
+                    ? FVector(1.0f, 0.0f, 0.0f)
+                    : ToUnit.GetSafeNormal();
+                float UnitRadius = URTSCollisionLibrary::GetActorCollisionSize(Actor) / 2.0f;
+                FVector ExitLocation = TargetLocation
+                    + ExitDirection * (BuildingRadius + UnitRadius + 50.0f);
+                ExitLocation.Z = Actor->GetActorLocation().Z;
+
+                UnitController->IssueMoveOrder(ExitLocation);
+            }
+        }
+    }
 
 	// Spawn building.
 	AActor* Building = GameMode->SpawnActorForPlayer(
@@ -221,7 +361,18 @@ AActor* URTSBuilderComponent::GetAssignedConstructionSite() const
     return AssignedConstructionSite;
 }
 
+TArray<USoundBase*> URTSBuilderComponent::GetConstructionFailedSounds() const
+{
+    return ConstructionFailedSounds;
+}
+
 void URTSBuilderComponent::NotifyOnConstructionFailed(AActor* Builder, TSubclassOf<AActor> BuildingClass, const FVector& Location)
 {
+    if (ConstructionFailedSounds.Num() > 0 && IsValid(Builder))
+    {
+        int32 Index = FMath::RandRange(0, ConstructionFailedSounds.Num() - 1);
+        UGameplayStatics::PlaySoundAtLocation(this, ConstructionFailedSounds[Index], Builder->GetActorLocation());
+    }
+
     OnConstructionFailed.Broadcast(Builder, BuildingClass, Location);
 }
