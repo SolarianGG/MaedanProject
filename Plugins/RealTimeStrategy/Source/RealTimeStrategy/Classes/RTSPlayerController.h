@@ -419,6 +419,22 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
     int32 CameraScrollThreshold;
 
+    /** Speed multiplier for edge scrolling relative to keyboard camera movement. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
+    float EdgeScrollSpeedMultiplier;
+
+    /** Speed of camera pitch rotation, in degrees per second. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
+    float CameraPitchSpeed;
+
+    /** Minimum camera pitch angle (most top-down), in degrees. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera")
+    float MinCameraPitch;
+
+    /** Maximum camera pitch angle (most horizontal), in degrees. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera")
+    float MaxCameraPitch;
+
     /** Time between two group selections to be considered a double-selection (e.g. for centering the camera on that group). */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Input", meta = (ClampMin = 0))
     float DoubleGroupSelectionTime;
@@ -463,6 +479,12 @@ private:
 
 	/** Last zoom axis input applied to camera movement. */
 	float CameraZoomAxisValue;
+
+	/** Accumulated pitch rotation input for the current tick. */
+	float CameraPitchAxisValue;
+
+	/** Whether the camera is currently being rotated (middle mouse button held). */
+	bool bRotatingCamera;
 
 	/** Saved selections of this player. */
     UPROPERTY()
@@ -576,6 +598,17 @@ private:
 
     /** Gets the distance from the player camera to an object, on the ground, in cm. */
     float GetCameraDistance() const;
+
+    /** Begins rotating the camera (middle mouse button pressed). */
+    UFUNCTION()
+    void StartRotateCamera();
+
+    /** Stops rotating the camera (middle mouse button released). */
+    UFUNCTION()
+    void StopRotateCamera();
+
+    /** Applies mouse Y delta to camera pitch rotation. */
+    void RotateCameraPitch(float Value);
 
     /** Remembers the current mouse position for multi-selection, finished by FinishSelectActors. */
     UFUNCTION()

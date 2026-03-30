@@ -69,7 +69,14 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 	MinCameraDistance = 500.0f;
 	MaxCameraDistance = 2500.0f;
 
-	CameraScrollThreshold = 20.0f;
+	CameraScrollThreshold = 50.0f;
+	EdgeScrollSpeedMultiplier = 1.5f;
+
+	CameraPitchSpeed = 50.0f;
+	MinCameraPitch = -80.0f;
+	MaxCameraPitch = -20.0f;
+	CameraPitchAxisValue = 0.0f;
+	bRotatingCamera = false;
 
 	DoubleGroupSelectionTime = 0.2f;
 
@@ -153,6 +160,10 @@ void ARTSPlayerController::SetupInputComponent()
 	InputComponent->BindAxis(TEXT("MoveCameraLeftRight"), this, &ARTSPlayerController::MoveCameraLeftRight);
 	InputComponent->BindAxis(TEXT("MoveCameraUpDown"), this, &ARTSPlayerController::MoveCameraUpDown);
 	InputComponent->BindAxis(TEXT("ZoomCamera"), this, &ARTSPlayerController::ZoomCamera);
+
+	InputComponent->BindAction(TEXT("RotateCamera"), IE_Pressed, this, &ARTSPlayerController::StartRotateCamera);
+	InputComponent->BindAction(TEXT("RotateCamera"), IE_Released, this, &ARTSPlayerController::StopRotateCamera);
+	InputComponent->BindAxis(TEXT("RotateCameraPitch"), this, &ARTSPlayerController::RotateCameraPitch);
 
 	InputComponent->BindAction(TEXT("SaveCameraLocation0"), IE_Pressed, this,
 	                           &ARTSPlayerController::SaveCameraLocationWithIndex<0>);
@@ -1797,6 +1808,28 @@ void ARTSPlayerController::ZoomCamera(float Value)
 	CameraZoomAxisValue = Value;
 }
 
+void ARTSPlayerController::StartRotateCamera()
+{
+	bRotatingCamera = true;
+}
+
+void ARTSPlayerController::StopRotateCamera()
+{
+	bRotatingCamera = false;
+}
+
+void ARTSPlayerController::RotateCameraPitch(float Value)
+{
+	if (bRotatingCamera)
+	{
+		CameraPitchAxisValue = Value;
+	}
+	else
+	{
+		CameraPitchAxisValue = 0.0f;
+	}
+}
+
 float ARTSPlayerController::GetCameraDistance() const
 {
 	APawn* PlayerPawn = GetPawnOrSpectator();
@@ -2049,26 +2082,30 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 	{
 		if (MouseX <= CameraScrollThreshold)
 		{
-			CameraLeftRightAxisValue -= 1 - (MouseX / CameraScrollThreshold);
+			float T = 1.0f - (MouseX / CameraScrollThreshold);
+			CameraLeftRightAxisValue -= T * T * EdgeScrollSpeedMultiplier;
 		}
 		else if (MouseX >= ScrollBorderRight)
 		{
-			CameraLeftRightAxisValue += (MouseX - ScrollBorderRight) / CameraScrollThreshold;
+			float T = (MouseX - ScrollBorderRight) / CameraScrollThreshold;
+			CameraLeftRightAxisValue += T * T * EdgeScrollSpeedMultiplier;
 		}
 
 		if (MouseY <= CameraScrollThreshold)
 		{
-			CameraUpDownAxisValue += 1 - (MouseY / CameraScrollThreshold);
+			float T = 1.0f - (MouseY / CameraScrollThreshold);
+			CameraUpDownAxisValue += T * T * EdgeScrollSpeedMultiplier;
 		}
 		else if (MouseY >= ScrollBorderTop)
 		{
-			CameraUpDownAxisValue -= (MouseY - ScrollBorderTop) / CameraScrollThreshold;
+			float T = (MouseY - ScrollBorderTop) / CameraScrollThreshold;
+			CameraUpDownAxisValue -= T * T * EdgeScrollSpeedMultiplier;
 		}
 	}
 
 	// Apply input.
-	CameraLeftRightAxisValue = FMath::Clamp(CameraLeftRightAxisValue, -1.0f, +1.0f);
-	CameraUpDownAxisValue = FMath::Clamp(CameraUpDownAxisValue, -1.0f, +1.0f);
+	CameraLeftRightAxisValue = FMath::Clamp(CameraLeftRightAxisValue, -EdgeScrollSpeedMultiplier, +EdgeScrollSpeedMultiplier);
+	CameraUpDownAxisValue = FMath::Clamp(CameraUpDownAxisValue, -EdgeScrollSpeedMultiplier, +EdgeScrollSpeedMultiplier);
 
 	FVector Location = PlayerPawn->GetActorLocation();
 	Location += FVector::RightVector * CameraSpeed * CameraLeftRightAxisValue * DeltaTime;
@@ -2089,6 +2126,15 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 		CameraLocation.Z += CameraZoomSpeed * CameraZoomAxisValue * DeltaTime;
 		CameraLocation.Z = FMath::Clamp(CameraLocation.Z, MinCameraDistance, MaxCameraDistance);
 		PlayerPawnCamera->SetRelativeLocation(CameraLocation);
+
+		// Apply pitch rotation input.
+		if (CameraPitchAxisValue != 0.0f)
+		{
+			FRotator CameraRotation = PlayerPawnCamera->GetRelativeRotation();
+			CameraRotation.Pitch += CameraPitchSpeed * CameraPitchAxisValue * DeltaTime;
+			CameraRotation.Pitch = FMath::Clamp(CameraRotation.Pitch, MinCameraPitch, MaxCameraPitch);
+			PlayerPawnCamera->SetRelativeRotation(CameraRotation);
+		}
 	}
 
 	// Get hovered actors.
