@@ -431,6 +431,10 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Construction")
     USoundBase* BuildingPlacementFailedSound;
 
+    /** Distance between units when issuing group move orders, in cm. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders", meta = (ClampMin = 50))
+    float FormationUnitSpacing;
+
     /** Orders that should be tried to apply for the input action IssueOrder, in order. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")
     TArray<TSubclassOf<URTSOrder>> DefaultOrders;

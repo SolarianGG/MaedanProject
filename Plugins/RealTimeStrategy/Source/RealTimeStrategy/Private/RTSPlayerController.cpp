@@ -33,6 +33,7 @@
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
+#include "Libraries/RTSFormationHelper.h"
 #include "Libraries/RTSConstructionLibrary.h"
 #include "Libraries/RTSGameplayLibrary.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
@@ -71,6 +72,8 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 	CameraScrollThreshold = 20.0f;
 
 	DoubleGroupSelectionTime = 0.2f;
+
+	FormationUnitSpacing = 150.0f;
 
 	DefaultOrders.Add(URTSAttackOrder::StaticClass());
 	DefaultOrders.Add(URTSGatherOrder::StaticClass());
@@ -329,7 +332,8 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 
 	const bool bAppendToQueue = IsInputKeyDown(EKeys::LeftShift) || IsInputKeyDown(EKeys::RightShift);
 
-	bool bSuccess = false;
+	// First pass: collect eligible pawns.
+	TArray<APawn*> EligiblePawns;
 
 	for (auto SelectedActor : SelectedActors)
 	{
@@ -358,25 +362,59 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 			continue;
 		}
 
-		// Send order to server.
-		ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
-
-		if (IsNetMode(NM_Client))
-		{
-			// Notify listeners.
-			NotifyOnIssuedOrder(SelectedPawn, Order);
-		}
-
 		if (GroupExecutionType == ERTSOrderGroupExecutionType::ORDERGROUPEXECUTION_Any)
 		{
 			// Just send a single actor.
+			ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
+
+			if (IsNetMode(NM_Client))
+			{
+				NotifyOnIssuedOrder(SelectedPawn, Order);
+			}
+
 			return true;
 		}
 
-		bSuccess = true;
+		EligiblePawns.Add(SelectedPawn);
 	}
 
-	return bSuccess;
+	if (EligiblePawns.Num() == 0)
+	{
+		return false;
+	}
+
+	// Calculate formation offsets for location-targeted orders with multiple units.
+	const bool bUseFormation = Order.OrderClass != nullptr
+		&& Order.OrderClass->GetDefaultObject<URTSOrder>()->GetTargetType() == ERTSOrderTargetType::ORDERTARGET_Location
+		&& EligiblePawns.Num() > 1;
+
+	TArray<FVector> FormationPositions;
+	if (bUseFormation)
+	{
+		FormationPositions = URTSFormationHelper::CalculateCircularFormation(
+			Order.TargetLocation, EligiblePawns.Num(), FormationUnitSpacing);
+	}
+
+	// Second pass: dispatch orders with per-unit offsets.
+	for (int32 i = 0; i < EligiblePawns.Num(); ++i)
+	{
+		APawn* Unit = EligiblePawns[i];
+
+		FRTSOrderData PawnOrder = Order;
+		if (bUseFormation && FormationPositions.IsValidIndex(i))
+		{
+			PawnOrder.TargetLocation = FormationPositions[i];
+		}
+
+		ServerIssueOrder(Unit, PawnOrder, bAppendToQueue);
+
+		if (IsNetMode(NM_Client))
+		{
+			NotifyOnIssuedOrder(Unit, PawnOrder);
+		}
+	}
+
+	return true;
 }
 
 void ARTSPlayerController::IssueDefaultOrderToActor(AActor* Actor, AActor* TargetActor, const FVector& TargetLocation)

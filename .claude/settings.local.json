@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(cd /c/Users/margaryta/Documents/\"Unreal Projects\"/RTSProject)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(grep -v \"//.*MoveTo\")",
+      "Bash(grep -r \"EPathFollowingRequestResult\\\\|FNavPathSharedPtr\\\\|SimpleMoveToActor\" 'C:\\\\Users\\\\margaryta\\\\Documents\\\\Unreal Projects\\\\RTSProject\\\\Plugins\\\\RealTimeStrategy\\\\Source' --include=*.h --include=*.cpp)",
+      "Bash(grep -r \"bUseRVOAvoidance\\\\|RVO\\\\|Avoidance\\\\|Separation\\\\|Crowd\\\\|Steering\" 'C:\\\\Users\\\\margaryta\\\\Documents\\\\Unreal Projects\\\\RTSProject' --include=*.h --include=*.cpp)",
+      "Bash(find /c/Users/margaryta/Documents/Unreal Projects/RTSProject -type f -name *BT_* -o -name *BB_*)"
     ]
   }
 }
