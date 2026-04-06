@@ -9,6 +9,7 @@
 #include "RTSGameplayTagsComponent.h"
 #include "RTSLog.h"
 #include "RTSPlayerAdvantageComponent.h"
+#include "RTSPlayerController.h"
 #include "Combat/RTSHealthComponent.h"
 #include "Construction/RTSBuilderComponent.h"
 #include "Economy/RTSPlayerResourcesComponent.h"
@@ -36,6 +37,8 @@ URTSConstructionSiteComponent::URTSConstructionSiteComponent(const FObjectInitia
     InitialHealthPercentage = 0.1f;
 	RefundFactor = 0.5f;
 	bStartImmediately = true;
+    StalledNotificationInterval = 5.0f;
+    TimeSinceLastStalledNotification = 0.0f;
 
     InitialGameplayTags.AddTag(URTSGameplayTagLibrary::Status_Permanent_CanBeConstructed());
     InitialGameplayTags.AddTag(URTSGameplayTagLibrary::Status_Changing_Immobilized());
@@ -180,8 +183,29 @@ void URTSConstructionSiteComponent::TickComponent(float DeltaTime, enum ELevelTi
 
 	if (!bConstructionCostPaid)
 	{
+        TimeSinceLastStalledNotification += DeltaTime;
+        if (TimeSinceLastStalledNotification >= StalledNotificationInterval)
+        {
+            TimeSinceLastStalledNotification = 0.0f;
+
+            OnConstructionStalled.Broadcast(GetOwner());
+
+            if (IsValid(StalledSound))
+            {
+                UGameplayStatics::PlaySoundAtLocation(this, StalledSound, GetOwner()->GetActorLocation());
+            }
+
+            auto* OwnerController = Cast<ARTSPlayerController>(GetOwner()->GetOwner());
+            if (OwnerController)
+            {
+                OwnerController->NotifyOnErrorOccurred(TEXT("Not enough resources."));
+            }
+        }
 		return;
 	}
+
+    // Reset stall timer so the next stall fires immediately.
+    TimeSinceLastStalledNotification = StalledNotificationInterval;
 
 	// Update construction progress.
 	RemainingConstructionTime -= ConstructionProgress;
@@ -341,7 +365,7 @@ void URTSConstructionSiteComponent::CancelConstruction()
     {
         auto PlayerResourcesComponent = Owner->FindComponentByClass<URTSPlayerResourcesComponent>();
 
-        if (!PlayerResourcesComponent)
+        if (PlayerResourcesComponent)
         {
             float TimeRefundFactor = 0.0f;
 
@@ -369,6 +393,21 @@ void URTSConstructionSiteComponent::CancelConstruction()
                 // Notify listeners.
                 OnConstructionCostRefunded.Broadcast(GetOwner(), ResourceType, ResourceAmount);
             }
+        }
+    }
+
+    // Release all assigned builders before destroying the site so their tags and state are cleaned up.
+    TArray<AActor*> BuildersToRelease(AssignedBuilders);
+    for (AActor* Builder : BuildersToRelease)
+    {
+        if (!IsValid(Builder))
+        {
+            continue;
+        }
+        URTSBuilderComponent* BuilderComponent = Builder->FindComponentByClass<URTSBuilderComponent>();
+        if (BuilderComponent)
+        {
+            BuilderComponent->LeaveConstructionSite();
         }
     }
 

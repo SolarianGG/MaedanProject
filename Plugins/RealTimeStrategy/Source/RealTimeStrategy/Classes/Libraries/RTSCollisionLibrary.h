@@ -54,10 +54,12 @@ public:
 	/** Gets all hit result from location to ground */
 	UFUNCTION(BlueprintPure, Category = "RTS", meta = (WorldContext = "WorldContextObject"))
 	static TArray<FHitResult> GetGroundHitResults(UObject* WorldContextObject, FVector Location);
+	static TArray<FHitResult> GetGroundHitResults(UObject* WorldContextObject, FVector Location, AActor* ActorToIgnore);
 
     /** Casts a ray to determine the z coordinate of the specified location on ground level. */
     UFUNCTION(BlueprintPure, Category = "RTS", meta = (WorldContext = "WorldContextObject"))
     static FVector GetGroundLocation(UObject* WorldContextObject, FVector Location);
+    static FVector GetGroundLocation(UObject* WorldContextObject, FVector Location, AActor* ActorToIgnore);
 
     /**
     * Checks whether the specified actor can be placed at the passed location.

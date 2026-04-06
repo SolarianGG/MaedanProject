@@ -4,6 +4,8 @@
 #include "Landscape.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BrushComponent.h"
+#include "Components/ShapeComponent.h"
+#include "GameFramework/Pawn.h"
 #include "Components/InputComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
@@ -33,6 +35,7 @@
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
+#include "Libraries/RTSFormationHelper.h"
 #include "Libraries/RTSConstructionLibrary.h"
 #include "Libraries/RTSGameplayLibrary.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
@@ -70,9 +73,18 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 	MinCameraDistance = 500.0f;
 	MaxCameraDistance = 2500.0f;
 
-	CameraScrollThreshold = 20.0f;
+	CameraScrollThreshold = 50.0f;
+	EdgeScrollSpeedMultiplier = 1.5f;
+
+	CameraPitchSpeed = 50.0f;
+	MinCameraPitch = -80.0f;
+	MaxCameraPitch = -20.0f;
+	CameraPitchAxisValue = 0.0f;
+	bRotatingCamera = false;
 
 	DoubleGroupSelectionTime = 0.2f;
+
+	FormationUnitSpacing = 150.0f;
 
 	DefaultOrders.Add(URTSAttackOrder::StaticClass());
 	DefaultOrders.Add(URTSGatherOrder::StaticClass());
@@ -154,6 +166,10 @@ void ARTSPlayerController::SetupInputComponent()
 	InputComponent->BindAxis(TEXT("MoveCameraLeftRight"), this, &ARTSPlayerController::MoveCameraLeftRight);
 	InputComponent->BindAxis(TEXT("MoveCameraUpDown"), this, &ARTSPlayerController::MoveCameraUpDown);
 	InputComponent->BindAxis(TEXT("ZoomCamera"), this, &ARTSPlayerController::ZoomCamera);
+
+	InputComponent->BindAction(TEXT("RotateCamera"), IE_Pressed, this, &ARTSPlayerController::StartRotateCamera);
+	InputComponent->BindAction(TEXT("RotateCamera"), IE_Released, this, &ARTSPlayerController::StopRotateCamera);
+	InputComponent->BindAxis(TEXT("RotateCameraPitch"), this, &ARTSPlayerController::RotateCameraPitch);
 
 	InputComponent->BindAction(TEXT("SaveCameraLocation0"), IE_Pressed, this,
 	                           &ARTSPlayerController::SaveCameraLocationWithIndex<0>);
@@ -333,7 +349,8 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 
 	const bool bAppendToQueue = IsInputKeyDown(EKeys::LeftShift) || IsInputKeyDown(EKeys::RightShift);
 
-	bool bSuccess = false;
+	// First pass: collect eligible pawns.
+	TArray<APawn*> EligiblePawns;
 	bool bMarkerNotified = false;
 
 	for (auto SelectedActor : SelectedActors)
@@ -363,26 +380,61 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 			continue;
 		}
 
-		// Send order to server.
-		ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
-
-		// Notify listeners. Only fire marker events once per command.
-		if (!bMarkerNotified)
+		if (GroupExecutionType == ERTSOrderGroupExecutionType::ORDERGROUPEXECUTION_Any)
 		{
+			// Just send a single actor.
+			ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
+
+		if (IsNetMode(NM_Client) && !bMarkerNotified)
+		{
+			// Notify listeners.
 			NotifyOnIssuedOrder(SelectedPawn, Order);
 			bMarkerNotified = true;
 		}
 
-		if (GroupExecutionType == ERTSOrderGroupExecutionType::ORDERGROUPEXECUTION_Any)
-		{
-			// Just send a single actor.
 			return true;
 		}
 
-		bSuccess = true;
+		EligiblePawns.Add(SelectedPawn);
 	}
 
-	return bSuccess;
+	if (EligiblePawns.Num() == 0)
+	{
+		return false;
+	}
+
+	// Calculate formation offsets for location-targeted orders with multiple units.
+	const bool bUseFormation = Order.OrderClass != nullptr
+		&& Order.OrderClass->GetDefaultObject<URTSOrder>()->GetTargetType() == ERTSOrderTargetType::ORDERTARGET_Location
+		&& EligiblePawns.Num() > 1;
+
+	TArray<FVector> FormationPositions;
+	if (bUseFormation)
+	{
+		FormationPositions = URTSFormationHelper::CalculateCircularFormation(
+			Order.TargetLocation, EligiblePawns.Num(), FormationUnitSpacing);
+	}
+
+	// Second pass: dispatch orders with per-unit offsets.
+	for (int32 i = 0; i < EligiblePawns.Num(); ++i)
+	{
+		APawn* Unit = EligiblePawns[i];
+
+		FRTSOrderData PawnOrder = Order;
+		if (bUseFormation && FormationPositions.IsValidIndex(i))
+		{
+			PawnOrder.TargetLocation = FormationPositions[i];
+		}
+
+		ServerIssueOrder(Unit, PawnOrder, bAppendToQueue);
+
+		if (IsNetMode(NM_Client))
+		{
+			NotifyOnIssuedOrder(Unit, PawnOrder);
+		}
+	}
+
+	return true;
 }
 
 void ARTSPlayerController::IssueDefaultOrderToActor(AActor* Actor, AActor* TargetActor, const FVector& TargetLocation)
@@ -1292,6 +1344,10 @@ bool ARTSPlayerController::CheckCanBeginBuildingPlacement(TSubclassOf<AActor> Bu
 		ConstructionSiteComponent->GetConstructionCosts()))
 	{
 		NotifyOnErrorOccurred(TEXT("Not enough resources."));
+		if (IsValid(BuildingPlacementFailedSound))
+		{
+			UGameplayStatics::PlaySound2D(this, BuildingPlacementFailedSound);
+		}
 		return false;
 	}
 
@@ -1316,6 +1372,10 @@ bool ARTSPlayerController::CheckCanBeginBuildingPlacement(TSubclassOf<AActor> Bu
 				NotifyOnErrorOccurred("Missing requirement.");
 			}
 
+			if (IsValid(BuildingPlacementFailedSound))
+			{
+				UGameplayStatics::PlaySound2D(this, BuildingPlacementFailedSound);
+			}
 			return false;
 		}
 	}
@@ -1527,6 +1587,26 @@ void ARTSPlayerController::ConfirmBuildingPlacement()
 
 		// Notify listeners.
 		NotifyOnBuildingPlacementError(BuildingBeingPlacedClass, HoveredWorldPosition);
+		NotifyOnErrorOccurred(TEXT("Can't place building here."));
+
+		// Play failure sound: prefer the selected builder's ConstructionFailedSounds, fall back to the generic UI sound.
+		bool bBuilderSoundPlayed = false;
+		for (AActor* SelectedActor : SelectedActors)
+		{
+			URTSBuilderComponent* BuilderComponent = SelectedActor ? SelectedActor->FindComponentByClass<URTSBuilderComponent>() : nullptr;
+			if (BuilderComponent && BuilderComponent->GetConstructionFailedSounds().Num() > 0)
+			{
+				TArray<USoundBase*> Sounds = BuilderComponent->GetConstructionFailedSounds();
+				int32 Index = FMath::RandRange(0, Sounds.Num() - 1);
+				UGameplayStatics::PlaySoundAtLocation(this, Sounds[Index], SelectedActor->GetActorLocation());
+				bBuilderSoundPlayed = true;
+				break;
+			}
+		}
+		if (!bBuilderSoundPlayed && IsValid(BuildingPlacementFailedSound))
+		{
+			UGameplayStatics::PlaySound2D(this, BuildingPlacementFailedSound);
+		}
 		return;
 	}
 
@@ -1536,6 +1616,57 @@ void ARTSPlayerController::ConfirmBuildingPlacement()
 	// Remove dummy building.
 	BuildingCursor->Destroy();
 	BuildingCursor = nullptr;
+
+	// Push own-team units out of the build zone immediately so they clear the area while the builder walks there.
+	{
+		UShapeComponent* BuildingShape =
+			URTSGameplayLibrary::FindDefaultComponentByClass<UShapeComponent>(BuildingBeingPlacedClass);
+
+		if (BuildingShape)
+		{
+			FCollisionObjectQueryParams OverlapParams(FCollisionObjectQueryParams::AllDynamicObjects);
+			TArray<FOverlapResult> Overlaps;
+			GetWorld()->OverlapMultiByObjectType(
+				Overlaps, HoveredWorldPosition, FQuat::Identity,
+				OverlapParams, BuildingShape->GetCollisionShape());
+
+			float BuildingRadius = URTSCollisionLibrary::GetCollisionSize(BuildingBeingPlacedClass) / 2.0f;
+
+			for (const FOverlapResult& Overlap : Overlaps)
+			{
+				AActor* Actor = Overlap.Actor.Get();
+				if (!Actor || !Actor->IsA<APawn>())
+				{
+					continue;
+				}
+
+				URTSOwnerComponent* OwnerComp = Actor->FindComponentByClass<URTSOwnerComponent>();
+				if (!OwnerComp || !OwnerComp->IsSameTeamAsController(this))
+				{
+					continue;
+				}
+
+				ARTSPawnAIController* UnitController =
+					Cast<ARTSPawnAIController>(Cast<APawn>(Actor)->GetController());
+				if (!UnitController)
+				{
+					continue;
+				}
+
+				FVector ToUnit = Actor->GetActorLocation() - HoveredWorldPosition;
+				ToUnit.Z = 0.0f;
+				FVector ExitDirection = ToUnit.IsNearlyZero()
+					? FVector(1.0f, 0.0f, 0.0f)
+					: ToUnit.GetSafeNormal();
+				float UnitRadius = URTSCollisionLibrary::GetActorCollisionSize(Actor) / 2.0f;
+				FVector ExitLocation = HoveredWorldPosition
+					+ ExitDirection * (BuildingRadius + UnitRadius + 50.0f);
+				ExitLocation.Z = Actor->GetActorLocation().Z;
+
+				UnitController->IssueMoveOrder(ExitLocation);
+			}
+		}
+	}
 
 	// Notify listeners.
 	NotifyOnBuildingPlacementConfirmed(BuildingBeingPlacedClass, HoveredWorldPosition);
@@ -1704,6 +1835,28 @@ void ARTSPlayerController::MoveCameraUpDown(float Value)
 void ARTSPlayerController::ZoomCamera(float Value)
 {
 	CameraZoomAxisValue = Value;
+}
+
+void ARTSPlayerController::StartRotateCamera()
+{
+	bRotatingCamera = true;
+}
+
+void ARTSPlayerController::StopRotateCamera()
+{
+	bRotatingCamera = false;
+}
+
+void ARTSPlayerController::RotateCameraPitch(float Value)
+{
+	if (bRotatingCamera)
+	{
+		CameraPitchAxisValue = Value;
+	}
+	else
+	{
+		CameraPitchAxisValue = 0.0f;
+	}
 }
 
 float ARTSPlayerController::GetCameraDistance() const
@@ -2021,26 +2174,30 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 	{
 		if (MouseX <= CameraScrollThreshold)
 		{
-			CameraLeftRightAxisValue -= 1 - (MouseX / CameraScrollThreshold);
+			float T = 1.0f - (MouseX / CameraScrollThreshold);
+			CameraLeftRightAxisValue -= T * T * EdgeScrollSpeedMultiplier;
 		}
 		else if (MouseX >= ScrollBorderRight)
 		{
-			CameraLeftRightAxisValue += (MouseX - ScrollBorderRight) / CameraScrollThreshold;
+			float T = (MouseX - ScrollBorderRight) / CameraScrollThreshold;
+			CameraLeftRightAxisValue += T * T * EdgeScrollSpeedMultiplier;
 		}
 
 		if (MouseY <= CameraScrollThreshold)
 		{
-			CameraUpDownAxisValue += 1 - (MouseY / CameraScrollThreshold);
+			float T = 1.0f - (MouseY / CameraScrollThreshold);
+			CameraUpDownAxisValue += T * T * EdgeScrollSpeedMultiplier;
 		}
 		else if (MouseY >= ScrollBorderTop)
 		{
-			CameraUpDownAxisValue -= (MouseY - ScrollBorderTop) / CameraScrollThreshold;
+			float T = (MouseY - ScrollBorderTop) / CameraScrollThreshold;
+			CameraUpDownAxisValue -= T * T * EdgeScrollSpeedMultiplier;
 		}
 	}
 
 	// Apply input.
-	CameraLeftRightAxisValue = FMath::Clamp(CameraLeftRightAxisValue, -1.0f, +1.0f);
-	CameraUpDownAxisValue = FMath::Clamp(CameraUpDownAxisValue, -1.0f, +1.0f);
+	CameraLeftRightAxisValue = FMath::Clamp(CameraLeftRightAxisValue, -EdgeScrollSpeedMultiplier, +EdgeScrollSpeedMultiplier);
+	CameraUpDownAxisValue = FMath::Clamp(CameraUpDownAxisValue, -EdgeScrollSpeedMultiplier, +EdgeScrollSpeedMultiplier);
 
 	FVector Location = PlayerPawn->GetActorLocation();
 	Location += FVector::RightVector * CameraSpeed * CameraLeftRightAxisValue * DeltaTime;
@@ -2061,6 +2218,15 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 		CameraLocation.Z += CameraZoomSpeed * CameraZoomAxisValue * DeltaTime;
 		CameraLocation.Z = FMath::Clamp(CameraLocation.Z, MinCameraDistance, MaxCameraDistance);
 		PlayerPawnCamera->SetRelativeLocation(CameraLocation);
+
+		// Apply pitch rotation input.
+		if (CameraPitchAxisValue != 0.0f)
+		{
+			FRotator CameraRotation = PlayerPawnCamera->GetRelativeRotation();
+			CameraRotation.Pitch += CameraPitchSpeed * CameraPitchAxisValue * DeltaTime;
+			CameraRotation.Pitch = FMath::Clamp(CameraRotation.Pitch, MinCameraPitch, MaxCameraPitch);
+			PlayerPawnCamera->SetRelativeRotation(CameraRotation);
+		}
 	}
 
 	// Get hovered actors.
