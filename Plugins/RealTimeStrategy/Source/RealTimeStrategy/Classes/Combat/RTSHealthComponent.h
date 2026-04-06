@@ -10,6 +10,7 @@
 
 
 class AActor;
+class UAnimMontage;
 class USoundCue;
 
 
@@ -54,6 +55,10 @@ public:
     /** Event when the current health of the actor has changed. */
     virtual void NotifyOnHealthChanged(AActor* Actor, float OldHealth, float NewHealth, AActor* DamageCauser);
 
+    /** Plays the death montage on all clients. */
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastPlayDeathMontage();
+
 
 	/** Event when the current health of the actor has changed. */
 	UPROPERTY(BlueprintAssignable, Category = "RTS")
@@ -84,6 +89,10 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     USoundCue* DeathSound;
 
+    /** Animation montage to play when the actor is killed. For DEATH_Destroy, the actor is destroyed after the montage finishes. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    UAnimMontage* DeathMontage;
+
     /** Current health of the actor. */
     UPROPERTY(ReplicatedUsing=ReceivedCurrentHealth)
     float CurrentHealth;
@@ -93,6 +102,9 @@ private:
 
     /** Timer for ticking health regeneration. */
     FTimerHandle HealthRegenerationTimer;
+
+    /** Timer for destroying the actor after the death montage finishes. */
+    FTimerHandle DeathDestroyTimer;
 
     UFUNCTION()
     void OnTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);

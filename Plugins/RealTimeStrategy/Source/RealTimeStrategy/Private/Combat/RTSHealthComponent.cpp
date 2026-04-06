@@ -1,6 +1,9 @@
 #include "Combat/RTSHealthComponent.h"
 
 #include "TimerManager.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
@@ -10,6 +13,8 @@
 #include "RTSGameMode.h"
 #include "RTSGameplayTagsComponent.h"
 #include "RTSLog.h"
+#include "RTSOwnerComponent.h"
+#include "RTSPlayerState.h"
 #include "Libraries/RTSGameplayLibrary.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
 
@@ -91,8 +96,21 @@ void URTSHealthComponent::SetCurrentHealth(float NewHealth, AActor* DamageCauser
     {
         UE_LOG(LogRTS, Log, TEXT("Actor %s has been killed."), *Owner->GetName());
 
-        // Get owner before destruction.
-        AController* OwningPlayer = Cast<AController>(Owner->GetOwner());
+        // Resolve owning controller: prefer URTSOwnerComponent, fall back to direct owner.
+        AController* OwningPlayer = nullptr;
+        URTSOwnerComponent* OwnerComponent = Owner->FindComponentByClass<URTSOwnerComponent>();
+        if (IsValid(OwnerComponent))
+        {
+            ARTSPlayerState* PlayerState = OwnerComponent->GetPlayerOwner();
+            if (IsValid(PlayerState))
+            {
+                OwningPlayer = Cast<AController>(PlayerState->GetOwner());
+            }
+        }
+        if (!IsValid(OwningPlayer))
+        {
+            OwningPlayer = Cast<AController>(Owner->GetOwner());
+        }
 
         // Remove Alive tag.
         URTSGameplayTagLibrary::RemoveGameplayTag(Owner, URTSGameplayTagLibrary::Status_Changing_Alive());
@@ -100,24 +118,47 @@ void URTSHealthComponent::SetCurrentHealth(float NewHealth, AActor* DamageCauser
         // Notify listeners.
         OnKilled.Broadcast(Owner, OwningPlayer, DamageCauser);
 
+        // Notify game mode before destroying so defeat condition check can exclude this actor.
+        ARTSGameMode* GameMode = Cast<ARTSGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+        if (GameMode != nullptr)
+        {
+            GameMode->NotifyOnActorKilled(Owner, OwningPlayer);
+        }
+
         // Stop or destroy actor.
         switch (ActorDeathType)
         {
         case ERTSActorDeathType::DEATH_StopGameplay:
             URTSGameplayLibrary::StopGameplayFor(Owner);
+            if (IsValid(DeathMontage))
+            {
+                MulticastPlayDeathMontage();
+            }
             break;
 
         case ERTSActorDeathType::DEATH_Destroy:
-            Owner->Destroy();
+            if (IsValid(DeathMontage))
+            {
+                // Disable interaction immediately, play montage, then destroy after it finishes.
+                URTSGameplayLibrary::StopGameplayFor(Owner);
+                MulticastPlayDeathMontage();
+                Owner->GetWorldTimerManager().SetTimer(
+                    DeathDestroyTimer,
+                    [WeakOwner = TWeakObjectPtr<AActor>(Owner)]()
+                    {
+                        if (WeakOwner.IsValid())
+                        {
+                            WeakOwner->Destroy();
+                        }
+                    },
+                    DeathMontage->GetPlayLength(),
+                    false);
+            }
+            else
+            {
+                Owner->Destroy();
+            }
             break;
-        }
-
-        // Notify game mode.
-        ARTSGameMode* GameMode = Cast<ARTSGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
-
-        if (GameMode != nullptr)
-        {
-            GameMode->NotifyOnActorKilled(Owner, OwningPlayer);
         }
     }
 }
@@ -164,4 +205,32 @@ void URTSHealthComponent::OnHealthRegenerationTimerElapsed()
 void URTSHealthComponent::ReceivedCurrentHealth(float OldHealth)
 {
     NotifyOnHealthChanged(GetOwner(), OldHealth, CurrentHealth, nullptr);
+}
+
+void URTSHealthComponent::MulticastPlayDeathMontage_Implementation()
+{
+    if (!IsValid(DeathMontage))
+    {
+        return;
+    }
+
+    AActor* Owner = GetOwner();
+    if (!IsValid(Owner))
+    {
+        return;
+    }
+
+    USkeletalMeshComponent* Mesh = Owner->FindComponentByClass<USkeletalMeshComponent>();
+    if (Mesh == nullptr)
+    {
+        return;
+    }
+
+    UAnimInstance* AnimInstance = Mesh->GetAnimInstance();
+    if (AnimInstance == nullptr)
+    {
+        return;
+    }
+
+    AnimInstance->Montage_Play(DeathMontage);
 }

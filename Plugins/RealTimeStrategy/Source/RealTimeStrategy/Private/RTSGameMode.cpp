@@ -326,9 +326,14 @@ void ARTSGameMode::NotifyOnActorKilled(AActor* Actor, AController* ActorOwner)
         }
 	}
 
-	// Check if any required actors are still alive.
+	// Check if any required actors are still alive (excluding the actor that just died).
 	for (AActor* OwnedActor : ActorOwner->Children)
 	{
+		if (OwnedActor == Actor)
+		{
+			continue;
+		}
+
 		if (DefeatConditionActorClasses.Contains(OwnedActor->GetClass()))
 		{
 			return;
