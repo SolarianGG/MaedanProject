@@ -385,7 +385,7 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 			// Just send a single actor.
 			ServerIssueOrder(SelectedPawn, Order, bAppendToQueue);
 
-		if (IsNetMode(NM_Client) && !bMarkerNotified)
+		if (!IsNetMode(NM_DedicatedServer) && !bMarkerNotified)
 		{
 			// Notify listeners.
 			NotifyOnIssuedOrder(SelectedPawn, Order);
@@ -428,7 +428,7 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 
 		ServerIssueOrder(Unit, PawnOrder, bAppendToQueue);
 
-		if (IsNetMode(NM_Client))
+		if (!IsNetMode(NM_DedicatedServer))
 		{
 			NotifyOnIssuedOrder(Unit, PawnOrder);
 		}
