@@ -101,6 +101,10 @@ public:
     /** Gets how many products may be queued per queue. */
     UFUNCTION(BlueprintPure)
     int32 GetCapacityPerQueue() const;
+
+    /** Gets all products in the specified queue. */
+    UFUNCTION(BlueprintPure)
+    TArray<TSubclassOf<AActor>> GetQueuedProducts(int32 QueueIndex = 0) const;
     
     /** Gets the actor or location to send new actors to. */
     UFUNCTION(BlueprintPure)

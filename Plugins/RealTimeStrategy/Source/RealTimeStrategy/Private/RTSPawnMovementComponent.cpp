@@ -4,6 +4,7 @@
 #include "GameFramework/Pawn.h"
 
 #include "RTSOwnerComponent.h"
+#include "Economy/RTSGathererComponent.h"
 
 
 URTSPawnMovementComponent::URTSPawnMovementComponent(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
@@ -20,7 +21,26 @@ URTSPawnMovementComponent::URTSPawnMovementComponent(const FObjectInitializer& O
 
 void URTSPawnMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+    // While actively gathering, consume all movement input so the pawn holds position.
+    // This does not interfere with the BT — tasks keep running, but the pawn stays put.
+    bool bIsGathering = false;
+    if (URTSGathererComponent* GathererComp = GetOwner()->FindComponentByClass<URTSGathererComponent>())
+    {
+        bIsGathering = GathererComp->IsGathering();
+    }
+
+    if (bIsGathering)
+    {
+        ConsumeInputVector();
+    }
+
     Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+    if (bIsGathering)
+    {
+        Velocity = FVector::ZeroVector;
+        return;
+    }
 
     if (!bEnableSeparation || !UpdatedComponent)
     {

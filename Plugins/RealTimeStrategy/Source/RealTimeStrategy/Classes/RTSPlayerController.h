@@ -56,6 +56,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	TArray<AActor*> GetSelectedActors() const;
 
+	/** Requests cancellation of a specific product in a building's queue. */
+	void RequestCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex);
+
 	/** Casts a ray from the specified screen position and collects the results. */
 	bool GetObjectsAtScreenPosition(FVector2D ScreenPosition, TArray<FHitResult>& OutHitResults) const;
 
@@ -270,6 +273,9 @@ public:
 
     /** Event when a pawn has received an order. */
     virtual void NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrderData& Order);
+
+	/** Spawns visual feedback (Niagara effects) for an order. Called once per order command, not per unit. */
+	void NotifyOnIssuedOrderVisualFeedback(const FRTSOrderData& Order);
 
 	/** Event when an actor has received an attack order. */
 	virtual void NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target);
@@ -622,6 +628,10 @@ private:
 	/** Cancels the current production at the specified actor. */
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerCancelProduction(AActor* ProductionActor);
+
+	/** Cancels production at a specific index in the specified queue. */
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex);
 
     /** Surrenders the current match. */
     UFUNCTION(Reliable, Server, WithValidation)

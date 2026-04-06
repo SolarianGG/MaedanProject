@@ -21,6 +21,35 @@
 #include "Orders/RTSStopOrder.h"
 
 
+FPathFollowingRequestResult ARTSPawnAIController::MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath)
+{
+    FAIMoveRequest AdjustedRequest = MoveRequest;
+
+    // When executing a gather order, use the gather range as the acceptance radius
+    // so that pathfinding stops as soon as the unit is close enough to gather,
+    // instead of trying to reach the resource center (which causes circling).
+    if (HasOrderByClass(URTSGatherOrder::StaticClass()) && MoveRequest.IsMoveToActorRequest())
+    {
+        if (APawn* MyPawn = GetPawn())
+        {
+            if (URTSGathererComponent* GathererComp = MyPawn->FindComponentByClass<URTSGathererComponent>())
+            {
+                AActor* GoalActor = MoveRequest.GetGoalActor();
+                if (IsValid(GoalActor))
+                {
+                    const float GatherRange = GathererComp->GetGatherRange(GoalActor);
+                    if (GatherRange > AdjustedRequest.GetAcceptanceRadius())
+                    {
+                        AdjustedRequest.SetAcceptanceRadius(GatherRange);
+                    }
+                }
+            }
+        }
+    }
+
+    return Super::MoveTo(AdjustedRequest, OutPath);
+}
+
 void ARTSPawnAIController::OnPossess(APawn* InPawn)
 {
     Super::OnPossess(InPawn);

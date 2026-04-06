@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
+#include "UI/RTSHUD.h"
 #include "RTSCameraBoundsVolume.h"
 #include "RTSPawnAIController.h"
 #include "RTSGameMode.h"
@@ -427,11 +428,13 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 		}
 
 		ServerIssueOrder(Unit, PawnOrder, bAppendToQueue);
+	}
 
-		if (!IsNetMode(NM_DedicatedServer))
-		{
-			NotifyOnIssuedOrder(Unit, PawnOrder);
-		}
+	// Notify once for the entire order, not per unit.
+	if (!IsNetMode(NM_DedicatedServer) && EligiblePawns.Num() > 0)
+	{
+		NotifyOnIssuedOrder(EligiblePawns[0], Order);
+		NotifyOnIssuedOrderVisualFeedback(Order);
 	}
 
 	return true;
@@ -1462,6 +1465,18 @@ void ARTSPlayerController::StartSelectActors()
 
 void ARTSPlayerController::FinishSelectActors()
 {
+	// Don't process selection if the click is on the production queue UI.
+	ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
+	if (HUD)
+	{
+		float MouseX, MouseY;
+		if (GetMousePosition(MouseX, MouseY) && HUD->IsPositionOnProductionQueue(MouseX, MouseY))
+		{
+			bCreatingSelectionFrame = false;
+			return;
+		}
+	}
+
 	// Get objects at pointer position.
 	TArray<FHitResult> HitResults;
 
@@ -1785,6 +1800,33 @@ bool ARTSPlayerController::ServerCancelProduction_Validate(AActor* ProductionAct
 	return ProductionActor->GetOwner() == this;
 }
 
+void ARTSPlayerController::RequestCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex)
+{
+	if (!IsValid(ProductionActor))
+	{
+		return;
+	}
+
+	ServerCancelProductionAt(ProductionActor, QueueIndex, ProductIndex);
+}
+
+void ARTSPlayerController::ServerCancelProductionAt_Implementation(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex)
+{
+	auto ProductionComponent = ProductionActor->FindComponentByClass<URTSProductionComponent>();
+
+	if (!ProductionComponent)
+	{
+		return;
+	}
+
+	ProductionComponent->CancelProduction(QueueIndex, ProductIndex);
+}
+
+bool ARTSPlayerController::ServerCancelProductionAt_Validate(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex)
+{
+	return IsValid(ProductionActor) && ProductionActor->GetOwner() == this;
+}
+
 void ARTSPlayerController::ServerStartProduction_Implementation(AActor* ProductionActor,
                                                                 TSubclassOf<AActor> ProductClass)
 {
@@ -1968,18 +2010,6 @@ void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrd
 
 void ARTSPlayerController::NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target)
 {
-    if (IsValid(Target) && EnemyOrderEffect)
-    {
-        UNiagaraFunctionLibrary::SpawnSystemAttached(
-            EnemyOrderEffect,
-            Target->GetRootComponent(),
-            NAME_None,
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            EAttachLocation::KeepRelativeOffset,
-            true);
-    }
-
 	ReceiveOnIssuedAttackOrder(OrderedPawn, Target);
 }
 
@@ -1996,21 +2026,41 @@ void ARTSPlayerController::NotifyOnIssuedContinueConstructionOrder(APawn* Ordere
 
 void ARTSPlayerController::NotifyOnIssuedGatherOrder(APawn* OrderedPawn, AActor* ResourceSource)
 {
-    if (IsValid(ResourceSource) && ResourceOrderEffect)
-    {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            GetWorld(),
-            ResourceOrderEffect,
-            ResourceSource->GetActorLocation(),
-            FRotator::ZeroRotator);
-    }
-
 	ReceiveOnIssuedGatherOrder(OrderedPawn, ResourceSource);
 }
 
 void ARTSPlayerController::NotifyOnIssuedMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation)
 {
 	ReceiveOnIssuedMoveOrder(OrderedPawn, TargetLocation);
+}
+
+void ARTSPlayerController::NotifyOnIssuedOrderVisualFeedback(const FRTSOrderData& Order)
+{
+	if (Order.OrderClass == URTSAttackOrder::StaticClass())
+	{
+		if (IsValid(Order.TargetActor) && EnemyOrderEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
+				EnemyOrderEffect,
+				Order.TargetActor->GetRootComponent(),
+				NAME_None,
+				FVector::ZeroVector,
+				FRotator::ZeroRotator,
+				EAttachLocation::KeepRelativeOffset,
+				true);
+		}
+	}
+	else if (Order.OrderClass == URTSGatherOrder::StaticClass())
+	{
+		if (IsValid(Order.TargetActor) && ResourceOrderEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				ResourceOrderEffect,
+				Order.TargetActor->GetActorLocation(),
+				FRotator::ZeroRotator);
+		}
+	}
 }
 
 void ARTSPlayerController::NotifyOnIssuedSetRallyPoint(AActor* OrderedActor, const FVector& TargetLocation)

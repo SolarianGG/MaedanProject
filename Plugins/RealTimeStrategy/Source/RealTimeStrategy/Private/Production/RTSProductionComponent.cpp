@@ -260,6 +260,15 @@ float URTSProductionComponent::GetRemainingProductionTime(int32 QueueIndex /*= 0
 	return ProductionQueues[QueueIndex].RemainingProductionTime;
 }
 
+TArray<TSubclassOf<AActor>> URTSProductionComponent::GetQueuedProducts(int32 QueueIndex) const
+{
+	if (QueueIndex >= 0 && QueueIndex < ProductionQueues.Num())
+	{
+		return ProductionQueues[QueueIndex].Queue;
+	}
+	return TArray<TSubclassOf<AActor>>();
+}
+
 bool URTSProductionComponent::IsProducing() const
 {
 	for (int32 QueueIndex = 0; QueueIndex < QueueCount; ++QueueIndex)

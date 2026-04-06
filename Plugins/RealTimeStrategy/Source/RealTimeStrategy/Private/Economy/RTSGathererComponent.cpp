@@ -15,6 +15,9 @@
 #include "Libraries/RTSCollisionLibrary.h"
 #include "Libraries/RTSGameplayLibrary.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "RTSPawnAIController.h"
+#include "Orders/RTSGatherOrder.h"
 
 
 URTSGathererComponent::URTSGathererComponent(
@@ -42,15 +45,40 @@ void URTSGathererComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void URTSGathererComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
                                           FActorComponentTickFunction* ThisTickFunction)
 {
+	// Auto-start gathering when the unit enters gather range during movement.
+	// This prevents the BT move task from circling around the resource trying to
+	// reach its center — we begin gathering as soon as we are close enough.
 	if (!CurrentResourceSource)
 	{
-		return;
+		if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
+		{
+			if (ARTSPawnAIController* AIController = Cast<ARTSPawnAIController>(OwnerPawn->GetController()))
+			{
+				if (AIController->HasOrderByClass(URTSGatherOrder::StaticClass()))
+				{
+					UBlackboardComponent* BB = AIController->GetBlackboardComponent();
+					AActor* TargetActor = BB ? Cast<AActor>(BB->GetValueAsObject(TEXT("TargetActor"))) : nullptr;
+					if (IsValid(TargetActor))
+					{
+						StartGatheringResources(TargetActor);
+					}
+				}
+			}
+		}
+
+		if (!CurrentResourceSource)
+		{
+			return;
+		}
 	}
 
 	// Check range.
 	const float GatherRange = GetGatherRange(CurrentResourceSource);
 
-	if (URTSCollisionLibrary::GetActorDistance(GetOwner(), CurrentResourceSource, true) > GatherRange)
+	// Use a larger threshold for leaving than for entering to prevent flickering
+	// when the unit is near the boundary (e.g., due to minor position adjustments).
+	const float LeaveToleranceMultiplier = 1.2f;
+	if (URTSCollisionLibrary::GetActorDistance(GetOwner(), CurrentResourceSource, true) > GatherRange * LeaveToleranceMultiplier)
 	{
 		// Stop gathering — full cleanup including container unload and gatherer count.
 		LeaveCurrentResourceSource();
@@ -294,7 +322,16 @@ void URTSGathererComponent::StartGatheringResources(AActor* ResourceSource)
 	}
 
 	CurrentResourceSource = ResourceSource;
-	
+
+	// Stop pathfollowing immediately so the unit doesn't keep moving into the resource.
+	if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
+	{
+		if (AAIController* AIController = Cast<AAIController>(OwnerPawn->GetController()))
+		{
+			AIController->StopMovement();
+		}
+	}
+
 	ResourceSourceComponent->AddGatherer();
 
 	if (CarriedResourceType != ResourceSourceComponent->GetResourceType())

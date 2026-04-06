@@ -113,6 +113,7 @@ public:
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual FPathFollowingRequestResult MoveTo(const FAIMoveRequest& MoveRequest, FNavPathSharedPtr* OutPath = nullptr) override;
 
 private:
     /** Behavior tree to use for driving the pawn AI. */
