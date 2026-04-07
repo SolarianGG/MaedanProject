@@ -1446,6 +1446,8 @@ void ARTSPlayerController::ClientGameHasEnded_Implementation(bool bIsWinner)
 
 void ARTSPlayerController::StartSelectActors()
 {
+	bClickStartedOnProductionQueue = false;
+
 	if (BuildingCursor)
 	{
 		// We're selecting a building location instead.
@@ -1458,6 +1460,14 @@ void ARTSPlayerController::StartSelectActors()
 
 	if (GetMousePosition(MouseX, MouseY))
 	{
+		// Check if click is on production queue UI.
+		ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
+		if (HUD && HUD->IsPositionOnProductionQueue(MouseX, MouseY))
+		{
+			bClickStartedOnProductionQueue = true;
+			return;
+		}
+
 		SelectionFrameMouseStartPosition = FVector2D(MouseX, MouseY);
 		bCreatingSelectionFrame = true;
 	}
@@ -1465,16 +1475,12 @@ void ARTSPlayerController::StartSelectActors()
 
 void ARTSPlayerController::FinishSelectActors()
 {
-	// Don't process selection if the click is on the production queue UI.
-	ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
-	if (HUD)
+	// If the click started on the production queue, suppress selection.
+	if (bClickStartedOnProductionQueue)
 	{
-		float MouseX, MouseY;
-		if (GetMousePosition(MouseX, MouseY) && HUD->IsPositionOnProductionQueue(MouseX, MouseY))
-		{
-			bCreatingSelectionFrame = false;
-			return;
-		}
+		bClickStartedOnProductionQueue = false;
+		bCreatingSelectionFrame = false;
+		return;
 	}
 
 	// Get objects at pointer position.

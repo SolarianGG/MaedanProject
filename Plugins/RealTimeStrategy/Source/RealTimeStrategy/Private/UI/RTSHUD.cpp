@@ -18,6 +18,7 @@
 #include "UI/RTSFloatingCombatTextComponent.h"
 #include "UI/RTSFloatingCombatTextData.h"
 #include "UI/RTSHoveredActorWidgetComponent.h"
+#include "Engine/UserInterfaceSettings.h"
 
 
 void ARTSHUD::DrawHUD()
@@ -534,6 +535,12 @@ void ARTSHUD::DrawProductionQueue()
 		return;
 	}
 
+	// Apply DPI scale to match UMG widget scaling.
+	const float DPIScale = GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(FIntPoint(Canvas->SizeX, Canvas->SizeY));
+	const float ScaledIconSize = ProductionQueueIconSize * DPIScale;
+	const float ScaledIconPadding = ProductionQueueIconPadding * DPIScale;
+	const float ScaledBottomOffset = ProductionQueueBottomOffset * DPIScale;
+
 	const int32 QueueCount = ProductionComponent->GetQueueCount();
 
 	for (int32 QueueIndex = 0; QueueIndex < QueueCount; ++QueueIndex)
@@ -546,10 +553,10 @@ void ARTSHUD::DrawProductionQueue()
 		}
 
 		// Layout: centered horizontally, near bottom of screen.
-		const float TotalWidth = QueuedProducts.Num() * ProductionQueueIconSize +
-			(QueuedProducts.Num() - 1) * ProductionQueueIconPadding;
+		const float TotalWidth = QueuedProducts.Num() * ScaledIconSize +
+			(QueuedProducts.Num() - 1) * ScaledIconPadding;
 		const float StartX = (Canvas->SizeX - TotalWidth) * 0.5f;
-		const float StartY = Canvas->SizeY - ProductionQueueBottomOffset - ProductionQueueIconSize;
+		const float StartY = Canvas->SizeY - ScaledBottomOffset - ScaledIconSize;
 
 		for (int32 ProductIndex = 0; ProductIndex < QueuedProducts.Num(); ++ProductIndex)
 		{
@@ -559,13 +566,13 @@ void ARTSHUD::DrawProductionQueue()
 				continue;
 			}
 
-			const float IconX = StartX + ProductIndex * (ProductionQueueIconSize + ProductionQueueIconPadding);
+			const float IconX = StartX + ProductIndex * (ScaledIconSize + ScaledIconPadding);
 			const float IconY = StartY;
 
 			// Draw dark background.
 			FCanvasTileItem BackgroundTile(
 				FVector2D(IconX, IconY),
-				FVector2D(ProductionQueueIconSize, ProductionQueueIconSize),
+				FVector2D(ScaledIconSize, ScaledIconSize),
 				FLinearColor(0.0f, 0.0f, 0.0f, 0.6f));
 			BackgroundTile.BlendMode = SE_BLEND_Translucent;
 			Canvas->DrawItem(BackgroundTile);
@@ -583,7 +590,7 @@ void ARTSHUD::DrawProductionQueue()
 					FCanvasTileItem PortraitTile(
 						FVector2D(IconX, IconY),
 						PortraitResource,
-						FVector2D(ProductionQueueIconSize, ProductionQueueIconSize),
+						FVector2D(ScaledIconSize, ScaledIconSize),
 						FVector2D(0.0f, 0.0f),
 						FVector2D(1.0f, 1.0f),
 						FLinearColor::White);
@@ -596,12 +603,12 @@ void ARTSHUD::DrawProductionQueue()
 			if (ProductIndex == 0)
 			{
 				const float Progress = ProductionComponent->GetProgressPercentage(QueueIndex);
-				const float ProgressHeight = ProductionQueueIconSize * Progress;
-				const float ProgressY = IconY + ProductionQueueIconSize - ProgressHeight;
+				const float ProgressHeight = ScaledIconSize * Progress;
+				const float ProgressY = IconY + ScaledIconSize - ProgressHeight;
 
 				FCanvasTileItem ProgressTile(
 					FVector2D(IconX, ProgressY),
-					FVector2D(ProductionQueueIconSize, ProgressHeight),
+					FVector2D(ScaledIconSize, ProgressHeight),
 					FLinearColor(0.0f, 0.8f, 0.0f, 0.35f));
 				ProgressTile.BlendMode = SE_BLEND_Translucent;
 				Canvas->DrawItem(ProgressTile);
@@ -612,16 +619,16 @@ void ARTSHUD::DrawProductionQueue()
 				? FLinearColor(0.0f, 0.8f, 0.0f, 0.8f)
 				: FLinearColor(0.5f, 0.5f, 0.5f, 0.6f);
 
-			DrawLine(IconX, IconY, IconX + ProductionQueueIconSize, IconY, BorderColor);
-			DrawLine(IconX, IconY + ProductionQueueIconSize, IconX + ProductionQueueIconSize, IconY + ProductionQueueIconSize, BorderColor);
-			DrawLine(IconX, IconY, IconX, IconY + ProductionQueueIconSize, BorderColor);
-			DrawLine(IconX + ProductionQueueIconSize, IconY, IconX + ProductionQueueIconSize, IconY + ProductionQueueIconSize, BorderColor);
+			DrawLine(IconX, IconY, IconX + ScaledIconSize, IconY, BorderColor);
+			DrawLine(IconX, IconY + ScaledIconSize, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
+			DrawLine(IconX, IconY, IconX, IconY + ScaledIconSize, BorderColor);
+			DrawLine(IconX + ScaledIconSize, IconY, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
 
 			// Register hit box for click detection.
 			FName HitBoxName = *FString::Printf(TEXT("ProdQueue_%d_%d"), QueueIndex, ProductIndex);
 			AddHitBox(
 				FVector2D(IconX, IconY),
-				FVector2D(ProductionQueueIconSize, ProductionQueueIconSize),
+				FVector2D(ScaledIconSize, ScaledIconSize),
 				HitBoxName,
 				false,
 				0);
@@ -629,7 +636,7 @@ void ARTSHUD::DrawProductionQueue()
 			// Cache icon data for reference.
 			FRTSProductionQueueIconData IconData;
 			IconData.Position = FVector2D(IconX, IconY);
-			IconData.Size = FVector2D(ProductionQueueIconSize, ProductionQueueIconSize);
+			IconData.Size = FVector2D(ScaledIconSize, ScaledIconSize);
 			IconData.ProductionActor = ProductionActor;
 			IconData.QueueIndex = QueueIndex;
 			IconData.ProductIndex = ProductIndex;
