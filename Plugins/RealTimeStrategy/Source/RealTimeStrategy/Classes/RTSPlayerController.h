@@ -405,6 +405,10 @@ public:
 	void ReceiveOnVisionInfoAvailable(ARTSVisionInfo* VisionInfo);
 
 
+	/** Called by Blueprint timer to reset click marker state. */
+	UFUNCTION()
+	void ResetMarkerFlag();
+
 protected:
     virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -469,6 +473,14 @@ private:
     /** Orders that should be tried to apply for the input action IssueOrder, in order. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")
     TArray<TSubclassOf<URTSOrder>> DefaultOrders;
+
+    /** Material for selection circle when selecting enemy actors. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Selection")
+    UMaterialInterface* EnemySelectionCircleMaterial;
+
+    /** Material for selection circle when selecting resource actors. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Selection")
+    UMaterialInterface* ResourceSelectionCircleMaterial;
 
     /** Niagara effect to spawn when an attack order is issued on an enemy. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")

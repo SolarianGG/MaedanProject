@@ -120,6 +120,7 @@ void ARTSPlayerState::NotifyOnTeamChanged(ARTSTeamInfo* NewTeam)
 	}
 
 	// Notify listeners.
+	OnTeamChangedDelegate.Broadcast(NewTeam);
 	ReceiveOnTeamChanged(NewTeam);
 
 	// Notify player.

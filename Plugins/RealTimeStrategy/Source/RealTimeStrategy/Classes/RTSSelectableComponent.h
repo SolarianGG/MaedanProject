@@ -31,9 +31,9 @@ public:
     virtual void DestroyComponent(bool bPromoteChildren = false) override;
 
 
-	/** Selects the unit for the local player. */
+	/** Selects the unit for the local player. Optionally overrides the selection circle material. */
 	UFUNCTION(BlueprintCallable)
-	void SelectActor();
+	void SelectActor(UMaterialInterface* OverrideMaterial = nullptr);
 
 	/** Deselects the unit for the local player. */
 	UFUNCTION(BlueprintCallable)

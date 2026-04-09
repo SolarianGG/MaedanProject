@@ -9,6 +9,7 @@
 
 
 class ARTSPlayerState;
+class ARTSTeamInfo;
 
 
 /**
@@ -33,8 +34,21 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "RTS")
 	int32 MaterialSlotIndex;
 
+	/** Component tag of the primary mesh to apply the material to. If empty, falls back to first SkeletalMesh/StaticMesh. */
+	UPROPERTY(EditDefaultsOnly, Category = "RTS")
+	FName PrimaryMeshComponentTag;
+
+	UPROPERTY()
+	ARTSPlayerState* PendingTeamPlayerState;
+
 	UFUNCTION()
 	void OnOwnerChanged(AActor* Actor, AController* NewOwner);
+
+	UFUNCTION()
+	void OnPlayerTeamChanged(ARTSTeamInfo* NewTeam);
+
+	void SubscribeToTeamChanged(ARTSPlayerState* PlayerState);
+	void UnsubscribeFromTeamChanged();
 
 	void ApplyTeamMaterial(uint8 TeamIndex);
 };

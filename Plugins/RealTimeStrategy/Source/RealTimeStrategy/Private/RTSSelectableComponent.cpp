@@ -57,7 +57,7 @@ void URTSSelectableComponent::DestroyComponent(bool bPromoteChildren /*= false*/
     }
 }
 
-void URTSSelectableComponent::SelectActor()
+void URTSSelectableComponent::SelectActor(UMaterialInterface* OverrideMaterial)
 {
 	if (bSelected)
 	{
@@ -66,9 +66,16 @@ void URTSSelectableComponent::SelectActor()
 
 	bSelected = true;
 
-    // Update selection circle.
+    // Update decal material if override provided.
     if (IsValid(DecalComponent))
     {
+        UMaterialInterface* MaterialToUse = OverrideMaterial ? OverrideMaterial : SelectionCircleMaterial;
+        if (MaterialToUse)
+        {
+            SelectionCircleMaterialInstance = UMaterialInstanceDynamic::Create(MaterialToUse, this);
+            DecalComponent->SetDecalMaterial(SelectionCircleMaterialInstance);
+        }
+
         DecalComponent->SetHiddenInGame(false);
     }
 

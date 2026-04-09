@@ -12,6 +12,9 @@ class AActor;
 class ARTSTeamInfo;
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRTSPlayerStateTeamChangedSignature, ARTSTeamInfo*, NewTeam);
+
+
 /**
 * Player state with RTS features, such as teams.
 */
@@ -21,6 +24,10 @@ class REALTIMESTRATEGY_API ARTSPlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
+	/** Event when this player's team has changed (fires on both server and client via OnRep). */
+	UPROPERTY(BlueprintAssignable, Category = "RTS")
+	FRTSPlayerStateTeamChangedSignature OnTeamChangedDelegate;
+
     static const uint8 PLAYER_INDEX_NONE;
 
     ARTSPlayerState(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());

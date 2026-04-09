@@ -1078,7 +1078,18 @@ void ARTSPlayerController::SelectActors(TArray<AActor*> Actors, ERTSSelectionCam
 
 		if (SelectableComponent)
 		{
-			SelectableComponent->SelectActor();
+			// Determine selection circle material override based on actor type.
+			UMaterialInterface* SelectionMaterialOverride = nullptr;
+			if (SelectedActor->FindComponentByClass<URTSResourceSourceComponent>())
+			{
+				SelectionMaterialOverride = ResourceSelectionCircleMaterial;
+			}
+			else if (!URTSGameplayLibrary::IsOwnedByLocalPlayer(SelectedActor))
+			{
+				SelectionMaterialOverride = EnemySelectionCircleMaterial;
+			}
+
+			SelectableComponent->SelectActor(SelectionMaterialOverride);
 
 			// Play selection sound.
 			if (SelectionSoundCooldownRemaining <= 0.0f &&
@@ -1971,6 +1982,13 @@ void ARTSPlayerController::NotifyOnGameHasEnded(bool bIsWinner)
 {
 	ReceiveOnGameHasEnded(bIsWinner);
 }
+
+void ARTSPlayerController::ResetMarkerFlag()
+{
+	// Called by Blueprint timer to reset click marker state.
+	// Logic is implemented in BP_RTSPlayerController.
+}
+
 
 void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrderData& Order)
 {

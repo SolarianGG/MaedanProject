@@ -1,6 +1,8 @@
 #include "RTSTeamMaterialComponent.h"
 
 #include "Components/MeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/Controller.h"
 
 #include "RTSLog.h"
@@ -13,6 +15,7 @@ URTSTeamMaterialComponent::URTSTeamMaterialComponent(const FObjectInitializer& O
 	: Super(ObjectInitializer)
 {
 	MaterialSlotIndex = 0;
+	PendingTeamPlayerState = nullptr;
 }
 
 void URTSTeamMaterialComponent::BeginPlay()
@@ -33,8 +36,6 @@ void URTSTeamMaterialComponent::BeginPlay()
 
 	OwnerComponent->OnOwnerChanged.AddDynamic(this, &URTSTeamMaterialComponent::OnOwnerChanged);
 
-	UE_LOG(LogRTS, Log, TEXT("%s: RTSTeamMaterialComponent bound to OnOwnerChanged."), *Owner->GetName());
-
 	// Apply material for the current owner if already set.
 	ARTSPlayerState* PlayerOwner = OwnerComponent->GetPlayerOwner();
 	if (IsValid(PlayerOwner))
@@ -42,24 +43,19 @@ void URTSTeamMaterialComponent::BeginPlay()
 		ARTSTeamInfo* Team = PlayerOwner->GetTeam();
 		if (IsValid(Team))
 		{
-			UE_LOG(LogRTS, Log, TEXT("%s: BeginPlay - owner already set, team %d."), *Owner->GetName(), Team->GetTeamIndex());
 			ApplyTeamMaterial(Team->GetTeamIndex());
 		}
 		else
 		{
-			UE_LOG(LogRTS, Warning, TEXT("%s: BeginPlay - owner set but Team is null."), *Owner->GetName());
+			// Team not yet replicated — wait for it.
+			SubscribeToTeamChanged(PlayerOwner);
 		}
-	}
-	else
-	{
-		UE_LOG(LogRTS, Log, TEXT("%s: BeginPlay - no owner yet, waiting for OnOwnerChanged."), *Owner->GetName());
 	}
 }
 
 void URTSTeamMaterialComponent::OnOwnerChanged(AActor* Actor, AController* NewOwner)
 {
-	UE_LOG(LogRTS, Log, TEXT("%s: OnOwnerChanged fired. NewOwner valid: %d"),
-		Actor ? *Actor->GetName() : TEXT("null"), IsValid(NewOwner));
+	UnsubscribeFromTeamChanged();
 
 	if (!IsValid(NewOwner))
 	{
@@ -69,25 +65,52 @@ void URTSTeamMaterialComponent::OnOwnerChanged(AActor* Actor, AController* NewOw
 	ARTSPlayerState* PlayerState = Cast<ARTSPlayerState>(NewOwner->PlayerState);
 	if (!IsValid(PlayerState))
 	{
-		UE_LOG(LogRTS, Warning, TEXT("%s: OnOwnerChanged - PlayerState is null."), *Actor->GetName());
 		return;
 	}
 
 	ARTSTeamInfo* Team = PlayerState->GetTeam();
-	if (!IsValid(Team))
+	if (IsValid(Team))
 	{
-		UE_LOG(LogRTS, Warning, TEXT("%s: OnOwnerChanged - Team is null."), *Actor->GetName());
-		return;
+		ApplyTeamMaterial(Team->GetTeamIndex());
 	}
+	else
+	{
+		// Team not yet replicated — wait for it.
+		SubscribeToTeamChanged(PlayerState);
+	}
+}
 
-	UE_LOG(LogRTS, Log, TEXT("%s: OnOwnerChanged - applying material for team %d."), *Actor->GetName(), Team->GetTeamIndex());
-	ApplyTeamMaterial(Team->GetTeamIndex());
+void URTSTeamMaterialComponent::OnPlayerTeamChanged(ARTSTeamInfo* NewTeam)
+{
+	if (IsValid(NewTeam))
+	{
+		ApplyTeamMaterial(NewTeam->GetTeamIndex());
+		UnsubscribeFromTeamChanged();
+	}
+}
+
+void URTSTeamMaterialComponent::SubscribeToTeamChanged(ARTSPlayerState* PlayerState)
+{
+	UnsubscribeFromTeamChanged();
+
+	PendingTeamPlayerState = PlayerState;
+	if (IsValid(PendingTeamPlayerState))
+	{
+		PendingTeamPlayerState->OnTeamChangedDelegate.AddDynamic(this, &URTSTeamMaterialComponent::OnPlayerTeamChanged);
+	}
+}
+
+void URTSTeamMaterialComponent::UnsubscribeFromTeamChanged()
+{
+	if (IsValid(PendingTeamPlayerState))
+	{
+		PendingTeamPlayerState->OnTeamChangedDelegate.RemoveDynamic(this, &URTSTeamMaterialComponent::OnPlayerTeamChanged);
+		PendingTeamPlayerState = nullptr;
+	}
 }
 
 void URTSTeamMaterialComponent::ApplyTeamMaterial(uint8 TeamIndex)
 {
-	UE_LOG(LogRTS, Log, TEXT("ApplyTeamMaterial called: TeamIndex=%d, TeamMaterials.Num=%d"), TeamIndex, TeamMaterials.Num());
-
 	if (!TeamMaterials.IsValidIndex(TeamIndex) || !TeamMaterials[TeamIndex])
 	{
 		UE_LOG(LogRTS, Warning, TEXT("ApplyTeamMaterial: invalid index %d or null material."), TeamIndex);
@@ -100,7 +123,33 @@ void URTSTeamMaterialComponent::ApplyTeamMaterial(uint8 TeamIndex)
 		return;
 	}
 
-	UMeshComponent* MeshComponent = Owner->FindComponentByClass<UMeshComponent>();
+	// Find the primary mesh component using tag, then fallback to SkeletalMesh, StaticMesh, any Mesh.
+	UMeshComponent* MeshComponent = nullptr;
+
+	if (PrimaryMeshComponentTag.IsValid())
+	{
+		for (UActorComponent* Comp : Owner->GetComponentsByTag(UMeshComponent::StaticClass(), PrimaryMeshComponentTag))
+		{
+			MeshComponent = Cast<UMeshComponent>(Comp);
+			break;
+		}
+	}
+
+	if (!IsValid(MeshComponent))
+	{
+		MeshComponent = Owner->FindComponentByClass<USkeletalMeshComponent>();
+	}
+
+	if (!IsValid(MeshComponent))
+	{
+		MeshComponent = Owner->FindComponentByClass<UStaticMeshComponent>();
+	}
+
+	if (!IsValid(MeshComponent))
+	{
+		MeshComponent = Owner->FindComponentByClass<UMeshComponent>();
+	}
+
 	if (!IsValid(MeshComponent))
 	{
 		UE_LOG(LogRTS, Warning, TEXT("%s has RTSTeamMaterialComponent but no MeshComponent."), *Owner->GetName());
