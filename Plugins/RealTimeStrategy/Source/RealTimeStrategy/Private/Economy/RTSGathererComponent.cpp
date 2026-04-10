@@ -40,75 +40,77 @@ void URTSGathererComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 	DOREPLIFETIME(URTSGathererComponent, CarriedResourceAmount);
 	DOREPLIFETIME(URTSGathererComponent, CarriedResourceType);
+	DOREPLIFETIME(URTSGathererComponent, CurrentResourceSource);
 }
 
 void URTSGathererComponent::TickComponent(float DeltaTime, enum ELevelTick TickType,
                                           FActorComponentTickFunction* ThisTickFunction)
 {
-	// Auto-start gathering when the unit enters gather range during movement.
-	// This prevents the BT move task from circling around the resource trying to
-	// reach its center — we begin gathering as soon as we are close enough.
-	if (!CurrentResourceSource)
+	// --- Server-only gameplay logic ---
+	if (GetOwner()->HasAuthority())
 	{
-		if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
+		// Auto-start gathering when the unit enters gather range during movement.
+		if (!CurrentResourceSource)
 		{
-			if (ARTSPawnAIController* AIController = Cast<ARTSPawnAIController>(OwnerPawn->GetController()))
+			if (APawn* OwnerPawn = Cast<APawn>(GetOwner()))
 			{
-				if (AIController->HasOrderByClass(URTSGatherOrder::StaticClass()))
+				if (ARTSPawnAIController* AIController = Cast<ARTSPawnAIController>(OwnerPawn->GetController()))
 				{
-					UBlackboardComponent* BB = AIController->GetBlackboardComponent();
-					AActor* TargetActor = BB ? Cast<AActor>(BB->GetValueAsObject(TEXT("TargetActor"))) : nullptr;
-					if (IsValid(TargetActor))
+					if (AIController->HasOrderByClass(URTSGatherOrder::StaticClass()))
 					{
-						StartGatheringResources(TargetActor);
+						UBlackboardComponent* BB = AIController->GetBlackboardComponent();
+						AActor* TargetActor = BB ? Cast<AActor>(BB->GetValueAsObject(TEXT("TargetActor"))) : nullptr;
+						if (IsValid(TargetActor))
+						{
+							StartGatheringResources(TargetActor);
+						}
 					}
 				}
 			}
 		}
 
-		if (!CurrentResourceSource)
+		if (CurrentResourceSource)
 		{
-			return;
-		}
-	}
+			// Check range.
+			const float GatherRange = GetGatherRange(CurrentResourceSource);
 
-	// Check range.
-	const float GatherRange = GetGatherRange(CurrentResourceSource);
-
-	// Use a larger threshold for leaving than for entering to prevent flickering
-	// when the unit is near the boundary (e.g., due to minor position adjustments).
-	const float LeaveToleranceMultiplier = 1.2f;
-	if (URTSCollisionLibrary::GetActorDistance(GetOwner(), CurrentResourceSource, true) > GatherRange * LeaveToleranceMultiplier)
-	{
-		// Stop gathering — full cleanup including container unload and gatherer count.
-		LeaveCurrentResourceSource();
-		return;
-	}
-
-	// Ensure animation is playing while gathering.
-	FRTSGatherData GatherData;
-	if (GetGatherDataForResourceSource(CurrentResourceSource, &GatherData) && GatherData.CollectingAnimMontage)
-	{
-		if (const auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
-		{
-			if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+			// Use a larger threshold for leaving than for entering to prevent flickering.
+			const float LeaveToleranceMultiplier = 1.2f;
+			if (URTSCollisionLibrary::GetActorDistance(GetOwner(), CurrentResourceSource, true) > GatherRange * LeaveToleranceMultiplier)
 			{
-				if (!AnimInstance->Montage_IsPlaying(GatherData.CollectingAnimMontage))
+				LeaveCurrentResourceSource();
+				return;
+			}
+
+			// Update cooldown timer.
+			if (RemainingCooldown > 0)
+			{
+				RemainingCooldown -= DeltaTime;
+
+				if (RemainingCooldown <= 0)
 				{
-					AnimInstance->Montage_Play(GatherData.CollectingAnimMontage, 1.0f);
+					GatherResources(CurrentResourceSource);
 				}
 			}
 		}
 	}
 
-	// Update cooldown timer.
-	if (RemainingCooldown > 0)
+	// --- Client + Server: play gathering animation ---
+	if (IsValid(CurrentResourceSource))
 	{
-		RemainingCooldown -= DeltaTime;
-
-		if (RemainingCooldown <= 0)
+		FRTSGatherData GatherData;
+		if (GetGatherDataForResourceSource(CurrentResourceSource, &GatherData) && GatherData.CollectingAnimMontage)
 		{
-			GatherResources(CurrentResourceSource);
+			if (const auto* SkeletalMeshComponent = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+			{
+				if (auto* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+				{
+					if (!AnimInstance->Montage_IsPlaying(GatherData.CollectingAnimMontage))
+					{
+						AnimInstance->Montage_Play(GatherData.CollectingAnimMontage, 1.0f);
+					}
+				}
+			}
 		}
 	}
 }

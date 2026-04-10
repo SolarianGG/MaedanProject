@@ -35,6 +35,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetClientHideReason(const FGameplayTag& HideReason, bool bHidden);
 
+    /** Client. Gets the current vision state for the local player. */
+    ERTSVisionState GetClientVisionState() const { return ClientVisionState; }
+
     /** Client. Remembers whether the actor is hidden due to vision for the local player. */
     void SetClientVisionState(ERTSVisionState InVisionState);
 

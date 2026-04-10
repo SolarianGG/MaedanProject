@@ -12,6 +12,7 @@
 
 class UWorld;
 
+class ARTSTeamInfo;
 class ARTSVisionVolume;
 
 
@@ -88,8 +89,15 @@ private:
 
 	void NotifyPlayerVisionInfoAvailable();
 
+	/** Whether we've already bound to the local player state's team change delegate for retry. */
+	bool bBoundToTeamChanged = false;
+
 	UFUNCTION()
 	virtual void ReceivedTeamIndex();
+
+	/** Called when the local player's team changes; retries vision info setup. */
+	UFUNCTION()
+	void OnLocalPlayerTeamChanged(ARTSTeamInfo* NewTeam);
 
     /** Checks whether we've got vision on the specified tile; cached for a short duration. */
     bool HasLocalVisionAt(int32 LocalTileX, int32 LocalTileY, int32 ActorSightRadiusTile, int32 GlobalTileX,

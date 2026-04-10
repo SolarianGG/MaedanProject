@@ -106,6 +106,16 @@ void ARTSVisionManager::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
+    // Lazy-init: re-acquire LocalPlayerState if it wasn't available during Initialize.
+    if (!IsValid(LocalPlayerState))
+    {
+        APlayerController* PC = GetGameInstance()->GetFirstLocalPlayerController();
+        if (IsValid(PC))
+        {
+            SetLocalPlayerState(PC->GetPlayerState<ARTSPlayerState>());
+        }
+    }
+
     // Update unit vision.
     for (FRTSVisionActor& VisionActor : VisionActors)
     {

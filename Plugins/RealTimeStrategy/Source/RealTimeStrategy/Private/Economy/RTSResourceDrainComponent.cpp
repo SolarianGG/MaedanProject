@@ -69,6 +69,11 @@ bool URTSResourceDrainComponent::CanAcceptGatherer() const
 
 void URTSResourceDrainComponent::RegisterGatherer(AActor* Gatherer)
 {
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
     if (!IsValid(Gatherer))
     {
         return;
@@ -80,6 +85,11 @@ void URTSResourceDrainComponent::RegisterGatherer(AActor* Gatherer)
 
 void URTSResourceDrainComponent::UnregisterGatherer(AActor* Gatherer)
 {
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
     if (!IsValid(Gatherer))
     {
         return;

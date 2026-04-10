@@ -68,12 +68,21 @@ private:
 	/** Timer handle for switching back to ambient. */
 	FTimerHandle PeaceTimerHandle;
 
+	/** Timer handle for periodic owned actor registration. */
+	FTimerHandle RegistrationSyncHandle;
+
+	/** Actors already registered for damage listening. */
+	TSet<TWeakObjectPtr<AActor>> RegisteredActors;
+
 	/** Called when an owned actor takes damage. */
 	UFUNCTION()
 	void OnOwnedActorHealthChanged(AActor* Actor, float OldHealth, float NewHealth, AActor* DamageCauser);
 
 	/** Called when the peace timer expires — switches back to ambient. */
 	void OnPeaceTimerExpired();
+
+	/** Periodically scans owned actors and registers any that are missing. */
+	void SyncRegisteredActors();
 
 	/** Plays the given sound, crossfading from the current track. */
 	void PlayTrack(USoundBase* Track);

@@ -2170,7 +2170,23 @@ void ARTSPlayerController::NotifyOnTeamChanged(ARTSTeamInfo* NewTeam)
 		{
 			NotifyOnVisionInfoAvailable(VisionInfo);
 		}
+		else
+		{
+			// VisionInfo may not have replicated yet; retry periodically until it arrives.
+			uint8 TeamIdx = NewTeam->GetTeamIndex();
+			GetWorldTimerManager().SetTimer(VisionInfoRetryHandle, [this, TeamIdx]()
+			{
+				ARTSVisionInfo* VI = ARTSVisionInfo::GetVisionInfoForTeam(GetWorld(), TeamIdx);
+				if (IsValid(VI))
+				{
+					NotifyOnVisionInfoAvailable(VI);
+					GetWorldTimerManager().ClearTimer(VisionInfoRetryHandle);
+				}
+			}, 0.5f, true);
+		}
 	}
+
+	ReceiveOnTeamChanged(NewTeam);
 }
 
 void ARTSPlayerController::NotifyOnVisionInfoAvailable(ARTSVisionInfo* VisionInfo)

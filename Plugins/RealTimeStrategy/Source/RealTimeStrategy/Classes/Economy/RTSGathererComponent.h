@@ -121,7 +121,7 @@ private:
     TSubclassOf<class URTSResourceType> CarriedResourceType;
 
     /** Resource source the actor is currently gathering from .*/
-    UPROPERTY()
+    UPROPERTY(Replicated)
     AActor* CurrentResourceSource;
 
     /** Resource source the actor has been gathering from before.*/

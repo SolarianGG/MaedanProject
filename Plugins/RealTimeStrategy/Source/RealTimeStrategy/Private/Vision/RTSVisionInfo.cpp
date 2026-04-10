@@ -19,7 +19,7 @@ ARTSVisionInfo::ARTSVisionInfo(const FObjectInitializer& ObjectInitializer /*= F
 	// Enable replication.
 	bReplicates = true;
 	bAlwaysRelevant = true;
-	NetUpdateFrequency = 1.0f;
+	NetUpdateFrequency = 10.0f;
 
 	// Force ReceivedTeamIndex() on clients.
 	TeamIndex = 255;
@@ -310,10 +310,41 @@ void ARTSVisionInfo::NotifyPlayerVisionInfoAvailable()
 
 	if (!Team || Team->GetTeamIndex() != TeamIndex)
 	{
+		// Team not available yet or doesn't match — bind to player state's team change delegate for retry.
+		ARTSPlayerState* PS = Player->GetPlayerState();
+		if (PS && !bBoundToTeamChanged)
+		{
+			PS->OnTeamChangedDelegate.AddDynamic(this, &ARTSVisionInfo::OnLocalPlayerTeamChanged);
+			bBoundToTeamChanged = true;
+		}
 		return;
 	}
 
 	Player->NotifyOnVisionInfoAvailable(this);
+}
+
+void ARTSVisionInfo::OnLocalPlayerTeamChanged(ARTSTeamInfo* NewTeam)
+{
+	NotifyPlayerVisionInfoAvailable();
+
+	// If successful, unbind to avoid repeated calls.
+	if (NewTeam && NewTeam->GetTeamIndex() == TeamIndex)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			ARTSPlayerController* Player = Cast<ARTSPlayerController>(World->GetFirstPlayerController());
+			if (Player)
+			{
+				ARTSPlayerState* PS = Player->GetPlayerState();
+				if (PS)
+				{
+					PS->OnTeamChangedDelegate.RemoveDynamic(this, &ARTSVisionInfo::OnLocalPlayerTeamChanged);
+					bBoundToTeamChanged = false;
+				}
+			}
+		}
+	}
 }
 
 void ARTSVisionInfo::ReceivedTeamIndex()

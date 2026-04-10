@@ -599,6 +599,9 @@ private:
     /** Timer handle for continuous order issuing while IssueOrder is held. */
     FTimerHandle ContinuousOrderTimerHandle;
 
+    /** Timer handle for retrying vision info lookup when team changes before VisionInfo replicates. */
+    FTimerHandle VisionInfoRetryHandle;
+
 
     /** Casts a ray from the current mouse position and collects the results. */
     bool GetObjectsAtPointerPosition(TArray<FHitResult>& OutHitResults) const;

@@ -6,6 +6,9 @@
 
 #include "Combat/RTSHealthComponent.h"
 #include "RTSLog.h"
+#include "RTSOwnerComponent.h"
+#include "RTSPlayerController.h"
+#include "RTSPlayerState.h"
 
 
 URTSMusicManagerComponent::URTSMusicManagerComponent(const FObjectInitializer& ObjectInitializer)
@@ -26,6 +29,16 @@ void URTSMusicManagerComponent::BeginPlay()
 	{
 		PlayTrack(AmbientMusic);
 	}
+
+	// Periodically scan for owned actors that need registration.
+	// This handles replication timing issues where actors arrive after initial discovery.
+	GetWorld()->GetTimerManager().SetTimer(
+		RegistrationSyncHandle,
+		this,
+		&URTSMusicManagerComponent::SyncRegisteredActors,
+		2.0f,
+		true,
+		1.0f);
 }
 
 void URTSMusicManagerComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -36,6 +49,7 @@ void URTSMusicManagerComponent::EndPlay(const EEndPlayReason::Type EndPlayReason
 	}
 
 	GetWorld()->GetTimerManager().ClearTimer(PeaceTimerHandle);
+	GetWorld()->GetTimerManager().ClearTimer(RegistrationSyncHandle);
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -47,10 +61,18 @@ void URTSMusicManagerComponent::RegisterActor(AActor* Actor)
 		return;
 	}
 
+	// Skip if already registered.
+	TWeakObjectPtr<AActor> WeakActor(Actor);
+	if (RegisteredActors.Contains(WeakActor))
+	{
+		return;
+	}
+
 	URTSHealthComponent* HealthComp = Actor->FindComponentByClass<URTSHealthComponent>();
 	if (HealthComp)
 	{
 		HealthComp->OnHealthChanged.AddDynamic(this, &URTSMusicManagerComponent::OnOwnedActorHealthChanged);
+		RegisteredActors.Add(WeakActor);
 	}
 }
 
@@ -61,10 +83,52 @@ void URTSMusicManagerComponent::UnregisterActor(AActor* Actor)
 		return;
 	}
 
+	TWeakObjectPtr<AActor> WeakActor(Actor);
+	if (!RegisteredActors.Contains(WeakActor))
+	{
+		return;
+	}
+
 	URTSHealthComponent* HealthComp = Actor->FindComponentByClass<URTSHealthComponent>();
 	if (HealthComp)
 	{
 		HealthComp->OnHealthChanged.RemoveDynamic(this, &URTSMusicManagerComponent::OnOwnedActorHealthChanged);
+	}
+
+	RegisteredActors.Remove(WeakActor);
+}
+
+void URTSMusicManagerComponent::SyncRegisteredActors()
+{
+	// Clean up stale entries.
+	for (auto It = RegisteredActors.CreateIterator(); It; ++It)
+	{
+		if (!It->IsValid())
+		{
+			It.RemoveCurrent();
+		}
+	}
+
+	// Find the owning player controller and its player state.
+	ARTSPlayerController* PC = Cast<ARTSPlayerController>(GetOwner());
+	if (!PC)
+	{
+		return;
+	}
+
+	ARTSPlayerState* PS = PC->GetPlayerState();
+	if (!PS)
+	{
+		return;
+	}
+
+	// Register any owned actors that aren't registered yet.
+	for (AActor* OwnedActor : PS->GetOwnActors())
+	{
+		if (IsValid(OwnedActor))
+		{
+			RegisterActor(OwnedActor);
+		}
 	}
 }
 

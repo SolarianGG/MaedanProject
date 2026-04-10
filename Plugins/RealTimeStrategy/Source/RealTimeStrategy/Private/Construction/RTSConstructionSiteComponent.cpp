@@ -240,11 +240,21 @@ bool URTSConstructionSiteComponent::CanAssignBuilder(AActor* Builder) const
 
 void URTSConstructionSiteComponent::AssignBuilder(AActor* Builder)
 {
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
     AssignedBuilders.Add(Builder);
 }
 
 void URTSConstructionSiteComponent::UnassignBuilder(AActor* Builder)
 {
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
     AssignedBuilders.Remove(Builder);
 }
 
