@@ -21,6 +21,7 @@
 #include "RTSGameState.h"
 #include "RTSLog.h"
 #include "RTSNameComponent.h"
+#include "RTSMusicManagerComponent.h"
 #include "RTSOwnerComponent.h"
 #include "RTSPlayerAdvantageComponent.h"
 #include "RTSPlayerState.h"
@@ -66,6 +67,7 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 {
 	PlayerAdvantageComponent = CreateDefaultSubobject<URTSPlayerAdvantageComponent>(TEXT("Player Advantage"));
 	PlayerResourcesComponent = CreateDefaultSubobject<URTSPlayerResourcesComponent>(TEXT("Player Resources"));
+	MusicManagerComponent = CreateDefaultSubobject<URTSMusicManagerComponent>(TEXT("Music Manager"));
 
 	// Set reasonable default values.
 	CameraSpeed = 1000.0f;
@@ -247,6 +249,15 @@ void ARTSPlayerController::OnPlayerStateAvailable(ARTSPlayerState* NewPlayerStat
 	if (IsValid(RTSPlayerState))
 	{
 		RTSPlayerState->DiscoverOwnActors();
+
+		// Register existing owned actors with the music manager.
+		if (MusicManagerComponent)
+		{
+			for (AActor* OwnedActor : RTSPlayerState->GetOwnActors())
+			{
+				MusicManagerComponent->RegisterActor(OwnedActor);
+			}
+		}
 	}
 
 	// Setup fog of war.
@@ -1949,6 +1960,20 @@ float ARTSPlayerController::GetCameraDistance() const
 
 void ARTSPlayerController::NotifyOnActorOwnerChanged(AActor* Actor)
 {
+	// Register/unregister actor with the music manager for damage tracking.
+	if (MusicManagerComponent && IsValid(Actor))
+	{
+		URTSOwnerComponent* OwnerComp = Actor->FindComponentByClass<URTSOwnerComponent>();
+		if (OwnerComp && OwnerComp->GetPlayerOwner() == GetPlayerState())
+		{
+			MusicManagerComponent->RegisterActor(Actor);
+		}
+		else
+		{
+			MusicManagerComponent->UnregisterActor(Actor);
+		}
+	}
+
 	ReceiveOnActorOwnerChanged(Actor);
 }
 

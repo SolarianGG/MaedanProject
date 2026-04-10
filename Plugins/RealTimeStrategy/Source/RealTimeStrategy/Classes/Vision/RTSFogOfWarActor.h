@@ -46,6 +46,14 @@ private:
 	UPROPERTY(EditInstanceOnly, Category = "RTS")
 	UMaterialInterface* FogOfWarMaterial;
 
+	/** Speed of fog fade transitions (higher = faster). */
+	UPROPERTY(EditAnywhere, Category = "RTS", meta = (ClampMin = "0.1", ClampMax = "20.0"))
+	float FogFadeSpeed = 5.0f;
+
+	/** Blur radius for softening fog edges (0 = no blur). */
+	UPROPERTY(EditAnywhere, Category = "RTS", meta = (ClampMin = "0", ClampMax = "3"))
+	int32 BlurRadius = 1;
+
 	/** Provides visibility information for how to render the fog of war. */
     UPROPERTY()
 	ARTSVisionInfo* VisionInfo;
@@ -56,10 +64,13 @@ private:
 
 	/** Texture containing visibility information to be rendered in 3D space. */
     UPROPERTY()
-	UTexture2D* FogOfWarTexture; 
+	UTexture2D* FogOfWarTexture;
 
 	/** Buffer for updating the contents of the fog of war texture. */
 	uint8* FogOfWarTextureBuffer;
+
+	/** Scratch buffer for blur passes. */
+	uint8* FogOfWarBlurBuffer;
 
 	/** Update region for updating the contents of the fog of war texture. */
 	FUpdateTextureRegion2D* FogOfWarUpdateTextureRegion;
@@ -67,4 +78,7 @@ private:
 	/** Post-process material instance for rendering fog of war in 3D space. */
     UPROPERTY()
 	UMaterialInstanceDynamic* FogOfWarMaterialInstance;
+
+	/** Applies a separable box blur to the fog of war texture buffer. */
+	void ApplyBlur(int32 TextureSize);
 };

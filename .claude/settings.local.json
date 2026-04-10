@@ -26,7 +26,8 @@
       "Bash(xargs strings:*)",
       "Bash(grep:*)",
       "Bash(ls:*)",
-      "Bash(\"C:/Program Files/Epic Games/UE_4.27/Engine/Build/BatchFiles/Build.bat\" RTSProject Win64 Development \"C:/Users/nazar/ue4/MaedanProject/RTSProject.uproject\" -waitmutex)"
+      "Bash(\"C:/Program Files/Epic Games/UE_4.27/Engine/Build/BatchFiles/Build.bat\" RTSProject Win64 Development \"C:/Users/nazar/ue4/MaedanProject/RTSProject.uproject\" -waitmutex)",
+      "Bash(\"C:/Program Files/Epic Games/UE_4.27/Engine/Build/BatchFiles/Build.bat\" RTSProject Win64 Development \"C:/Users/nazar/UE4/MaedanProject/RTSProject.uproject\" -waitmutex)"
     ]
   }
 }
