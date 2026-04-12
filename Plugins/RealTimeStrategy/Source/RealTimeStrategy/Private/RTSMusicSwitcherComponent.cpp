@@ -5,6 +5,7 @@
 #include "Sound/AmbientSound.h"
 #include "TimerManager.h"
 
+#include "Combat/RTSAttackComponent.h"
 #include "Combat/RTSHealthComponent.h"
 #include "RTSLog.h"
 #include "RTSOwnerComponent.h"
@@ -79,10 +80,24 @@ void URTSMusicSwitcherComponent::RegisterActor(AActor* Actor)
 		return;
 	}
 
+	bool bRegistered = false;
+
 	URTSHealthComponent* HealthComp = Actor->FindComponentByClass<URTSHealthComponent>();
 	if (HealthComp)
 	{
 		HealthComp->OnHealthChanged.AddDynamic(this, &URTSMusicSwitcherComponent::OnOwnedActorHealthChanged);
+		bRegistered = true;
+	}
+
+	URTSAttackComponent* AttackComp = Actor->FindComponentByClass<URTSAttackComponent>();
+	if (AttackComp)
+	{
+		AttackComp->OnAttackUsed.AddDynamic(this, &URTSMusicSwitcherComponent::OnOwnedActorAttackUsed);
+		bRegistered = true;
+	}
+
+	if (bRegistered)
+	{
 		RegisteredActors.Add(WeakActor);
 	}
 }
@@ -104,6 +119,12 @@ void URTSMusicSwitcherComponent::UnregisterActor(AActor* Actor)
 	if (HealthComp)
 	{
 		HealthComp->OnHealthChanged.RemoveDynamic(this, &URTSMusicSwitcherComponent::OnOwnedActorHealthChanged);
+	}
+
+	URTSAttackComponent* AttackComp = Actor->FindComponentByClass<URTSAttackComponent>();
+	if (AttackComp)
+	{
+		AttackComp->OnAttackUsed.RemoveDynamic(this, &URTSMusicSwitcherComponent::OnOwnedActorAttackUsed);
 	}
 
 	RegisteredActors.Remove(WeakActor);
@@ -151,7 +172,17 @@ void URTSMusicSwitcherComponent::OnOwnedActorHealthChanged(AActor* Actor, float 
 		return;
 	}
 
-	// Reset the peace timer every time damage is taken.
+	TriggerBattleMusic();
+}
+
+void URTSMusicSwitcherComponent::OnOwnedActorAttackUsed(AActor* Actor, const FRTSAttackData& Attack, AActor* Target, ARTSProjectile* Projectile)
+{
+	TriggerBattleMusic();
+}
+
+void URTSMusicSwitcherComponent::TriggerBattleMusic()
+{
+	// Reset the peace timer.
 	GetWorld()->GetTimerManager().ClearTimer(PeaceTimerHandle);
 	GetWorld()->GetTimerManager().SetTimer(
 		PeaceTimerHandle,

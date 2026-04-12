@@ -7,7 +7,9 @@
 #include "RTSMusicSwitcherComponent.generated.h"
 
 
+class ARTSProjectile;
 class UAudioComponent;
+struct FRTSAttackData;
 
 
 /**
@@ -81,6 +83,13 @@ private:
 	/** Called when an owned actor takes damage. */
 	UFUNCTION()
 	void OnOwnedActorHealthChanged(AActor* Actor, float OldHealth, float NewHealth, AActor* DamageCauser);
+
+	/** Called when an owned actor uses an attack. */
+	UFUNCTION()
+	void OnOwnedActorAttackUsed(AActor* Actor, const FRTSAttackData& Attack, AActor* Target, ARTSProjectile* Projectile);
+
+	/** Resets the peace timer and switches to battle music if needed. */
+	void TriggerBattleMusic();
 
 	/** Called when the peace timer expires -- switches back to ambient. */
 	void OnPeaceTimerExpired();
