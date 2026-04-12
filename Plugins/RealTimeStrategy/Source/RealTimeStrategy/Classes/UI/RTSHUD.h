@@ -20,6 +20,15 @@ struct FRTSProductionQueueIconData
 	int32 ProductIndex;
 };
 
+/** Cached data about a drawn ability icon for hit-testing. */
+struct FRTSAbilityIconData
+{
+	FVector2D Position;
+	FVector2D Size;
+	AActor* AbilityActor;
+	int32 AbilityIndex;
+};
+
 
 /**
 * HUD with RTS features, such as showing a selection frame.
@@ -35,6 +44,9 @@ public:
 
 	/** Returns true if the given screen position is over a production queue icon. */
 	bool IsPositionOnProductionQueue(float ScreenX, float ScreenY) const;
+
+	/** Returns true if the given screen position is over an ability icon. */
+	bool IsPositionOnAbilityIcons(float ScreenX, float ScreenY) const;
 
     /** Event for drawaing a floating combat text. */
     virtual void NotifyDrawFloatingCombatText(
@@ -193,6 +205,9 @@ private:
 	/** Draws the production queue icons for the selected building. */
 	void DrawProductionQueue();
 
+	/** Draws the ability icons for the selected unit. */
+	void DrawAbilityIcons();
+
     /** Size of each production queue icon, in pixels. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Production Queue")
     float ProductionQueueIconSize = 64.0f;
@@ -207,4 +222,19 @@ private:
 
     /** Cached icon data for click detection. Rebuilt every frame. */
     TArray<FRTSProductionQueueIconData> ProductionQueueIcons;
+
+    /** Size of each ability icon, in pixels. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Ability Icons")
+    float AbilityIconSize = 64.0f;
+
+    /** Padding between ability icons, in pixels. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Ability Icons")
+    float AbilityIconPadding = 4.0f;
+
+    /** Vertical offset from the bottom of the screen for ability icons. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Ability Icons")
+    float AbilityIconBottomOffset = 200.0f;
+
+    /** Cached ability icon data for click detection. Rebuilt every frame. */
+    TArray<FRTSAbilityIconData> AbilityIcons;
 };

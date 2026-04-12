@@ -13,6 +13,7 @@
 #include "RTSPlayerController.generated.h"
 
 
+class UDecalComponent;
 class USkeletalMesh;
 class USoundBase;
 
@@ -110,6 +111,26 @@ public:
     /** Orders the selected production actor to start producing the product with the specified index. */
     UFUNCTION(BlueprintCallable)
     void IssueProductionOrder(TSubclassOf<AActor> ProductClass);
+
+    /** Enters ability targeting mode for the specified ability index. */
+    UFUNCTION(BlueprintCallable)
+    void BeginAbilityTargeting(AActor* AbilityActor, int32 AbilityIndex);
+
+    /** Whether the player is currently targeting an ability. */
+    UFUNCTION(BlueprintPure)
+    bool IsAbilityTargeting() const;
+
+    /** Gets the ability index currently being targeted. */
+    UFUNCTION(BlueprintPure)
+    int32 GetAbilityTargetingIndex() const;
+
+    /** Gets the actor whose ability is being targeted. */
+    UFUNCTION(BlueprintPure)
+    AActor* GetAbilityTargetingActor() const;
+
+    /** Issues an ability order to the specified actor. */
+    UFUNCTION(BlueprintCallable)
+    bool IssueAbilityOrder(AActor* AbilityActor, int32 AbilityIndex, AActor* TargetActor, FVector TargetLocation);
 
 	/** Orders all selected units to stop all current actions. */
 	UFUNCTION(BlueprintCallable)
@@ -302,6 +323,15 @@ public:
 	/** Event when an actor has received a stop order. */
 	virtual void NotifyOnIssuedStopOrder(APawn* OrderedPawn);
 
+    /** Event when the player begins targeting an ability. */
+    virtual void NotifyOnAbilityTargetingStarted(AActor* AbilityActor, int32 AbilityIndex);
+
+    /** Event when the player confirms an ability target location. */
+    virtual void NotifyOnAbilityTargetingConfirmed(AActor* AbilityActor, int32 AbilityIndex, const FVector& Location);
+
+    /** Event when the player cancels ability targeting. */
+    virtual void NotifyOnAbilityTargetingCancelled(AActor* AbilityActor, int32 AbilityIndex);
+
 	/** Event when the player has clicked a spot on the minimap. */
 	virtual void NotifyOnMinimapClicked(const FPointerEvent& InMouseEvent, const FVector2D& MinimapPosition, const FVector& WorldPosition);
 
@@ -380,6 +410,18 @@ public:
 	/** Event when an actor has received a stop order. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedStopOrder"))
 	void ReceiveOnIssuedStopOrder(APawn* OrderedPawn);
+
+    /** Event when the player begins targeting an ability. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Abilities", meta = (DisplayName = "OnAbilityTargetingStarted"))
+    void ReceiveOnAbilityTargetingStarted(AActor* AbilityActor, int32 AbilityIndex);
+
+    /** Event when the player confirms an ability target location. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Abilities", meta = (DisplayName = "OnAbilityTargetingConfirmed"))
+    void ReceiveOnAbilityTargetingConfirmed(AActor* AbilityActor, int32 AbilityIndex, const FVector& Location);
+
+    /** Event when the player cancels ability targeting. */
+    UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Abilities", meta = (DisplayName = "OnAbilityTargetingCancelled"))
+    void ReceiveOnAbilityTargetingCancelled(AActor* AbilityActor, int32 AbilityIndex);
 
 	/** Event when the player has clicked a spot on the minimap. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Minimap", meta = (DisplayName = "OnMinimapClicked"))
@@ -483,6 +525,14 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Selection")
     UMaterialInterface* ResourceSelectionCircleMaterial;
 
+    /** Material for the ability targeting circle decal on the ground. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Abilities")
+    UMaterialInterface* AbilityTargetingCircleMaterial;
+
+    /** Default radius of the ability targeting circle, in cm. Overridden by ability range if set. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Abilities", meta = (ClampMin = 10))
+    float AbilityTargetingCircleRadius = 100.0f;
+
     /** Niagara effect to spawn when an attack order is issued on an enemy. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
     UNiagaraSystem* EnemyOrderEffect;
@@ -575,6 +625,23 @@ private:
 	/** Whether the current click started on the production queue UI. */
 	bool bClickStartedOnProductionQueue;
 
+	/** Whether the current click started on an ability icon. */
+	bool bClickStartedOnAbilityIcons;
+
+	/** Index of the ability currently being targeted, or -1 if not targeting. */
+	int32 AbilityTargetingIndex;
+
+	/** The actor whose ability is being targeted. */
+	UPROPERTY()
+	AActor* AbilityTargetingActor;
+
+	/** True during the same press/release cycle that entered ability targeting — prevents immediate confirmation. */
+	bool bAbilityTargetingJustEntered;
+
+	/** Decal component showing the ability targeting circle on the ground. */
+	UPROPERTY()
+	UDecalComponent* AbilityTargetingDecal;
+
 	/** Mouse position on screen when creating the selection frame started. */
 	FVector2D SelectionFrameMouseStartPosition;
 
@@ -643,6 +710,16 @@ private:
     /** Issues the specified order to the passed pawn. */
     UFUNCTION(Reliable, Server, WithValidation)
     void ServerIssueOrder(APawn* OrderedPawn, const FRTSOrderData& Order, bool bAppendToQueue);
+
+    /** Uses the specified ability on the target. */
+    UFUNCTION(Reliable, Server, WithValidation)
+    void ServerUseAbility(APawn* OrderedPawn, int32 AbilityIndex, AActor* TargetActor, FVector TargetLocation);
+
+    /** Confirms the current ability targeting at the hovered position. */
+    void ConfirmAbilityTargeting();
+
+    /** Cancels the current ability targeting. */
+    void CancelAbilityTargeting();
 
 	/** Start producing the specified product at the specified actor. */
 	UFUNCTION(Reliable, Server, WithValidation)

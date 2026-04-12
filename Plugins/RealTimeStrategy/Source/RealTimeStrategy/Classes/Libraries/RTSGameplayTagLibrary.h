@@ -121,4 +121,10 @@ public:
 
     /** Actor can produce other actors. */
     static const FGameplayTag& Status_Permanent_CanProduce();
+
+    /** Actor has mana resource. */
+    static const FGameplayTag& Status_Permanent_HasMana();
+
+    /** Actor has abilities. */
+    static const FGameplayTag& Status_Permanent_HasAbilities();
 };

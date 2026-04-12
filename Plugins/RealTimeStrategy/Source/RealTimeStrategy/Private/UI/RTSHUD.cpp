@@ -7,6 +7,8 @@
 
 #include "RTSPlayerController.h"
 #include "RTSPortraitComponent.h"
+#include "Abilities/RTSAbility.h"
+#include "Abilities/RTSAbilitySystemComponent.h"
 #include "Combat/RTSHealthComponent.h"
 #include "Combat/RTSHealthBarWidgetComponent.h"
 #include "Construction/RTSConstructionSiteComponent.h"
@@ -32,6 +34,7 @@ void ARTSHUD::DrawHUD()
 	DrawProductionProgressBars();
 	DrawHoveredActorWidget();
 	DrawProductionQueue();
+	DrawAbilityIcons();
 }
 
 void ARTSHUD::NotifyDrawFloatingCombatText(AActor* Actor, const FString& Text, const FLinearColor& Color, float Scale, float Lifetime, float RemainingLifetime, float LifetimePercentage, float SuggestedTextLeft, float SuggestedTextTop)
@@ -663,34 +666,217 @@ void ARTSHUD::NotifyHitBoxClick(FName BoxName)
 	Super::NotifyHitBoxClick(BoxName);
 
 	const FString BoxString = BoxName.ToString();
-	if (!BoxString.StartsWith(TEXT("ProdQueue_")))
+
+	// Handle production queue clicks.
+	if (BoxString.StartsWith(TEXT("ProdQueue_")))
+	{
+		// Parse "ProdQueue_{QueueIndex}_{ProductIndex}".
+		int32 QueueIndex = 0;
+		int32 ProductIndex = 0;
+
+		TArray<FString> Parts;
+		BoxString.ParseIntoArray(Parts, TEXT("_"));
+		if (Parts.Num() >= 3)
+		{
+			QueueIndex = FCString::Atoi(*Parts[1]);
+			ProductIndex = FCString::Atoi(*Parts[2]);
+		}
+
+		// Find matching cached icon data.
+		for (const FRTSProductionQueueIconData& IconData : ProductionQueueIcons)
+		{
+			if (IconData.QueueIndex == QueueIndex && IconData.ProductIndex == ProductIndex)
+			{
+				ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
+				if (PlayerController)
+				{
+					PlayerController->RequestCancelProductionAt(IconData.ProductionActor, QueueIndex, ProductIndex);
+				}
+				break;
+			}
+		}
+		return;
+	}
+
+	// Handle ability icon clicks.
+	if (BoxString.StartsWith(TEXT("Ability_")))
+	{
+		int32 AbilityIndex = FCString::Atoi(*BoxString.Mid(8));
+
+		for (const FRTSAbilityIconData& IconData : AbilityIcons)
+		{
+			if (IconData.AbilityIndex == AbilityIndex)
+			{
+				ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
+				if (PlayerController)
+				{
+					PlayerController->BeginAbilityTargeting(IconData.AbilityActor, AbilityIndex);
+				}
+				break;
+			}
+		}
+		return;
+	}
+}
+
+void ARTSHUD::DrawAbilityIcons()
+{
+	AbilityIcons.Reset();
+
+	ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
+	if (!PlayerController)
 	{
 		return;
 	}
 
-	// Parse "ProdQueue_{QueueIndex}_{ProductIndex}".
-	int32 QueueIndex = 0;
-	int32 ProductIndex = 0;
+	// Find the first selected actor with an ability system component.
+	AActor* AbilityActor = nullptr;
+	URTSAbilitySystemComponent* AbilitySystem = nullptr;
 
-	TArray<FString> Parts;
-	BoxString.ParseIntoArray(Parts, TEXT("_"));
-	if (Parts.Num() >= 3)
+	for (AActor* SelectedActor : PlayerController->GetSelectedActors())
 	{
-		QueueIndex = FCString::Atoi(*Parts[1]);
-		ProductIndex = FCString::Atoi(*Parts[2]);
-	}
-
-	// Find matching cached icon data.
-	for (const FRTSProductionQueueIconData& IconData : ProductionQueueIcons)
-	{
-		if (IconData.QueueIndex == QueueIndex && IconData.ProductIndex == ProductIndex)
+		if (!IsValid(SelectedActor))
 		{
-			ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
-			if (PlayerController)
-			{
-				PlayerController->RequestCancelProductionAt(IconData.ProductionActor, QueueIndex, ProductIndex);
-			}
+			continue;
+		}
+
+		auto* AbilityComp = SelectedActor->FindComponentByClass<URTSAbilitySystemComponent>();
+		if (AbilityComp)
+		{
+			AbilityActor = SelectedActor;
+			AbilitySystem = AbilityComp;
 			break;
 		}
 	}
+
+	if (!AbilitySystem)
+	{
+		return;
+	}
+
+	TArray<FRTSAbilityData> Abilities = AbilitySystem->GetAbilities();
+	if (Abilities.Num() == 0)
+	{
+		return;
+	}
+
+	// Apply DPI scale.
+	const float DPIScale = GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(FIntPoint(Canvas->SizeX, Canvas->SizeY));
+	const float ScaledIconSize = AbilityIconSize * DPIScale;
+	const float ScaledIconPadding = AbilityIconPadding * DPIScale;
+	const float ScaledBottomOffset = AbilityIconBottomOffset * DPIScale;
+
+	// Layout: centered horizontally, above the production queue.
+	const float TotalWidth = Abilities.Num() * ScaledIconSize +
+		(Abilities.Num() - 1) * ScaledIconPadding;
+	const float StartX = (Canvas->SizeX - TotalWidth) * 0.5f;
+	const float StartY = Canvas->SizeY - ScaledBottomOffset - ScaledIconSize;
+
+	for (int32 i = 0; i < Abilities.Num(); ++i)
+	{
+		const FRTSAbilityData& AbilityData = Abilities[i];
+		if (!AbilityData.AbilityClass)
+		{
+			continue;
+		}
+
+		const URTSAbility* AbilityCDO = AbilityData.AbilityClass->GetDefaultObject<URTSAbility>();
+
+		const float IconX = StartX + i * (ScaledIconSize + ScaledIconPadding);
+		const float IconY = StartY;
+
+		// Draw dark background.
+		FCanvasTileItem BackgroundTile(
+			FVector2D(IconX, IconY),
+			FVector2D(ScaledIconSize, ScaledIconSize),
+			FLinearColor(0.0f, 0.0f, 0.0f, 0.6f));
+		BackgroundTile.BlendMode = SE_BLEND_Translucent;
+		Canvas->DrawItem(BackgroundTile);
+
+		// Draw ability icon texture.
+		UTexture2D* Icon = AbilityCDO->GetAbilityIcon();
+		if (Icon)
+		{
+			const FTexture* IconResource = Icon->GetResource();
+			if (IconResource)
+			{
+				FCanvasTileItem IconTile(
+					FVector2D(IconX, IconY),
+					IconResource,
+					FVector2D(ScaledIconSize, ScaledIconSize),
+					FVector2D(0.0f, 0.0f),
+					FVector2D(1.0f, 1.0f),
+					FLinearColor::White);
+				IconTile.BlendMode = SE_BLEND_Translucent;
+				Canvas->DrawItem(IconTile);
+			}
+		}
+
+		// Draw cooldown overlay.
+		if (AbilityData.RemainingCooldown > 0 && AbilityCDO->GetCooldown() > 0)
+		{
+			const float CooldownFraction = AbilityData.RemainingCooldown / AbilityCDO->GetCooldown();
+			const float OverlayHeight = ScaledIconSize * CooldownFraction;
+
+			FCanvasTileItem CooldownTile(
+				FVector2D(IconX, IconY),
+				FVector2D(ScaledIconSize, OverlayHeight),
+				FLinearColor(0.0f, 0.0f, 0.0f, 0.6f));
+			CooldownTile.BlendMode = SE_BLEND_Translucent;
+			Canvas->DrawItem(CooldownTile);
+		}
+
+		// Draw border.
+		const bool bReady = AbilityData.RemainingCooldown <= 0;
+		const bool bIsTargeting = PlayerController->IsAbilityTargeting() && PlayerController->GetAbilityTargetingIndex() == i;
+		FLinearColor BorderColor;
+
+		if (bIsTargeting)
+		{
+			BorderColor = FLinearColor(1.0f, 0.8f, 0.0f, 1.0f); // Gold when targeting.
+		}
+		else if (bReady)
+		{
+			BorderColor = FLinearColor(0.0f, 0.8f, 0.0f, 0.8f); // Green when ready.
+		}
+		else
+		{
+			BorderColor = FLinearColor(0.5f, 0.5f, 0.5f, 0.6f); // Gray when on cooldown.
+		}
+
+		DrawLine(IconX, IconY, IconX + ScaledIconSize, IconY, BorderColor);
+		DrawLine(IconX, IconY + ScaledIconSize, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
+		DrawLine(IconX, IconY, IconX, IconY + ScaledIconSize, BorderColor);
+		DrawLine(IconX + ScaledIconSize, IconY, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
+
+		// Register hit box.
+		FName HitBoxName = *FString::Printf(TEXT("Ability_%d"), i);
+		AddHitBox(
+			FVector2D(IconX, IconY),
+			FVector2D(ScaledIconSize, ScaledIconSize),
+			HitBoxName,
+			false,
+			0);
+
+		// Cache icon data.
+		FRTSAbilityIconData IconDataEntry;
+		IconDataEntry.Position = FVector2D(IconX, IconY);
+		IconDataEntry.Size = FVector2D(ScaledIconSize, ScaledIconSize);
+		IconDataEntry.AbilityActor = AbilityActor;
+		IconDataEntry.AbilityIndex = i;
+		AbilityIcons.Add(IconDataEntry);
+	}
+}
+
+bool ARTSHUD::IsPositionOnAbilityIcons(float ScreenX, float ScreenY) const
+{
+	for (const FRTSAbilityIconData& IconData : AbilityIcons)
+	{
+		if (ScreenX >= IconData.Position.X && ScreenX <= IconData.Position.X + IconData.Size.X &&
+			ScreenY >= IconData.Position.Y && ScreenY <= IconData.Position.Y + IconData.Size.Y)
+		{
+			return true;
+		}
+	}
+	return false;
 }
