@@ -164,7 +164,11 @@ void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order, bool bAppendTo
 
     // Non-queued orders clear any pending queue.
     ClearOrderQueue();
+    ApplyOrder(Order);
+}
 
+void ARTSPawnAIController::ApplyOrder(const FRTSOrderData& Order)
+{
     // Unbind delegates from the previous order before updating CurrentOrder.
     UnbindOrderValidationDelegates();
     CurrentOrder = Order;
@@ -214,17 +218,23 @@ void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order, bool bAppendTo
 
 void ARTSPawnAIController::FinishCurrentOrder()
 {
-    if (OrderQueue.Num() > 0)
+    while (OrderQueue.Num() > 0)
     {
         FRTSOrderData NextOrder = OrderQueue[0];
         OrderQueue.RemoveAt(0);
         OnOrderQueueChanged.Broadcast(GetOwner(), OrderQueue);
-        IssueOrder(NextOrder, false);
+
+        // Skip orders whose actor target was destroyed while waiting in the queue.
+        if (NextOrder.TargetActor != nullptr && !IsValid(NextOrder.TargetActor))
+        {
+            continue;
+        }
+
+        ApplyOrder(NextOrder);
+        return;
     }
-    else
-    {
-        IssueStopOrder();
-    }
+
+    IssueStopOrder();
 }
 
 void ARTSPawnAIController::ClearOrderQueue()
@@ -260,8 +270,8 @@ void ARTSPawnAIController::ValidateCurrentOrder()
 
     if (!URTSOrderLibrary::CanObeyOrder(CurrentOrder.OrderClass, GetPawn(), CurrentOrder.Index))
     {
-        UE_LOG(LogRTS, Log, TEXT("%s: current order invalidated by tag change, stopping."), *GetPawn()->GetName());
-        IssueStopOrder();
+        UE_LOG(LogRTS, Log, TEXT("%s: current order invalidated by tag change, advancing queue."), *GetPawn()->GetName());
+        FinishCurrentOrder();
         return;
     }
 
@@ -271,8 +281,8 @@ void ARTSPawnAIController::ValidateCurrentOrder()
             GetPawn(), CurrentOrder.TargetActor, CurrentOrder.TargetLocation);
         if (!URTSOrderLibrary::IsValidOrderTarget(CurrentOrder.OrderClass, GetPawn(), TargetData, CurrentOrder.Index))
         {
-            UE_LOG(LogRTS, Log, TEXT("%s: current order target invalidated by tag change, stopping."), *GetPawn()->GetName());
-            IssueStopOrder();
+            UE_LOG(LogRTS, Log, TEXT("%s: current order target invalidated by tag change, advancing queue."), *GetPawn()->GetName());
+            FinishCurrentOrder();
         }
     }
 }
@@ -351,42 +361,45 @@ void ARTSPawnAIController::OnTargetDestroyed(AActor* DestroyedActor)
     DestroyedActor->OnDestroyed.RemoveDynamic(this, &ARTSPawnAIController::OnTargetDestroyed);
     CurrentOrder.TargetActor = nullptr;
 
-    IssueStopOrder();
+    // Advance to the next queued order instead of stopping — preserves the player's queue.
+    FinishCurrentOrder();
 }
 
 void ARTSPawnAIController::IssueAttackOrder(AActor* Target)
 {
+    if (!Blackboard) return;
     FRTSOrderData Order;
     Order.OrderClass = URTSAttackOrder::StaticClass();
     Order.TargetActor = Target;
-
-    IssueOrder(Order);
+    ApplyOrder(Order);
 }
 
 void ARTSPawnAIController::IssueBeginConstructionOrder(TSubclassOf<AActor> BuildingClass, const FVector& TargetLocation)
 {
+    if (!Blackboard) return;
     FRTSOrderData Order;
     Order.OrderClass = URTSBeginConstructionOrder::StaticClass();
     Order.Index = URTSConstructionLibrary::GetConstructableBuildingIndex(GetPawn(), BuildingClass);
     Order.TargetLocation = TargetLocation;
-
-    IssueOrder(Order);
+    ApplyOrder(Order);
 }
 
 void ARTSPawnAIController::IssueContinueConstructionOrder(AActor* ConstructionSite)
 {
+    if (!Blackboard) return;
     FRTSOrderData Order;
     Order.OrderClass = URTSContinueConstructionOrder::StaticClass();
     Order.TargetActor = ConstructionSite;
-    IssueOrder(Order);
+    ApplyOrder(Order);
 }
 
 void ARTSPawnAIController::IssueGatherOrder(AActor* ResourceSource)
 {
+    if (!Blackboard) return;
     FRTSOrderData Order;
     Order.OrderClass = URTSGatherOrder::StaticClass();
     Order.TargetActor = ResourceSource;
-    IssueOrder(Order);
+    ApplyOrder(Order);
 }
 
 void ARTSPawnAIController::IssueMoveOrder(const FVector& Location)
@@ -399,6 +412,14 @@ void ARTSPawnAIController::IssueMoveOrder(const FVector& Location)
 
 void ARTSPawnAIController::IssueReturnResourcesOrder()
 {
+    // If the player has queued more orders after the current one, skip the
+    // automatic return-resources phase and advance to the next queued order instead.
+    if (OrderQueue.Num() > 0)
+    {
+        FinishCurrentOrder();
+        return;
+    }
+
 	auto GathererComponent = GetPawn()->FindComponentByClass<URTSGathererComponent>();
 
 	if (!GathererComponent)
@@ -413,10 +434,11 @@ void ARTSPawnAIController::IssueReturnResourcesOrder()
 		return;
 	}
 
+    if (!Blackboard) return;
     FRTSOrderData Order;
     Order.OrderClass = URTSReturnResourcesOrder::StaticClass();
     Order.TargetActor = ResourceDrain;
-    IssueOrder(Order);
+    ApplyOrder(Order);
 }
 
 void ARTSPawnAIController::IssueStopOrder()

@@ -137,6 +137,9 @@ private:
     /** The order currently being executed, stored for live validation. */
     FRTSOrderData CurrentOrder;
 
+    /** Applies an order directly to the blackboard and BT without touching the queue. Used internally by IssueOrder and FinishCurrentOrder. */
+    void ApplyOrder(const FRTSOrderData& Order);
+
     /** Re-validates the current order against live tags; issues stop if it is no longer valid. */
     void ValidateCurrentOrder();
 

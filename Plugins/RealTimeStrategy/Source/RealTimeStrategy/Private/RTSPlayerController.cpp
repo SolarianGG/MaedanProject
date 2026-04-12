@@ -480,7 +480,8 @@ void ARTSPlayerController::IssueDefaultOrderToActor(AActor* Actor, AActor* Targe
 		Order.TargetActor = TargetActor;
 		Order.TargetLocation = TargetLocation;
 
-		ServerIssueOrder(IssuedPawn, Order, false);
+		const bool bShiftHeld = IsInputKeyDown(EKeys::LeftShift) || IsInputKeyDown(EKeys::RightShift);
+		ServerIssueOrder(IssuedPawn, Order, bShiftHeld);
 
 		// Notify listeners (e.g. click marker, target circle).
 		NotifyOnIssuedOrder(IssuedPawn, Order);
@@ -623,8 +624,12 @@ bool ARTSPlayerController::IsSelectableActor(AActor* Actor) const
 void ARTSPlayerController::StartContinuousOrder()
 {
 	IssueDefaultOrderToSelectedActors();
-	GetWorld()->GetTimerManager().SetTimer(ContinuousOrderTimerHandle, this,
-		&ARTSPlayerController::IssueDefaultOrderToSelectedActors, 0.1f, true);
+	// When Shift is held each click adds exactly one waypoint — don't spam the queue with the repeat timer.
+	if (!IsInputKeyDown(EKeys::LeftShift) && !IsInputKeyDown(EKeys::RightShift))
+	{
+		GetWorld()->GetTimerManager().SetTimer(ContinuousOrderTimerHandle, this,
+			&ARTSPlayerController::IssueDefaultOrderToSelectedActors, 0.1f, true);
+	}
 }
 
 void ARTSPlayerController::StopContinuousOrder()
