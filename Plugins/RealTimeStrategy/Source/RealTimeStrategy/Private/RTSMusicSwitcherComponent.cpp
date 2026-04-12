@@ -80,23 +80,23 @@ void URTSMusicSwitcherComponent::RegisterActor(AActor* Actor)
 		return;
 	}
 
-	bool bRegistered = false;
+	bool bShouldRegister = false;
 
 	URTSHealthComponent* HealthComp = Actor->FindComponentByClass<URTSHealthComponent>();
 	if (HealthComp)
 	{
 		HealthComp->OnHealthChanged.AddDynamic(this, &URTSMusicSwitcherComponent::OnOwnedActorHealthChanged);
-		bRegistered = true;
+		bShouldRegister = true;
 	}
 
 	URTSAttackComponent* AttackComp = Actor->FindComponentByClass<URTSAttackComponent>();
 	if (AttackComp)
 	{
 		AttackComp->OnAttackUsed.AddDynamic(this, &URTSMusicSwitcherComponent::OnOwnedActorAttackUsed);
-		bRegistered = true;
+		bShouldRegister = true;
 	}
 
-	if (bRegistered)
+	if (bShouldRegister)
 	{
 		RegisteredActors.Add(WeakActor);
 	}

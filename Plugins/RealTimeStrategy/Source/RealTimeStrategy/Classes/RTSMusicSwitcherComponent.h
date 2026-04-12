@@ -3,13 +3,13 @@
 #include "CoreMinimal.h"
 
 #include "Components/ActorComponent.h"
+#include "Combat/RTSAttackComponent.h"
 
 #include "RTSMusicSwitcherComponent.generated.h"
 
 
 class ARTSProjectile;
 class UAudioComponent;
-struct FRTSAttackData;
 
 
 /**
