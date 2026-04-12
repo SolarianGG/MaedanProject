@@ -74,4 +74,7 @@ private:
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastPlayAttackMontage(UAnimMontage* Montage);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastNotifyAttackUsed(AActor* InActor, AActor* InTarget);
 };

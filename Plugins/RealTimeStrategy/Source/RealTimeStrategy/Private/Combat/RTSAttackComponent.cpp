@@ -145,8 +145,11 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 	// Start cooldown timer.
 	RemainingCooldown = Attack.Cooldown;
 
-	// Notify listeners.
+	// Notify listeners (server-side, with full data).
 	OnAttackUsed.Broadcast(Owner, Attack, Target, SpawnedProjectile);
+
+	// Replicate to clients so they can react (e.g. battle music).
+	MulticastNotifyAttackUsed(Owner, Target);
 }
 
 float URTSAttackComponent::GetAcquisitionRadius() const
@@ -167,6 +170,16 @@ TArray<FRTSAttackData> URTSAttackComponent::GetAttacks() const
 float URTSAttackComponent::GetRemainingCooldown() const
 {
 	return RemainingCooldown;
+}
+
+void URTSAttackComponent::MulticastNotifyAttackUsed_Implementation(AActor* InActor, AActor* InTarget)
+{
+	// On clients, broadcast OnAttackUsed with minimal data (no Attack struct or Projectile).
+	if (!GetOwner()->HasAuthority())
+	{
+		FRTSAttackData DummyAttack;
+		OnAttackUsed.Broadcast(InActor, DummyAttack, InTarget, nullptr);
+	}
 }
 
 void URTSAttackComponent::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage)
