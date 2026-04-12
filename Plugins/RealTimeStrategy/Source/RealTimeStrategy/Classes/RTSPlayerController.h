@@ -20,6 +20,7 @@ class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
 class UNiagaraSystem;
 class ARTSRallyPointIndicator;
+class URTSMusicSwitcherComponent;
 class URTSPlayerAdvantageComponent;
 class URTSPlayerResourcesComponent;
 class ARTSPlayerState;
@@ -55,6 +56,9 @@ public:
 	/** Gets the list of units currently selected by this player. */
 	UFUNCTION(BlueprintPure)
 	TArray<AActor*> GetSelectedActors() const;
+
+	/** Requests cancellation of a specific product in a building's queue. */
+	void RequestCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex);
 
 	/** Casts a ray from the specified screen position and collects the results. */
 	bool GetObjectsAtScreenPosition(FVector2D ScreenPosition, TArray<FHitResult>& OutHitResults) const;
@@ -271,6 +275,9 @@ public:
     /** Event when a pawn has received an order. */
     virtual void NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrderData& Order);
 
+	/** Spawns visual feedback (Niagara effects) for an order. Called once per order command, not per unit. */
+	void NotifyOnIssuedOrderVisualFeedback(const FRTSOrderData& Order);
+
 	/** Event when an actor has received an attack order. */
 	virtual void NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target);
 
@@ -399,6 +406,10 @@ public:
 	void ReceiveOnVisionInfoAvailable(ARTSVisionInfo* VisionInfo);
 
 
+	/** Called by Blueprint timer to reset click marker state. */
+	UFUNCTION()
+	void ResetMarkerFlag();
+
 protected:
     virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -464,6 +475,14 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Orders")
     TArray<TSubclassOf<URTSOrder>> DefaultOrders;
 
+    /** Material for selection circle when selecting enemy actors. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Selection")
+    UMaterialInterface* EnemySelectionCircleMaterial;
+
+    /** Material for selection circle when selecting resource actors. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Selection")
+    UMaterialInterface* ResourceSelectionCircleMaterial;
+
     /** Niagara effect to spawn when an attack order is issued on an enemy. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
     UNiagaraSystem* EnemyOrderEffect;
@@ -495,6 +514,10 @@ private:
     /** Stores the resources available for this player. */
     UPROPERTY(VisibleAnywhere, Category = "RTS")
     URTSPlayerResourcesComponent* PlayerResourcesComponent;
+
+    /** Manages background music transitions between ambient and battle tracks. */
+    UPROPERTY(VisibleAnywhere, Category = "RTS")
+    URTSMusicSwitcherComponent* MusicSwitcherComponent;
 
     /** Volume that restricts the camera movement of this player. */
     UPROPERTY()
@@ -549,6 +572,9 @@ private:
 	/** Whether we're currently creating a selection frame by dragging the mouse. */
 	bool bCreatingSelectionFrame;
 
+	/** Whether the current click started on the production queue UI. */
+	bool bClickStartedOnProductionQueue;
+
 	/** Mouse position on screen when creating the selection frame started. */
 	FVector2D SelectionFrameMouseStartPosition;
 
@@ -572,6 +598,9 @@ private:
 
     /** Timer handle for continuous order issuing while IssueOrder is held. */
     FTimerHandle ContinuousOrderTimerHandle;
+
+    /** Timer handle for retrying vision info lookup when team changes before VisionInfo replicates. */
+    FTimerHandle VisionInfoRetryHandle;
 
 
     /** Casts a ray from the current mouse position and collects the results. */
@@ -622,6 +651,10 @@ private:
 	/** Cancels the current production at the specified actor. */
 	UFUNCTION(Reliable, Server, WithValidation)
 	void ServerCancelProduction(AActor* ProductionActor);
+
+	/** Cancels production at a specific index in the specified queue. */
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex);
 
     /** Surrenders the current match. */
     UFUNCTION(Reliable, Server, WithValidation)

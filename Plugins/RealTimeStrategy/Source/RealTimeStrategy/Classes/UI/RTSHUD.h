@@ -7,6 +7,20 @@
 #include "RTSHUD.generated.h"
 
 
+class URTSProductionComponent;
+
+
+/** Cached data about a drawn production queue icon for hit-testing. */
+struct FRTSProductionQueueIconData
+{
+	FVector2D Position;
+	FVector2D Size;
+	AActor* ProductionActor;
+	int32 QueueIndex;
+	int32 ProductIndex;
+};
+
+
 /**
 * HUD with RTS features, such as showing a selection frame.
 */
@@ -17,6 +31,10 @@ class REALTIMESTRATEGY_API ARTSHUD : public AHUD
 
 public:
 	virtual void DrawHUD() override;
+	virtual void NotifyHitBoxClick(FName BoxName) override;
+
+	/** Returns true if the given screen position is over a production queue icon. */
+	bool IsPositionOnProductionQueue(float ScreenX, float ScreenY) const;
 
     /** Event for drawaing a floating combat text. */
     virtual void NotifyDrawFloatingCombatText(
@@ -171,4 +189,22 @@ private:
 
     /** Hides the production progress bar of the specified actor. */
     void HideProductionProgressBar(AActor* Actor);
+
+	/** Draws the production queue icons for the selected building. */
+	void DrawProductionQueue();
+
+    /** Size of each production queue icon, in pixels. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Production Queue")
+    float ProductionQueueIconSize = 64.0f;
+
+    /** Padding between queue icons, in pixels. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Production Queue")
+    float ProductionQueueIconPadding = 4.0f;
+
+    /** Vertical offset from the bottom of the screen. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Production Queue")
+    float ProductionQueueBottomOffset = 120.0f;
+
+    /** Cached icon data for click detection. Rebuilt every frame. */
+    TArray<FRTSProductionQueueIconData> ProductionQueueIcons;
 };

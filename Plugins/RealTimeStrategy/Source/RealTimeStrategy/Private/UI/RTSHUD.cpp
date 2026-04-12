@@ -1,8 +1,12 @@
 #include "UI/RTSHUD.h"
 
 #include "EngineUtils.h"
+#include "CanvasItem.h"
+#include "Engine/Canvas.h"
+#include "Engine/Texture2D.h"
 
 #include "RTSPlayerController.h"
+#include "RTSPortraitComponent.h"
 #include "Combat/RTSHealthComponent.h"
 #include "Combat/RTSHealthBarWidgetComponent.h"
 #include "Construction/RTSConstructionSiteComponent.h"
@@ -14,6 +18,7 @@
 #include "UI/RTSFloatingCombatTextComponent.h"
 #include "UI/RTSFloatingCombatTextData.h"
 #include "UI/RTSHoveredActorWidgetComponent.h"
+#include "Engine/UserInterfaceSettings.h"
 
 
 void ARTSHUD::DrawHUD()
@@ -26,6 +31,7 @@ void ARTSHUD::DrawHUD()
 	DrawConstructionProgressBars();
 	DrawProductionProgressBars();
 	DrawHoveredActorWidget();
+	DrawProductionQueue();
 }
 
 void ARTSHUD::NotifyDrawFloatingCombatText(AActor* Actor, const FString& Text, const FLinearColor& Color, float Scale, float Lifetime, float RemainingLifetime, float LifetimePercentage, float SuggestedTextLeft, float SuggestedTextTop)
@@ -492,4 +498,199 @@ void ARTSHUD::HideProductionProgressBar(AActor* Actor)
     }
 
     ProductionProgressBarWidgetComponent->SetVisibility(false);
+}
+
+void ARTSHUD::DrawProductionQueue()
+{
+	ProductionQueueIcons.Reset();
+
+	ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
+	if (!PlayerController)
+	{
+		return;
+	}
+
+	// Find the first selected building with a production component.
+	AActor* ProductionActor = nullptr;
+	URTSProductionComponent* ProductionComponent = nullptr;
+
+	for (AActor* SelectedActor : PlayerController->GetSelectedActors())
+	{
+		if (!IsValid(SelectedActor))
+		{
+			continue;
+		}
+
+		auto* ProdComp = SelectedActor->FindComponentByClass<URTSProductionComponent>();
+		if (ProdComp && ProdComp->IsProducing())
+		{
+			ProductionActor = SelectedActor;
+			ProductionComponent = ProdComp;
+			break;
+		}
+	}
+
+	if (!ProductionComponent)
+	{
+		return;
+	}
+
+	// Apply DPI scale to match UMG widget scaling.
+	const float DPIScale = GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(FIntPoint(Canvas->SizeX, Canvas->SizeY));
+	const float ScaledIconSize = ProductionQueueIconSize * DPIScale;
+	const float ScaledIconPadding = ProductionQueueIconPadding * DPIScale;
+	const float ScaledBottomOffset = ProductionQueueBottomOffset * DPIScale;
+
+	const int32 QueueCount = ProductionComponent->GetQueueCount();
+
+	for (int32 QueueIndex = 0; QueueIndex < QueueCount; ++QueueIndex)
+	{
+		TArray<TSubclassOf<AActor>> QueuedProducts = ProductionComponent->GetQueuedProducts(QueueIndex);
+
+		if (QueuedProducts.Num() == 0)
+		{
+			continue;
+		}
+
+		// Layout: centered horizontally, near bottom of screen.
+		const float TotalWidth = QueuedProducts.Num() * ScaledIconSize +
+			(QueuedProducts.Num() - 1) * ScaledIconPadding;
+		const float StartX = (Canvas->SizeX - TotalWidth) * 0.5f;
+		const float StartY = Canvas->SizeY - ScaledBottomOffset - ScaledIconSize;
+
+		for (int32 ProductIndex = 0; ProductIndex < QueuedProducts.Num(); ++ProductIndex)
+		{
+			TSubclassOf<AActor> ProductClass = QueuedProducts[ProductIndex];
+			if (!ProductClass)
+			{
+				continue;
+			}
+
+			const float IconX = StartX + ProductIndex * (ScaledIconSize + ScaledIconPadding);
+			const float IconY = StartY;
+
+			// Draw dark background.
+			FCanvasTileItem BackgroundTile(
+				FVector2D(IconX, IconY),
+				FVector2D(ScaledIconSize, ScaledIconSize),
+				FLinearColor(0.0f, 0.0f, 0.0f, 0.6f));
+			BackgroundTile.BlendMode = SE_BLEND_Translucent;
+			Canvas->DrawItem(BackgroundTile);
+
+			// Get portrait texture from the product class CDO.
+			URTSPortraitComponent* PortraitComp =
+				URTSGameplayLibrary::FindDefaultComponentByClass<URTSPortraitComponent>(ProductClass);
+
+			if (PortraitComp && PortraitComp->GetPortrait())
+			{
+				UTexture2D* Portrait = PortraitComp->GetPortrait();
+				const FTexture* PortraitResource = Portrait->GetResource();
+				if (PortraitResource)
+				{
+					FCanvasTileItem PortraitTile(
+						FVector2D(IconX, IconY),
+						PortraitResource,
+						FVector2D(ScaledIconSize, ScaledIconSize),
+						FVector2D(0.0f, 0.0f),
+						FVector2D(1.0f, 1.0f),
+						FLinearColor::White);
+					PortraitTile.BlendMode = SE_BLEND_Translucent;
+					Canvas->DrawItem(PortraitTile);
+				}
+			}
+
+			// Draw progress overlay for the first item (currently producing).
+			if (ProductIndex == 0)
+			{
+				const float Progress = ProductionComponent->GetProgressPercentage(QueueIndex);
+				const float ProgressHeight = ScaledIconSize * Progress;
+				const float ProgressY = IconY + ScaledIconSize - ProgressHeight;
+
+				FCanvasTileItem ProgressTile(
+					FVector2D(IconX, ProgressY),
+					FVector2D(ScaledIconSize, ProgressHeight),
+					FLinearColor(0.0f, 0.8f, 0.0f, 0.35f));
+				ProgressTile.BlendMode = SE_BLEND_Translucent;
+				Canvas->DrawItem(ProgressTile);
+			}
+
+			// Draw border.
+			const FLinearColor BorderColor = (ProductIndex == 0)
+				? FLinearColor(0.0f, 0.8f, 0.0f, 0.8f)
+				: FLinearColor(0.5f, 0.5f, 0.5f, 0.6f);
+
+			DrawLine(IconX, IconY, IconX + ScaledIconSize, IconY, BorderColor);
+			DrawLine(IconX, IconY + ScaledIconSize, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
+			DrawLine(IconX, IconY, IconX, IconY + ScaledIconSize, BorderColor);
+			DrawLine(IconX + ScaledIconSize, IconY, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
+
+			// Register hit box for click detection.
+			FName HitBoxName = *FString::Printf(TEXT("ProdQueue_%d_%d"), QueueIndex, ProductIndex);
+			AddHitBox(
+				FVector2D(IconX, IconY),
+				FVector2D(ScaledIconSize, ScaledIconSize),
+				HitBoxName,
+				false,
+				0);
+
+			// Cache icon data for reference.
+			FRTSProductionQueueIconData IconData;
+			IconData.Position = FVector2D(IconX, IconY);
+			IconData.Size = FVector2D(ScaledIconSize, ScaledIconSize);
+			IconData.ProductionActor = ProductionActor;
+			IconData.QueueIndex = QueueIndex;
+			IconData.ProductIndex = ProductIndex;
+			ProductionQueueIcons.Add(IconData);
+		}
+	}
+}
+
+bool ARTSHUD::IsPositionOnProductionQueue(float ScreenX, float ScreenY) const
+{
+	for (const FRTSProductionQueueIconData& IconData : ProductionQueueIcons)
+	{
+		if (ScreenX >= IconData.Position.X && ScreenX <= IconData.Position.X + IconData.Size.X &&
+			ScreenY >= IconData.Position.Y && ScreenY <= IconData.Position.Y + IconData.Size.Y)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void ARTSHUD::NotifyHitBoxClick(FName BoxName)
+{
+	Super::NotifyHitBoxClick(BoxName);
+
+	const FString BoxString = BoxName.ToString();
+	if (!BoxString.StartsWith(TEXT("ProdQueue_")))
+	{
+		return;
+	}
+
+	// Parse "ProdQueue_{QueueIndex}_{ProductIndex}".
+	int32 QueueIndex = 0;
+	int32 ProductIndex = 0;
+
+	TArray<FString> Parts;
+	BoxString.ParseIntoArray(Parts, TEXT("_"));
+	if (Parts.Num() >= 3)
+	{
+		QueueIndex = FCString::Atoi(*Parts[1]);
+		ProductIndex = FCString::Atoi(*Parts[2]);
+	}
+
+	// Find matching cached icon data.
+	for (const FRTSProductionQueueIconData& IconData : ProductionQueueIcons)
+	{
+		if (IconData.QueueIndex == QueueIndex && IconData.ProductIndex == ProductIndex)
+		{
+			ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
+			if (PlayerController)
+			{
+				PlayerController->RequestCancelProductionAt(IconData.ProductionActor, QueueIndex, ProductIndex);
+			}
+			break;
+		}
+	}
 }

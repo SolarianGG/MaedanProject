@@ -14,12 +14,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
+#include "UI/RTSHUD.h"
 #include "RTSCameraBoundsVolume.h"
 #include "RTSPawnAIController.h"
 #include "RTSGameMode.h"
 #include "RTSGameState.h"
 #include "RTSLog.h"
 #include "RTSNameComponent.h"
+#include "RTSMusicSwitcherComponent.h"
 #include "RTSOwnerComponent.h"
 #include "RTSPlayerAdvantageComponent.h"
 #include "RTSPlayerState.h"
@@ -65,6 +67,7 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 {
 	PlayerAdvantageComponent = CreateDefaultSubobject<URTSPlayerAdvantageComponent>(TEXT("Player Advantage"));
 	PlayerResourcesComponent = CreateDefaultSubobject<URTSPlayerResourcesComponent>(TEXT("Player Resources"));
+	MusicSwitcherComponent = CreateDefaultSubobject<URTSMusicSwitcherComponent>(TEXT("Music Switcher"));
 
 	// Set reasonable default values.
 	CameraSpeed = 1000.0f;
@@ -246,6 +249,15 @@ void ARTSPlayerController::OnPlayerStateAvailable(ARTSPlayerState* NewPlayerStat
 	if (IsValid(RTSPlayerState))
 	{
 		RTSPlayerState->DiscoverOwnActors();
+
+		// Register existing owned actors with the music manager.
+		if (MusicSwitcherComponent)
+		{
+			for (AActor* OwnedActor : RTSPlayerState->GetOwnActors())
+			{
+				MusicSwitcherComponent->RegisterActor(OwnedActor);
+			}
+		}
 	}
 
 	// Setup fog of war.
@@ -427,11 +439,13 @@ bool ARTSPlayerController::IssueOrderToSelectedActors(const FRTSOrderData& Order
 		}
 
 		ServerIssueOrder(Unit, PawnOrder, bAppendToQueue);
+	}
 
-		if (!IsNetMode(NM_DedicatedServer))
-		{
-			NotifyOnIssuedOrder(Unit, PawnOrder);
-		}
+	// Notify once for the entire order, not per unit.
+	if (!IsNetMode(NM_DedicatedServer) && EligiblePawns.Num() > 0)
+	{
+		NotifyOnIssuedOrder(EligiblePawns[0], Order);
+		NotifyOnIssuedOrderVisualFeedback(Order);
 	}
 
 	return true;
@@ -1075,7 +1089,18 @@ void ARTSPlayerController::SelectActors(TArray<AActor*> Actors, ERTSSelectionCam
 
 		if (SelectableComponent)
 		{
-			SelectableComponent->SelectActor();
+			// Determine selection circle material override based on actor type.
+			UMaterialInterface* SelectionMaterialOverride = nullptr;
+			if (SelectedActor->FindComponentByClass<URTSResourceSourceComponent>())
+			{
+				SelectionMaterialOverride = ResourceSelectionCircleMaterial;
+			}
+			else if (!URTSGameplayLibrary::IsOwnedByLocalPlayer(SelectedActor))
+			{
+				SelectionMaterialOverride = EnemySelectionCircleMaterial;
+			}
+
+			SelectableComponent->SelectActor(SelectionMaterialOverride);
 
 			// Play selection sound.
 			if (SelectionSoundCooldownRemaining <= 0.0f &&
@@ -1443,6 +1468,8 @@ void ARTSPlayerController::ClientGameHasEnded_Implementation(bool bIsWinner)
 
 void ARTSPlayerController::StartSelectActors()
 {
+	bClickStartedOnProductionQueue = false;
+
 	if (BuildingCursor)
 	{
 		// We're selecting a building location instead.
@@ -1455,6 +1482,14 @@ void ARTSPlayerController::StartSelectActors()
 
 	if (GetMousePosition(MouseX, MouseY))
 	{
+		// Check if click is on production queue UI.
+		ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
+		if (HUD && HUD->IsPositionOnProductionQueue(MouseX, MouseY))
+		{
+			bClickStartedOnProductionQueue = true;
+			return;
+		}
+
 		SelectionFrameMouseStartPosition = FVector2D(MouseX, MouseY);
 		bCreatingSelectionFrame = true;
 	}
@@ -1462,6 +1497,14 @@ void ARTSPlayerController::StartSelectActors()
 
 void ARTSPlayerController::FinishSelectActors()
 {
+	// If the click started on the production queue, suppress selection.
+	if (bClickStartedOnProductionQueue)
+	{
+		bClickStartedOnProductionQueue = false;
+		bCreatingSelectionFrame = false;
+		return;
+	}
+
 	// Get objects at pointer position.
 	TArray<FHitResult> HitResults;
 
@@ -1785,6 +1828,33 @@ bool ARTSPlayerController::ServerCancelProduction_Validate(AActor* ProductionAct
 	return ProductionActor->GetOwner() == this;
 }
 
+void ARTSPlayerController::RequestCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex)
+{
+	if (!IsValid(ProductionActor))
+	{
+		return;
+	}
+
+	ServerCancelProductionAt(ProductionActor, QueueIndex, ProductIndex);
+}
+
+void ARTSPlayerController::ServerCancelProductionAt_Implementation(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex)
+{
+	auto ProductionComponent = ProductionActor->FindComponentByClass<URTSProductionComponent>();
+
+	if (!ProductionComponent)
+	{
+		return;
+	}
+
+	ProductionComponent->CancelProduction(QueueIndex, ProductIndex);
+}
+
+bool ARTSPlayerController::ServerCancelProductionAt_Validate(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex)
+{
+	return IsValid(ProductionActor) && ProductionActor->GetOwner() == this;
+}
+
 void ARTSPlayerController::ServerStartProduction_Implementation(AActor* ProductionActor,
                                                                 TSubclassOf<AActor> ProductClass)
 {
@@ -1890,6 +1960,20 @@ float ARTSPlayerController::GetCameraDistance() const
 
 void ARTSPlayerController::NotifyOnActorOwnerChanged(AActor* Actor)
 {
+	// Register/unregister actor with the music manager for damage tracking.
+	if (MusicSwitcherComponent && IsValid(Actor))
+	{
+		URTSOwnerComponent* OwnerComp = Actor->FindComponentByClass<URTSOwnerComponent>();
+		if (OwnerComp && OwnerComp->GetPlayerOwner() == GetPlayerState())
+		{
+			MusicSwitcherComponent->RegisterActor(Actor);
+		}
+		else
+		{
+			MusicSwitcherComponent->UnregisterActor(Actor);
+		}
+	}
+
 	ReceiveOnActorOwnerChanged(Actor);
 }
 
@@ -1923,6 +2007,13 @@ void ARTSPlayerController::NotifyOnGameHasEnded(bool bIsWinner)
 {
 	ReceiveOnGameHasEnded(bIsWinner);
 }
+
+void ARTSPlayerController::ResetMarkerFlag()
+{
+	// Called by Blueprint timer to reset click marker state.
+	// Logic is implemented in BP_RTSPlayerController.
+}
+
 
 void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrderData& Order)
 {
@@ -1968,18 +2059,6 @@ void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrd
 
 void ARTSPlayerController::NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target)
 {
-    if (IsValid(Target) && EnemyOrderEffect)
-    {
-        UNiagaraFunctionLibrary::SpawnSystemAttached(
-            EnemyOrderEffect,
-            Target->GetRootComponent(),
-            NAME_None,
-            FVector::ZeroVector,
-            FRotator::ZeroRotator,
-            EAttachLocation::KeepRelativeOffset,
-            true);
-    }
-
 	ReceiveOnIssuedAttackOrder(OrderedPawn, Target);
 }
 
@@ -1996,21 +2075,41 @@ void ARTSPlayerController::NotifyOnIssuedContinueConstructionOrder(APawn* Ordere
 
 void ARTSPlayerController::NotifyOnIssuedGatherOrder(APawn* OrderedPawn, AActor* ResourceSource)
 {
-    if (IsValid(ResourceSource) && ResourceOrderEffect)
-    {
-        UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-            GetWorld(),
-            ResourceOrderEffect,
-            ResourceSource->GetActorLocation(),
-            FRotator::ZeroRotator);
-    }
-
 	ReceiveOnIssuedGatherOrder(OrderedPawn, ResourceSource);
 }
 
 void ARTSPlayerController::NotifyOnIssuedMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation)
 {
 	ReceiveOnIssuedMoveOrder(OrderedPawn, TargetLocation);
+}
+
+void ARTSPlayerController::NotifyOnIssuedOrderVisualFeedback(const FRTSOrderData& Order)
+{
+	if (Order.OrderClass == URTSAttackOrder::StaticClass())
+	{
+		if (IsValid(Order.TargetActor) && EnemyOrderEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
+				EnemyOrderEffect,
+				Order.TargetActor->GetRootComponent(),
+				NAME_None,
+				FVector::ZeroVector,
+				FRotator::ZeroRotator,
+				EAttachLocation::KeepRelativeOffset,
+				true);
+		}
+	}
+	else if (Order.OrderClass == URTSGatherOrder::StaticClass())
+	{
+		if (IsValid(Order.TargetActor) && ResourceOrderEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				ResourceOrderEffect,
+				Order.TargetActor->GetActorLocation(),
+				FRotator::ZeroRotator);
+		}
+	}
 }
 
 void ARTSPlayerController::NotifyOnIssuedSetRallyPoint(AActor* OrderedActor, const FVector& TargetLocation)
@@ -2071,7 +2170,23 @@ void ARTSPlayerController::NotifyOnTeamChanged(ARTSTeamInfo* NewTeam)
 		{
 			NotifyOnVisionInfoAvailable(VisionInfo);
 		}
+		else
+		{
+			// VisionInfo may not have replicated yet; retry periodically until it arrives.
+			uint8 TeamIdx = NewTeam->GetTeamIndex();
+			GetWorldTimerManager().SetTimer(VisionInfoRetryHandle, [this, TeamIdx]()
+			{
+				ARTSVisionInfo* VI = ARTSVisionInfo::GetVisionInfoForTeam(GetWorld(), TeamIdx);
+				if (IsValid(VI))
+				{
+					NotifyOnVisionInfoAvailable(VI);
+					GetWorldTimerManager().ClearTimer(VisionInfoRetryHandle);
+				}
+			}, 0.5f, true);
+		}
 	}
+
+	ReceiveOnTeamChanged(NewTeam);
 }
 
 void ARTSPlayerController::NotifyOnVisionInfoAvailable(ARTSVisionInfo* VisionInfo)

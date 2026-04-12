@@ -188,6 +188,12 @@ void URTSHealthComponent::NotifyOnHealthChanged(AActor* Actor, float OldHealth, 
 
 void URTSHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
 {
+    // Only the server should modify health; clients receive the authoritative value via replication.
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
     SetCurrentHealth(CurrentHealth - Damage, DamageCauser);
 }
 

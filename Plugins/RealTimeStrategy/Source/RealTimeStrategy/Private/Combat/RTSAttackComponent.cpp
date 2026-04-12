@@ -19,6 +19,7 @@ URTSAttackComponent::URTSAttackComponent(const FObjectInitializer& ObjectInitial
 	: Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	SetIsReplicatedByDefault(true);
 
 	// Set reasonable default values.
 	AcquisitionRadius = 1000.0f;
@@ -55,6 +56,12 @@ void URTSAttackComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 {
 	AActor* Owner = GetOwner();
+
+	// Only the server should execute attacks; multicast RPCs only propagate from authority.
+	if (!Owner->HasAuthority())
+	{
+		return;
+	}
 	APawn* OwnerPawn = Cast<APawn>(Owner);
 	AController* OwnerController = Cast<AController>(Owner->GetOwner());
 

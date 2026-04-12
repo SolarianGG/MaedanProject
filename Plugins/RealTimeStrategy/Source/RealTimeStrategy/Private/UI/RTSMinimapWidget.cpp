@@ -13,6 +13,7 @@
 #include "Combat/RTSHealthComponent.h"
 #include "UI/RTSMinimapVolume.h"
 #include "Vision/RTSFogOfWarActor.h"
+#include "Vision/RTSVisibleComponent.h"
 #include "Vision/RTSVisionInfo.h"
 #include "Vision/RTSVisionState.h"
 #include "Vision/RTSVisionVolume.h"
@@ -220,6 +221,13 @@ void URTSMinimapWidget::DrawUnits(FPaintContext& InContext) const
         }
 
         if (Actor->IsHidden())
+        {
+            continue;
+        }
+
+        // Additional vision check: hide actors in unknown fog of war on minimap.
+        URTSVisibleComponent* VisibleComp = Actor->FindComponentByClass<URTSVisibleComponent>();
+        if (VisibleComp && VisibleComp->GetClientVisionState() == ERTSVisionState::VISION_Unknown)
         {
             continue;
         }
