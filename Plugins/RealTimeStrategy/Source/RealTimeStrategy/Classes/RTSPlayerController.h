@@ -20,7 +20,7 @@ class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
 class UNiagaraSystem;
 class ARTSRallyPointIndicator;
-class URTSMusicManagerComponent;
+class URTSMusicSwitcherComponent;
 class URTSPlayerAdvantageComponent;
 class URTSPlayerResourcesComponent;
 class ARTSPlayerState;
@@ -517,7 +517,7 @@ private:
 
     /** Manages background music transitions between ambient and battle tracks. */
     UPROPERTY(VisibleAnywhere, Category = "RTS")
-    URTSMusicManagerComponent* MusicManagerComponent;
+    URTSMusicSwitcherComponent* MusicSwitcherComponent;
 
     /** Volume that restricts the camera movement of this player. */
     UPROPERTY()

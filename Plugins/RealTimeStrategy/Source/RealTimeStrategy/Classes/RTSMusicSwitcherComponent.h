@@ -4,25 +4,25 @@
 
 #include "Components/ActorComponent.h"
 
-#include "RTSMusicManagerComponent.generated.h"
+#include "RTSMusicSwitcherComponent.generated.h"
 
 
 class UAudioComponent;
-class USoundBase;
 
 
 /**
- * Manages background music transitions between ambient and battle tracks.
+ * Manages background music transitions between ambient and battle tracks
+ * by controlling Ambient Sound actors placed in the level.
  * Switches to battle music when owned units/buildings take damage,
  * and returns to ambient after a configurable peace timeout.
  */
 UCLASS(meta = (BlueprintSpawnableComponent))
-class REALTIMESTRATEGY_API URTSMusicManagerComponent : public UActorComponent
+class REALTIMESTRATEGY_API URTSMusicSwitcherComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	URTSMusicManagerComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	URTSMusicSwitcherComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -42,13 +42,13 @@ public:
 	void StartAmbientMusic();
 
 private:
-	/** Ambient music track (plays by default). */
+	/** Actor tag used to find the ambient music Ambient Sound actor in the level. */
 	UPROPERTY(EditDefaultsOnly, Category = "RTS|Music")
-	USoundBase* AmbientMusic;
+	FName AmbientMusicTag;
 
-	/** Battle music track (plays when units take damage). */
+	/** Actor tag used to find the battle music Ambient Sound actor in the level. */
 	UPROPERTY(EditDefaultsOnly, Category = "RTS|Music")
-	USoundBase* BattleMusic;
+	FName BattleMusicTag;
 
 	/** Time in seconds without damage before switching back to ambient music. */
 	UPROPERTY(EditDefaultsOnly, Category = "RTS|Music", meta = (ClampMin = 1.0))
@@ -58,9 +58,13 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "RTS|Music", meta = (ClampMin = 0.0))
 	float CrossfadeDuration;
 
-	/** Audio component for the currently active track. */
+	/** Cached audio component from the ambient music Ambient Sound actor. */
 	UPROPERTY()
-	UAudioComponent* ActiveAudioComponent;
+	UAudioComponent* AmbientAudioComponent;
+
+	/** Cached audio component from the battle music Ambient Sound actor. */
+	UPROPERTY()
+	UAudioComponent* BattleAudioComponent;
 
 	/** Whether battle music is currently playing. */
 	bool bIsBattleMusicPlaying;
@@ -78,12 +82,12 @@ private:
 	UFUNCTION()
 	void OnOwnedActorHealthChanged(AActor* Actor, float OldHealth, float NewHealth, AActor* DamageCauser);
 
-	/** Called when the peace timer expires — switches back to ambient. */
+	/** Called when the peace timer expires -- switches back to ambient. */
 	void OnPeaceTimerExpired();
 
 	/** Periodically scans owned actors and registers any that are missing. */
 	void SyncRegisteredActors();
 
-	/** Plays the given sound, crossfading from the current track. */
-	void PlayTrack(USoundBase* Track);
+	/** Finds the UAudioComponent on an Ambient Sound actor with the given tag. */
+	UAudioComponent* FindMusicAudioComponent(FName Tag);
 };
