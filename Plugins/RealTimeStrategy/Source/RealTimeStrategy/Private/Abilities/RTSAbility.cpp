@@ -143,3 +143,13 @@ UNiagaraSystem* URTSAbility::GetTargetEffect() const
 {
     return TargetEffect;
 }
+
+float URTSAbility::GetTargetEffectZOffset() const
+{
+    return TargetEffectZOffset;
+}
+
+float URTSAbility::GetTargetingCircleSize() const
+{
+    return TargetingCircleSize;
+}

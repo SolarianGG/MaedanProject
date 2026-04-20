@@ -628,6 +628,12 @@ private:
 	/** Whether the current click started on an ability icon. */
 	bool bClickStartedOnAbilityIcons;
 
+	/** Whether the current click started on the world while in ability targeting mode. Set on press, triggers confirm on release. */
+	bool bClickStartedOnTargetingWorld;
+
+	/** Saved cursor-visible state before entering ability targeting, so we can restore it on confirm/cancel. */
+	bool bAbilityTargetingCursorWasVisible;
+
 	/** Index of the ability currently being targeted, or -1 if not targeting. */
 	int32 AbilityTargetingIndex;
 
@@ -638,9 +644,9 @@ private:
 	/** True during the same press/release cycle that entered ability targeting — prevents immediate confirmation. */
 	bool bAbilityTargetingJustEntered;
 
-	/** Decal component showing the ability targeting circle on the ground. */
+	/** Decal actor showing the ability targeting circle on the ground. */
 	UPROPERTY()
-	UDecalComponent* AbilityTargetingDecal;
+	class ADecalActor* AbilityTargetingDecalActor;
 
 	/** Mouse position on screen when creating the selection frame started. */
 	FVector2D SelectionFrameMouseStartPosition;

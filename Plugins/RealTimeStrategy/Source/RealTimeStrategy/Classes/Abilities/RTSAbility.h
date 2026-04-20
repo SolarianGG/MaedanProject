@@ -85,6 +85,14 @@ public:
     UFUNCTION(BlueprintPure)
     UNiagaraSystem* GetTargetEffect() const;
 
+    /** Gets the vertical offset applied to the target effect spawn location. */
+    UFUNCTION(BlueprintPure)
+    float GetTargetEffectZOffset() const;
+
+    /** Gets the world-space diameter (cm) of the targeting circle. Mirror this to your Niagara effect's Uniform Sprite Size. */
+    UFUNCTION(BlueprintPure)
+    float GetTargetingCircleSize() const;
+
 protected:
     /** Mana cost to activate this ability. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 0))
@@ -141,4 +149,12 @@ protected:
     /** Niagara effect to spawn at the target location (or target actor) when the ability is activated. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|VFX")
     UNiagaraSystem* TargetEffect;
+
+    /** Vertical offset (cm) added to the target effect spawn location. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|VFX")
+    float TargetEffectZOffset;
+
+    /** World-space diameter (cm) of the targeting circle decal. Set this to match the Niagara effect's Uniform Sprite Size. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|VFX", meta = (ClampMin = 0))
+    float TargetingCircleSize;
 };

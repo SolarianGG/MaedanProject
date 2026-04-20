@@ -174,6 +174,7 @@ void URTSAbilitySystemComponent::UseAbility(int32 AbilityIndex, AActor* TargetAc
 	if (CasterEffect || TargetEffect)
 	{
 		FVector EffectTargetLocation = IsValid(TargetActor) ? TargetActor->GetActorLocation() : TargetLocation;
+		EffectTargetLocation.Z += AbilityCDO->GetTargetEffectZOffset();
 		MulticastSpawnAbilityEffects(CasterEffect, TargetEffect, Owner->GetActorLocation(), EffectTargetLocation, Owner->GetActorRotation());
 	}
 
