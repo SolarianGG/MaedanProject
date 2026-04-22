@@ -318,3 +318,15 @@ const FGameplayTag& URTSGameplayTagLibrary::Status_Permanent_CanProduce()
     static FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(TEXT("Status.Permanent.CanProduce")));
     return Tag;
 }
+
+const FGameplayTag& URTSGameplayTagLibrary::Status_Permanent_HasMana()
+{
+    static FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(TEXT("Status.Permanent.HasMana")));
+    return Tag;
+}
+
+const FGameplayTag& URTSGameplayTagLibrary::Status_Permanent_HasAbilities()
+{
+    static FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(TEXT("Status.Permanent.HasAbilities")));
+    return Tag;
+}

@@ -15,6 +15,14 @@
 #include "Sound/SoundCue.h"
 
 #include "UI/RTSHUD.h"
+#include "Abilities/RTSAbility.h"
+#include "Abilities/RTSAbilitySystemComponent.h"
+#include "Components/DecalComponent.h"
+#include "Engine/DecalActor.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystem.h"
 #include "RTSCameraBoundsVolume.h"
 #include "RTSPawnAIController.h"
 #include "RTSGameMode.h"
@@ -100,6 +108,13 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 	DefaultOrderIgnoreTargetClasses.Add(ARTSCameraBoundsVolume::StaticClass());
 	DefaultOrderIgnoreTargetClasses.Add(ARTSVisionVolume::StaticClass());
 	DefaultOrderIgnoreTargetClasses.Add(ARTSMinimapVolume::StaticClass());
+
+	AbilityTargetingIndex = -1;
+	AbilityTargetingActor = nullptr;
+	AbilityTargetingDecalActor = nullptr;
+	bAbilityTargetingJustEntered = false;
+	bClickStartedOnTargetingWorld = false;
+	bAbilityTargetingCursorWasVisible = true;
 }
 
 void ARTSPlayerController::BeginPlay()
@@ -1474,6 +1489,31 @@ void ARTSPlayerController::ClientGameHasEnded_Implementation(bool bIsWinner)
 void ARTSPlayerController::StartSelectActors()
 {
 	bClickStartedOnProductionQueue = false;
+	bClickStartedOnAbilityIcons = false;
+	bClickStartedOnTargetingWorld = false;
+
+	// If we're in ability targeting mode, only record where the press started — confirm happens on release.
+	if (AbilityTargetingIndex >= 0)
+	{
+		float MouseX;
+		float MouseY;
+
+		if (GetMousePosition(MouseX, MouseY))
+		{
+			ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
+
+			// Press on another ability icon — NotifyHitBoxClick will handle the switch on release.
+			if (HUD && HUD->IsPositionOnAbilityIcons(MouseX, MouseY))
+			{
+				bClickStartedOnAbilityIcons = true;
+				return;
+			}
+		}
+
+		// Press in the world — confirm on matching release.
+		bClickStartedOnTargetingWorld = true;
+		return;
+	}
 
 	if (BuildingCursor)
 	{
@@ -1487,11 +1527,19 @@ void ARTSPlayerController::StartSelectActors()
 
 	if (GetMousePosition(MouseX, MouseY))
 	{
-		// Check if click is on production queue UI.
 		ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
+
+		// Check if click is on production queue UI.
 		if (HUD && HUD->IsPositionOnProductionQueue(MouseX, MouseY))
 		{
 			bClickStartedOnProductionQueue = true;
+			return;
+		}
+
+		// Check if click is on ability icons.
+		if (HUD && HUD->IsPositionOnAbilityIcons(MouseX, MouseY))
+		{
+			bClickStartedOnAbilityIcons = true;
 			return;
 		}
 
@@ -1502,6 +1550,50 @@ void ARTSPlayerController::StartSelectActors()
 
 void ARTSPlayerController::FinishSelectActors()
 {
+	// Ability targeting mode: confirm only when press + release both happened in the world
+	// (and not on the same click that entered targeting).
+	if (AbilityTargetingIndex >= 0)
+	{
+		// First click that entered targeting mode — consume without confirming.
+		if (bAbilityTargetingJustEntered)
+		{
+			bAbilityTargetingJustEntered = false;
+			bClickStartedOnAbilityIcons = false;
+			bClickStartedOnTargetingWorld = false;
+			bCreatingSelectionFrame = false;
+			return;
+		}
+
+		// Release while press was on an ability icon — let NotifyHitBoxClick handle the switch.
+		if (bClickStartedOnAbilityIcons)
+		{
+			bClickStartedOnAbilityIcons = false;
+			bCreatingSelectionFrame = false;
+			return;
+		}
+
+		// Press + release both in the world → confirm the ability.
+		if (bClickStartedOnTargetingWorld)
+		{
+			bClickStartedOnTargetingWorld = false;
+			bCreatingSelectionFrame = false;
+			ConfirmAbilityTargeting();
+			return;
+		}
+
+		// Release without a matching press in the world (e.g., press happened before targeting began) — ignore.
+		bCreatingSelectionFrame = false;
+		return;
+	}
+
+	// If the click started on an ability icon, suppress selection.
+	if (bClickStartedOnAbilityIcons)
+	{
+		bClickStartedOnAbilityIcons = false;
+		bCreatingSelectionFrame = false;
+		return;
+	}
+
 	// If the click started on the production queue, suppress selection.
 	if (bClickStartedOnProductionQueue)
 	{
@@ -1623,6 +1715,12 @@ void ARTSPlayerController::StopToggleSelection()
 
 void ARTSPlayerController::ConfirmBuildingPlacement()
 {
+	// Ability targeting confirms through FinishSelectActors on LMB release; skip here to avoid double-confirm.
+	if (AbilityTargetingIndex >= 0)
+	{
+		return;
+	}
+
 	if (!BuildingCursor)
 	{
 		return;
@@ -1725,6 +1823,13 @@ void ARTSPlayerController::ConfirmBuildingPlacement()
 
 void ARTSPlayerController::CancelBuildingPlacement()
 {
+	// Check if we're targeting an ability instead.
+	if (AbilityTargetingIndex >= 0)
+	{
+		CancelAbilityTargeting();
+		return;
+	}
+
 	if (!BuildingCursor)
 	{
 		return;
@@ -2371,6 +2476,12 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 				BuildingCursor->SetLocationValid(bLocationValid);
 			}
 
+			// Update position of ability targeting circle.
+			if (IsValid(AbilityTargetingDecalActor))
+			{
+				AbilityTargetingDecalActor->SetActorLocation(HoveredWorldPosition + FVector(0.0f, 0.0f, 10.0f));
+			}
+
 			// Check if hit any actor.
 			if (HitResult.Actor == nullptr || Cast<ALandscape>(HitResult.Actor.Get()) != nullptr)
 			{
@@ -2487,4 +2598,226 @@ void ARTSPlayerController::OnRep_PlayerState()
 	       *PlayerState->GetPlayerName());
 
 	OnPlayerStateAvailable(GetPlayerState());
+}
+
+void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 AbilityIndex)
+{
+	if (!IsValid(AbilityActor))
+	{
+		return;
+	}
+
+	// Cancel building placement if active.
+	if (BuildingCursor)
+	{
+		CancelBuildingPlacement();
+	}
+
+	AbilityTargetingActor = AbilityActor;
+	AbilityTargetingIndex = AbilityIndex;
+	bAbilityTargetingJustEntered = true;
+
+	// Clean up any previous targeting visuals.
+	if (IsValid(AbilityTargetingDecalActor))
+	{
+		AbilityTargetingDecalActor->Destroy();
+		AbilityTargetingDecalActor = nullptr;
+	}
+
+	// Resolve circle radius: prefer TargetingCircleSize on the ability, fall back to the ability Range, then to the controller default.
+	float CircleRadius = AbilityTargetingCircleRadius;
+	URTSAbilitySystemComponent* AbilitySystem = AbilityActor->FindComponentByClass<URTSAbilitySystemComponent>();
+	if (AbilitySystem)
+	{
+		TArray<FRTSAbilityData> Abilities = AbilitySystem->GetAbilities();
+		if (Abilities.IsValidIndex(AbilityIndex) && Abilities[AbilityIndex].AbilityClass)
+		{
+			const URTSAbility* AbilityCDO = Abilities[AbilityIndex].AbilityClass->GetDefaultObject<URTSAbility>();
+			const float CircleSize = AbilityCDO->GetTargetingCircleSize();
+			if (CircleSize > 0.0f)
+			{
+				CircleRadius = CircleSize;
+			}
+			else if (AbilityCDO->GetRange() > 0.0f)
+			{
+				CircleRadius = AbilityCDO->GetRange();
+			}
+		}
+	}
+
+	UE_LOG(LogRTS, Warning, TEXT("BeginAbilityTargeting: Material=%s, CircleRadius=%.1f, HoveredPos=%s"),
+		AbilityTargetingCircleMaterial ? *AbilityTargetingCircleMaterial->GetName() : TEXT("NULL"),
+		CircleRadius,
+		*HoveredWorldPosition.ToString());
+
+	if (AbilityTargetingCircleMaterial && CircleRadius > 0.0f)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Owner = this;
+		SpawnParams.ObjectFlags |= RF_Transient;
+
+		const FVector DecalSpawnLocation = HoveredWorldPosition + FVector(0.0f, 0.0f, 10.0f);
+		const FRotator DecalSpawnRotation = FRotator(-90.0f, 0.0f, 0.0f); // Pitch=-90 so decal projects downward.
+
+		AbilityTargetingDecalActor = GetWorld()->SpawnActor<ADecalActor>(DecalSpawnLocation, DecalSpawnRotation, SpawnParams);
+		if (AbilityTargetingDecalActor)
+		{
+			UMaterialInstanceDynamic* MatInstance = UMaterialInstanceDynamic::Create(AbilityTargetingCircleMaterial, this);
+			AbilityTargetingDecalActor->SetDecalMaterial(MatInstance);
+
+			// ADecalActor's default DecalSize is (128, 256, 256). Scale the actor so the projected area equals CircleRadius (cm) on each side.
+			const float ScaleXY = CircleRadius / 256.0f;
+			AbilityTargetingDecalActor->SetActorRelativeScale3D(FVector(1.0f, ScaleXY, ScaleXY));
+
+			UE_LOG(LogRTS, Warning, TEXT("BeginAbilityTargeting: DecalActor spawned at %s, radius=%.1f (scale=%.3f)"),
+				*DecalSpawnLocation.ToString(), CircleRadius, ScaleXY);
+		}
+		else
+		{
+			UE_LOG(LogRTS, Warning, TEXT("BeginAbilityTargeting: failed to spawn ADecalActor"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogRTS, Warning, TEXT("BeginAbilityTargeting: Decal NOT spawned (Material=%s, Radius=%.1f)"),
+			AbilityTargetingCircleMaterial ? TEXT("set") : TEXT("NULL"),
+			CircleRadius);
+	}
+
+	// Hide system cursor only if the decal was spawned — otherwise user would see nothing at all.
+	bAbilityTargetingCursorWasVisible = bShowMouseCursor;
+	if (IsValid(AbilityTargetingDecalActor))
+	{
+		bShowMouseCursor = false;
+	}
+
+	UE_LOG(LogRTS, Log, TEXT("Player began targeting ability %d on actor %s."), AbilityIndex, *AbilityActor->GetName());
+
+	NotifyOnAbilityTargetingStarted(AbilityActor, AbilityIndex);
+}
+
+bool ARTSPlayerController::IsAbilityTargeting() const
+{
+	return AbilityTargetingIndex >= 0;
+}
+
+int32 ARTSPlayerController::GetAbilityTargetingIndex() const
+{
+	return AbilityTargetingIndex;
+}
+
+AActor* ARTSPlayerController::GetAbilityTargetingActor() const
+{
+	return AbilityTargetingActor;
+}
+
+void ARTSPlayerController::ConfirmAbilityTargeting()
+{
+	if (AbilityTargetingIndex < 0 || !IsValid(AbilityTargetingActor))
+	{
+		CancelAbilityTargeting();
+		return;
+	}
+
+	AActor* Actor = AbilityTargetingActor;
+	int32 Index = AbilityTargetingIndex;
+	FVector Location = HoveredWorldPosition;
+
+	// Reset state before issuing order.
+	AbilityTargetingIndex = -1;
+	AbilityTargetingActor = nullptr;
+
+	// Destroy targeting circle.
+	if (IsValid(AbilityTargetingDecalActor))
+	{
+		AbilityTargetingDecalActor->Destroy();
+		AbilityTargetingDecalActor = nullptr;
+	}
+
+	// Restore system cursor.
+	bShowMouseCursor = bAbilityTargetingCursorWasVisible ? true : bShowMouseCursor;
+
+	IssueAbilityOrder(Actor, Index, HoveredActor, Location);
+
+	NotifyOnAbilityTargetingConfirmed(Actor, Index, Location);
+}
+
+void ARTSPlayerController::CancelAbilityTargeting()
+{
+	AActor* Actor = AbilityTargetingActor;
+	int32 Index = AbilityTargetingIndex;
+
+	AbilityTargetingIndex = -1;
+	AbilityTargetingActor = nullptr;
+	bClickStartedOnTargetingWorld = false;
+
+	// Destroy targeting circle.
+	if (IsValid(AbilityTargetingDecalActor))
+	{
+		AbilityTargetingDecalActor->Destroy();
+		AbilityTargetingDecalActor = nullptr;
+	}
+
+	// Restore system cursor.
+	bShowMouseCursor = bAbilityTargetingCursorWasVisible ? true : bShowMouseCursor;
+
+	if (Index >= 0)
+	{
+		UE_LOG(LogRTS, Log, TEXT("Player cancelled ability targeting."));
+		NotifyOnAbilityTargetingCancelled(Actor, Index);
+	}
+}
+
+bool ARTSPlayerController::IssueAbilityOrder(AActor* AbilityActor, int32 AbilityIndex, AActor* TargetActor, FVector TargetLocation)
+{
+	if (!IsValid(AbilityActor))
+	{
+		return false;
+	}
+
+	APawn* OrderedPawn = Cast<APawn>(AbilityActor);
+	if (!IsValid(OrderedPawn))
+	{
+		return false;
+	}
+
+	ServerUseAbility(OrderedPawn, AbilityIndex, TargetActor, TargetLocation);
+	return true;
+}
+
+void ARTSPlayerController::ServerUseAbility_Implementation(APawn* OrderedPawn, int32 AbilityIndex, AActor* TargetActor, FVector TargetLocation)
+{
+	if (!IsValid(OrderedPawn))
+	{
+		return;
+	}
+
+	URTSAbilitySystemComponent* AbilitySystem = OrderedPawn->FindComponentByClass<URTSAbilitySystemComponent>();
+	if (!IsValid(AbilitySystem))
+	{
+		return;
+	}
+
+	AbilitySystem->UseAbility(AbilityIndex, TargetActor, TargetLocation);
+}
+
+bool ARTSPlayerController::ServerUseAbility_Validate(APawn* OrderedPawn, int32 AbilityIndex, AActor* TargetActor, FVector TargetLocation)
+{
+	return IsValid(OrderedPawn) && OrderedPawn->GetOwner() == this;
+}
+
+void ARTSPlayerController::NotifyOnAbilityTargetingStarted(AActor* AbilityActor, int32 AbilityIndex)
+{
+	ReceiveOnAbilityTargetingStarted(AbilityActor, AbilityIndex);
+}
+
+void ARTSPlayerController::NotifyOnAbilityTargetingConfirmed(AActor* AbilityActor, int32 AbilityIndex, const FVector& Location)
+{
+	ReceiveOnAbilityTargetingConfirmed(AbilityActor, AbilityIndex, Location);
+}
+
+void ARTSPlayerController::NotifyOnAbilityTargetingCancelled(AActor* AbilityActor, int32 AbilityIndex)
+{
+	ReceiveOnAbilityTargetingCancelled(AbilityActor, AbilityIndex);
 }
