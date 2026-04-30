@@ -2658,7 +2658,8 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 		SpawnParams.ObjectFlags |= RF_Transient;
 
 		const FVector DecalSpawnLocation = HoveredWorldPosition + FVector(0.0f, 0.0f, 10.0f);
-		const FRotator DecalSpawnRotation = FRotator(-90.0f, 0.0f, 0.0f); // Pitch=-90 so decal projects downward.
+		// ADecalActor already orients its DecalComponent with Pitch=-90 in its constructor; spawn the actor with identity rotation.
+		const FRotator DecalSpawnRotation = FRotator::ZeroRotator;
 
 		AbilityTargetingDecalActor = GetWorld()->SpawnActor<ADecalActor>(DecalSpawnLocation, DecalSpawnRotation, SpawnParams);
 		if (AbilityTargetingDecalActor)
