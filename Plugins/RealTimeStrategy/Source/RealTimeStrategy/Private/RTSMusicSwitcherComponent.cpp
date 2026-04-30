@@ -7,6 +7,7 @@
 
 #include "Combat/RTSAttackComponent.h"
 #include "Combat/RTSHealthComponent.h"
+#include "Construction/RTSConstructionSiteComponent.h"
 #include "RTSLog.h"
 #include "RTSOwnerComponent.h"
 #include "RTSPlayerController.h"
@@ -170,6 +171,17 @@ void URTSMusicSwitcherComponent::OnOwnedActorHealthChanged(AActor* Actor, float 
 	if (NewHealth >= OldHealth)
 	{
 		return;
+	}
+
+	// StartConstruction drops HP to InitialHealthPercentage and ticks heal it back up;
+	// that synthetic drop is not combat, ignore it while the site is still constructing.
+	if (Actor)
+	{
+		URTSConstructionSiteComponent* ConstructionSite = Actor->FindComponentByClass<URTSConstructionSiteComponent>();
+		if (ConstructionSite && ConstructionSite->IsConstructing())
+		{
+			return;
+		}
 	}
 
 	TriggerBattleMusic();
