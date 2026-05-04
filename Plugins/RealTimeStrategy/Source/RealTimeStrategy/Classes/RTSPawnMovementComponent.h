@@ -24,6 +24,13 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "RTS")
 	bool bUpdateRotation;
 
+    /** Maximum rotation speed in degrees per second. 0 = instant (original behavior). */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 0))
+    float RotationSpeed;
+
+    /** DeltaTime cached each tick for use in UpdateComponentVelocity(). */
+    float CachedDeltaTime;
+
     /** Whether to apply separation forces to avoid overlapping with nearby units. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Separation")
     bool bEnableSeparation;

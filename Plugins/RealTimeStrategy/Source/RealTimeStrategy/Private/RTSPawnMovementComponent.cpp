@@ -12,6 +12,8 @@ URTSPawnMovementComponent::URTSPawnMovementComponent(const FObjectInitializer& O
 {
     // Set reasonable default values.
     bUpdateRotation = true;
+    RotationSpeed = 360.0f;
+    CachedDeltaTime = 0.0f;
     bEnableSeparation = true;
     SeparationRadius = 200.0f;
     SeparationStrength = 300.0f;
@@ -21,6 +23,8 @@ URTSPawnMovementComponent::URTSPawnMovementComponent(const FObjectInitializer& O
 
 void URTSPawnMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+    CachedDeltaTime = DeltaTime;
+
     // While actively gathering, consume all movement input so the pawn holds position.
     // This does not interfere with the BT — tasks keep running, but the pawn stays put.
     bool bIsGathering = false;
@@ -69,7 +73,12 @@ void URTSPawnMovementComponent::UpdateComponentVelocity()
 
     if (bUpdateRotation && !Velocity.IsNearlyZero())
     {
-        MoveUpdatedComponent(FVector::ZeroVector, Velocity.Rotation(), false);
+        FRotator TargetRotation = Velocity.Rotation();
+        FRotator CurrentRotation = UpdatedComponent->GetComponentRotation();
+        FRotator NewRotation = (RotationSpeed > 0.0f)
+            ? FMath::RInterpConstantTo(CurrentRotation, TargetRotation, CachedDeltaTime, RotationSpeed)
+            : TargetRotation;
+        MoveUpdatedComponent(FVector::ZeroVector, NewRotation, false);
     }
 }
 
