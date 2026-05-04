@@ -41,6 +41,7 @@
 #include "Construction/RTSConstructionSiteComponent.h"
 #include "Economy/RTSGathererComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Blueprint/UserWidget.h"
 #include "UI/RTSRallyPointIndicator.h"
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
@@ -2115,6 +2116,21 @@ void ARTSPlayerController::NotifyOnErrorOccurred(const FString& ErrorMessage)
 
 void ARTSPlayerController::NotifyOnGameHasEnded(bool bIsWinner)
 {
+    SetPause(true);
+    SetInputMode(FInputModeUIOnly());
+    bShowMouseCursor = true;
+
+    TSubclassOf<UUserWidget> WidgetClass = bIsWinner ? VictoryWidgetClass : DefeatWidgetClass;
+
+    if (WidgetClass != nullptr)
+    {
+        UUserWidget* Widget = CreateWidget<UUserWidget>(this, WidgetClass);
+        if (Widget != nullptr)
+        {
+            Widget->AddToViewport();
+        }
+    }
+
 	ReceiveOnGameHasEnded(bIsWinner);
 }
 
