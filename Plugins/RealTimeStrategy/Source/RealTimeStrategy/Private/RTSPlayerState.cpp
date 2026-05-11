@@ -8,6 +8,7 @@
 #include "RTSOwnerComponent.h"
 #include "RTSPlayerController.h"
 #include "RTSTeamInfo.h"
+#include "Upgrades/RTSPlayerUpgradeComponent.h"
 
 
 const uint8 ARTSPlayerState::PLAYER_INDEX_NONE = 255;
@@ -138,6 +139,18 @@ void ARTSPlayerState::NotifyOnActorOwnerChanged(AActor* Actor, ARTSPlayerState* 
     if (NewOwner == this)
     {
         RegisterOwnedActor(Actor);
+
+        // Apply any already-researched stat upgrades to the newly owned actor.
+        AController* PC = Cast<AController>(GetOwner());
+        if (IsValid(PC))
+        {
+            URTSPlayerUpgradeComponent* UpgradeComp =
+                PC->FindComponentByClass<URTSPlayerUpgradeComponent>();
+            if (IsValid(UpgradeComp))
+            {
+                UpgradeComp->ApplyStatUpgradesToActor(Actor);
+            }
+        }
     }
     else
     {

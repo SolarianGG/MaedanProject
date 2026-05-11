@@ -111,6 +111,23 @@ private:
     bool bShowHotkeyHealthBars = true;
 
 
+    /** Whether to always show all mana bars. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Mana Bars")
+    bool bAlwaysShowManaBars;
+
+    /** Whether to show mana bars for hovered units. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Mana Bars")
+    bool bShowHoverManaBars = true;
+
+    /** Whether to show mana bars for selected units. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Mana Bars")
+    bool bShowSelectionManaBars = true;
+
+    /** Whether to show mana bars while the respective hotkey is pressed. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Mana Bars")
+    bool bShowHotkeyManaBars = true;
+
+
     /** Whether to always show all construction progress bars. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Construction Progress Bars")
     bool bAlwaysShowConstructionProgressBars;
@@ -180,6 +197,15 @@ private:
 
     /** Hides the health bar of the specified actor. */
     void HideHealthBar(AActor* Actor);
+
+    /** Draws unit mana bars. */
+    void DrawManaBars();
+
+    /** Draws the mana bar of the specified actor. */
+    void DrawManaBar(AActor* Actor);
+
+    /** Hides the mana bar of the specified actor. */
+    void HideManaBar(AActor* Actor);
 
 	/** Draws all construction progress bars. */
 	void DrawConstructionProgressBars();

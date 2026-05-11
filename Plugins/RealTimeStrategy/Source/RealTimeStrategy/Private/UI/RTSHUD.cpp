@@ -11,6 +11,9 @@
 #include "Abilities/RTSAbilitySystemComponent.h"
 #include "Combat/RTSHealthComponent.h"
 #include "Combat/RTSHealthBarWidgetComponent.h"
+#include "Combat/RTSManaComponent.h"
+#include "Combat/RTSManaBarWidgetComponent.h"
+#include "Upgrades/RTSPlayerUpgradeComponent.h"
 #include "Construction/RTSConstructionSiteComponent.h"
 #include "Construction/RTSConstructionProgressBarWidgetComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
@@ -30,6 +33,7 @@ void ARTSHUD::DrawHUD()
     DrawFloatingCombatTexts();
 	DrawSelectionFrame();
 	DrawHealthBars();
+	DrawManaBars();
 	DrawConstructionProgressBars();
 	DrawProductionProgressBars();
 	DrawHoveredActorWidget();
@@ -262,6 +266,89 @@ void ARTSHUD::HideHealthBar(AActor* Actor)
     }
 
     HealthBarWidgetComponent->SetVisibility(false);
+}
+
+void ARTSHUD::DrawManaBars()
+{
+    ARTSPlayerController* PlayerController = Cast<ARTSPlayerController>(PlayerOwner);
+
+    if (!PlayerController)
+    {
+        return;
+    }
+
+    for (TActorIterator<AActor> ActorIt(GetWorld()); ActorIt; ++ActorIt)
+    {
+        AActor* Actor = *ActorIt;
+
+        if (!URTSGameplayLibrary::IsFullyVisibleForLocalClient(Actor))
+        {
+            HideManaBar(Actor);
+            continue;
+        }
+
+        // Check override conditions.
+        if (bAlwaysShowManaBars || (bShowHotkeyManaBars && PlayerController->IsHealthBarHotkeyPressed()))
+        {
+            DrawManaBar(Actor);
+        }
+        else if (bShowHoverManaBars && Actor == PlayerController->GetHoveredActor())
+        {
+            DrawManaBar(Actor);
+        }
+        else if (bShowSelectionManaBars && PlayerController->GetSelectedActors().Contains(Actor))
+        {
+            DrawManaBar(Actor);
+        }
+        else
+        {
+            HideManaBar(Actor);
+        }
+    }
+}
+
+void ARTSHUD::DrawManaBar(AActor* Actor)
+{
+    if (!IsValid(Actor))
+    {
+        return;
+    }
+
+    URTSManaComponent* ManaComponent = Actor->FindComponentByClass<URTSManaComponent>();
+
+    if (!IsValid(ManaComponent) || ManaComponent->GetMaximumMana() <= 0.0f)
+    {
+        return;
+    }
+
+    URTSManaBarWidgetComponent* ManaBarWidgetComponent = Actor->FindComponentByClass<URTSManaBarWidgetComponent>();
+
+    if (!IsValid(ManaBarWidgetComponent))
+    {
+        return;
+    }
+
+    FVector2D Size = GetActorSizeOnScreen(Actor);
+
+    ManaBarWidgetComponent->UpdatePositionAndSize(Size);
+    ManaBarWidgetComponent->SetVisibility(true);
+}
+
+void ARTSHUD::HideManaBar(AActor* Actor)
+{
+    if (!IsValid(Actor))
+    {
+        return;
+    }
+
+    URTSManaBarWidgetComponent* ManaBarWidgetComponent = Actor->FindComponentByClass<URTSManaBarWidgetComponent>();
+
+    if (!IsValid(ManaBarWidgetComponent))
+    {
+        return;
+    }
+
+    ManaBarWidgetComponent->SetVisibility(false);
 }
 
 void ARTSHUD::DrawConstructionProgressBars()
@@ -760,6 +847,8 @@ void ARTSHUD::DrawAbilityIcons()
 		return;
 	}
 
+	URTSPlayerUpgradeComponent* UpgradeComp = PlayerController->FindComponentByClass<URTSPlayerUpgradeComponent>();
+
 	// Apply DPI scale.
 	const float DPIScale = GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(FIntPoint(Canvas->SizeX, Canvas->SizeY));
 	const float ScaledIconSize = AbilityIconSize * DPIScale;
@@ -782,6 +871,9 @@ void ARTSHUD::DrawAbilityIcons()
 
 		const URTSAbility* AbilityCDO = AbilityData.AbilityClass->GetDefaultObject<URTSAbility>();
 
+		const bool bLocked = AbilityData.RequiredUpgrade &&
+			(!IsValid(UpgradeComp) || !UpgradeComp->HasUpgrade(AbilityData.RequiredUpgrade));
+
 		const float IconX = StartX + i * (ScaledIconSize + ScaledIconPadding);
 		const float IconY = StartY;
 
@@ -800,16 +892,30 @@ void ARTSHUD::DrawAbilityIcons()
 			const FTexture* IconResource = Icon->GetResource();
 			if (IconResource)
 			{
+				const FLinearColor IconTint = bLocked
+					? FLinearColor(0.3f, 0.3f, 0.3f, 1.0f)
+					: FLinearColor::White;
 				FCanvasTileItem IconTile(
 					FVector2D(IconX, IconY),
 					IconResource,
 					FVector2D(ScaledIconSize, ScaledIconSize),
 					FVector2D(0.0f, 0.0f),
 					FVector2D(1.0f, 1.0f),
-					FLinearColor::White);
+					IconTint);
 				IconTile.BlendMode = SE_BLEND_Translucent;
 				Canvas->DrawItem(IconTile);
 			}
+		}
+
+		// Draw lock overlay for abilities requiring an unresearched upgrade.
+		if (bLocked)
+		{
+			FCanvasTileItem LockTile(
+				FVector2D(IconX, IconY),
+				FVector2D(ScaledIconSize, ScaledIconSize),
+				FLinearColor(0.0f, 0.0f, 0.0f, 0.55f));
+			LockTile.BlendMode = SE_BLEND_Translucent;
+			Canvas->DrawItem(LockTile);
 		}
 
 		// Draw cooldown overlay.
@@ -849,22 +955,24 @@ void ARTSHUD::DrawAbilityIcons()
 		DrawLine(IconX, IconY, IconX, IconY + ScaledIconSize, BorderColor);
 		DrawLine(IconX + ScaledIconSize, IconY, IconX + ScaledIconSize, IconY + ScaledIconSize, BorderColor);
 
-		// Register hit box.
-		FName HitBoxName = *FString::Printf(TEXT("Ability_%d"), i);
-		AddHitBox(
-			FVector2D(IconX, IconY),
-			FVector2D(ScaledIconSize, ScaledIconSize),
-			HitBoxName,
-			false,
-			0);
+		// Register hit box and cache icon data — skip for locked abilities.
+		if (!bLocked)
+		{
+			FName HitBoxName = *FString::Printf(TEXT("Ability_%d"), i);
+			AddHitBox(
+				FVector2D(IconX, IconY),
+				FVector2D(ScaledIconSize, ScaledIconSize),
+				HitBoxName,
+				false,
+				0);
 
-		// Cache icon data.
-		FRTSAbilityIconData IconDataEntry;
-		IconDataEntry.Position = FVector2D(IconX, IconY);
-		IconDataEntry.Size = FVector2D(ScaledIconSize, ScaledIconSize);
-		IconDataEntry.AbilityActor = AbilityActor;
-		IconDataEntry.AbilityIndex = i;
-		AbilityIcons.Add(IconDataEntry);
+			FRTSAbilityIconData IconDataEntry;
+			IconDataEntry.Position = FVector2D(IconX, IconY);
+			IconDataEntry.Size = FVector2D(ScaledIconSize, ScaledIconSize);
+			IconDataEntry.AbilityActor = AbilityActor;
+			IconDataEntry.AbilityIndex = i;
+			AbilityIcons.Add(IconDataEntry);
+		}
 	}
 }
 
