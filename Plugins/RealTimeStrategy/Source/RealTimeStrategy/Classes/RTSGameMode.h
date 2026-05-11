@@ -54,11 +54,21 @@ public:
 	/** Event when a player has been defeated. */
 	virtual void NotifyOnPlayerDefeated(AController* Player);
 
+	/** Defeat a player when they disconnect. */
+	virtual void Logout(AController* Exiting) override;
+
 	/** Event when a player has been defeated. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "RTS", meta = (DisplayName = "OnPlayerDefeated"))
 	void ReceiveOnPlayerDefeated(AController* Player);
 
 private:
+	/** Controllers that have already been defeated. Guards against duplicate defeat processing. */
+	UPROPERTY(Transient)
+	TSet<AController*> DefeatedPlayers;
+
+	/** True once a winner has been declared. Prevents multiple winners if two players' last buildings die simultaneously. */
+	bool bGameHasEnded;
+
     /** Actors to spawn for each player in the game. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     TArray<TSubclassOf<AActor>> InitialActors;
@@ -66,10 +76,6 @@ private:
     /** Relative locations of the actors to spawn for each player in the game, relative to their respective start spot. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     TArray<FVector> InitialActorLocations;
-
-    /** Optional types of actors that are required for a player to be alive. As soon as no actor of the specified type is alive, the player is defeated. */
-    UPROPERTY(EditDefaultsOnly, Category = "RTS")
-    TArray<TSubclassOf<AActor>> DefeatConditionActorClasses;
 
     /** Class of TeamInfo to spawn. */
     UPROPERTY(EditDefaultsOnly, Category = "Team")

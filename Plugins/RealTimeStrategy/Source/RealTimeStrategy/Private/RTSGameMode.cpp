@@ -26,6 +26,7 @@ ARTSGameMode::ARTSGameMode(const FObjectInitializer& ObjectInitializer /*= FObje
 	// Set reasonable default values.
     TeamClass = ARTSTeamInfo::StaticClass();
 	NumTeams = 2;
+	bGameHasEnded = false;
 }
 
 void ARTSGameMode::BeginPlay()
@@ -307,48 +308,116 @@ TArray<ARTSTeamInfo*> ARTSGameMode::GetTeams() const
     return Teams;
 }
 
+void ARTSGameMode::Logout(AController* Exiting)
+{
+    Super::Logout(Exiting);
+
+    if (Cast<ARTSPlayerController>(Exiting) != nullptr)
+    {
+        UE_LOG(LogRTS, Log, TEXT("Player %s disconnected and is now defeated."), *Exiting->GetName());
+        NotifyOnPlayerDefeated(Exiting);
+    }
+}
+
 void ARTSGameMode::NotifyOnActorKilled(AActor* Actor, AController* ActorOwner)
 {
-	if (DefeatConditionActorClasses.Num() <= 0)
-	{
-		return;
-	}
+    ARTSPlayerController* OwningPlayer = Cast<ARTSPlayerController>(ActorOwner);
 
-	ARTSPlayerController* OwningPlayer = Cast<ARTSPlayerController>(ActorOwner);
-
-	if (OwningPlayer == nullptr)
-	{
+    if (OwningPlayer == nullptr)
+    {
         ARTSPlayerAIController* OwningAIPlayer = Cast<ARTSPlayerAIController>(ActorOwner);
 
         if (OwningAIPlayer == nullptr)
         {
             return;
         }
-	}
+    }
 
-	// Check if any required actors are still alive (excluding the actor that just died).
-	for (AActor* OwnedActor : ActorOwner->Children)
-	{
-		if (OwnedActor == Actor)
-		{
-			continue;
-		}
+    // Defeat is triggered only when a building (actor with URTSConstructionSiteComponent) dies.
+    if (!IsValid(Actor->FindComponentByClass<URTSConstructionSiteComponent>()))
+    {
+        return;
+    }
 
-		if (DefeatConditionActorClasses.Contains(OwnedActor->GetClass()))
-		{
-			return;
-		}
-	}
+    // Check if the player still has at least one building alive (excluding the dying actor).
+    for (AActor* OwnedActor : ActorOwner->Children)
+    {
+        if (OwnedActor == Actor)
+        {
+            continue;
+        }
 
-	UE_LOG(LogRTS, Log, TEXT("Player %s does not control any required actors anymore and has been defeated."), *ActorOwner->GetName());
+        if (IsValid(OwnedActor->FindComponentByClass<URTSConstructionSiteComponent>()))
+        {
+            return;
+        }
+    }
 
-	// Notify listeners.
-	NotifyOnPlayerDefeated(ActorOwner);
+    UE_LOG(LogRTS, Log, TEXT("Player %s has no buildings left and has been defeated."), *ActorOwner->GetName());
+
+    NotifyOnPlayerDefeated(ActorOwner);
 }
 
 void ARTSGameMode::NotifyOnPlayerDefeated(AController* Player)
 {
-	ReceiveOnPlayerDefeated(Player);
+    // Only process recognized RTS player types.
+    if (Cast<ARTSPlayerController>(Player) == nullptr &&
+        Cast<ARTSPlayerAIController>(Player) == nullptr)
+    {
+        return;
+    }
+
+    // Guard against duplicate defeat notifications.
+    if (DefeatedPlayers.Contains(Player))
+    {
+        return;
+    }
+
+    // Do not process after a winner has already been declared.
+    if (bGameHasEnded)
+    {
+        return;
+    }
+
+    DefeatedPlayers.Add(Player);
+    UE_LOG(LogRTS, Log, TEXT("Player %s has been defeated."), *Player->GetName());
+
+    // Fire the existing Blueprint event.
+    ReceiveOnPlayerDefeated(Player);
+
+    // Notify the defeated player's controller (triggers ClientGameHasEnded RPC -> Blueprint UI).
+    Player->GameHasEnded(nullptr, false);
+
+    // Do not continue during engine teardown.
+    UWorld* World = GetWorld();
+    if (!IsValid(World) || World->bIsTearingDown)
+    {
+        return;
+    }
+
+    // Find all remaining non-defeated RTS players.
+    AController* LastSurvivor = nullptr;
+    int32 SurvivorCount = 0;
+
+    for (TActorIterator<AController> It(World); It; ++It)
+    {
+        AController* Controller = *It;
+        if (!IsValid(Controller)) continue;
+        if (Cast<ARTSPlayerController>(Controller) == nullptr &&
+            Cast<ARTSPlayerAIController>(Controller) == nullptr) continue;
+        if (DefeatedPlayers.Contains(Controller)) continue;
+
+        LastSurvivor = Controller;
+        ++SurvivorCount;
+    }
+
+    // Last player standing wins. Zero survivors = draw, no winner is declared.
+    if (SurvivorCount == 1 && LastSurvivor != nullptr)
+    {
+        bGameHasEnded = true;
+        UE_LOG(LogRTS, Log, TEXT("Player %s is the last player standing and wins!"), *LastSurvivor->GetName());
+        LastSurvivor->GameHasEnded(nullptr, true);
+    }
 }
 
 uint8 ARTSGameMode::GetAvailablePlayerIndex()

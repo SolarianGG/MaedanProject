@@ -16,6 +16,7 @@
 class UDecalComponent;
 class USkeletalMesh;
 class USoundBase;
+class UUserWidget;
 
 class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
@@ -548,6 +549,14 @@ private:
     /** Niagara effect spawned at the rally point destination. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
     UNiagaraSystem* RallyPointArrivalEffect;
+
+    /** Widget to show when this player wins. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|UI")
+    TSubclassOf<UUserWidget> VictoryWidgetClass;
+
+    /** Widget to show when this player loses. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|UI")
+    TSubclassOf<UUserWidget> DefeatWidgetClass;
 
     /** Active rally point indicator, destroyed when rally point changes. */
     UPROPERTY()

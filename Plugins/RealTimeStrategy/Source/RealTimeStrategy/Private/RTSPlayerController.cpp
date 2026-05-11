@@ -41,6 +41,7 @@
 #include "Construction/RTSConstructionSiteComponent.h"
 #include "Economy/RTSGathererComponent.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Blueprint/UserWidget.h"
 #include "UI/RTSRallyPointIndicator.h"
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
@@ -120,6 +121,15 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 void ARTSPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (IsLocalController())
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
+		bShowMouseCursor = true;
+	}
 
 	// Allow immediate updates for interested listeners.
 	for (int32 Index = 0; Index < PlayerResourcesComponent->GetResourceTypes().Num(); ++Index)
@@ -2115,6 +2125,27 @@ void ARTSPlayerController::NotifyOnErrorOccurred(const FString& ErrorMessage)
 
 void ARTSPlayerController::NotifyOnGameHasEnded(bool bIsWinner)
 {
+    SetPause(true);
+    SetInputMode(FInputModeUIOnly());
+    bShowMouseCursor = true;
+
+    UWorld* World = GetWorld();
+    if (!IsValid(World) || World->bIsTearingDown)
+    {
+        return;
+    }
+
+    TSubclassOf<UUserWidget> WidgetClass = bIsWinner ? VictoryWidgetClass : DefeatWidgetClass;
+
+    if (WidgetClass != nullptr)
+    {
+        UUserWidget* Widget = CreateWidget<UUserWidget>(this, WidgetClass);
+        if (Widget != nullptr)
+        {
+            Widget->AddToViewport();
+        }
+    }
+
 	ReceiveOnGameHasEnded(bIsWinner);
 }
 
