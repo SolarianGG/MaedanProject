@@ -169,27 +169,27 @@ void ARTSPlayerController::SetupInputComponent()
 	                           &ARTSPlayerController::StopContinuousOrder);
 	InputComponent->BindAction(TEXT("IssueStopOrder"), IE_Released, this, &ARTSPlayerController::IssueStopOrder);
 
-	InputComponent->BindAction(TEXT("SaveControlGroup0"), IE_Released, this, &ARTSPlayerController::SaveControlGroup0);
-	InputComponent->BindAction(TEXT("SaveControlGroup1"), IE_Released, this, &ARTSPlayerController::SaveControlGroup1);
-	InputComponent->BindAction(TEXT("SaveControlGroup2"), IE_Released, this, &ARTSPlayerController::SaveControlGroup2);
-	InputComponent->BindAction(TEXT("SaveControlGroup3"), IE_Released, this, &ARTSPlayerController::SaveControlGroup3);
-	InputComponent->BindAction(TEXT("SaveControlGroup4"), IE_Released, this, &ARTSPlayerController::SaveControlGroup4);
-	InputComponent->BindAction(TEXT("SaveControlGroup5"), IE_Released, this, &ARTSPlayerController::SaveControlGroup5);
-	InputComponent->BindAction(TEXT("SaveControlGroup6"), IE_Released, this, &ARTSPlayerController::SaveControlGroup6);
-	InputComponent->BindAction(TEXT("SaveControlGroup7"), IE_Released, this, &ARTSPlayerController::SaveControlGroup7);
-	InputComponent->BindAction(TEXT("SaveControlGroup8"), IE_Released, this, &ARTSPlayerController::SaveControlGroup8);
-	InputComponent->BindAction(TEXT("SaveControlGroup9"), IE_Released, this, &ARTSPlayerController::SaveControlGroup9);
+	InputComponent->BindAction(TEXT("SaveControlGroup0"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup0);
+	InputComponent->BindAction(TEXT("SaveControlGroup1"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup1);
+	InputComponent->BindAction(TEXT("SaveControlGroup2"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup2);
+	InputComponent->BindAction(TEXT("SaveControlGroup3"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup3);
+	InputComponent->BindAction(TEXT("SaveControlGroup4"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup4);
+	InputComponent->BindAction(TEXT("SaveControlGroup5"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup5);
+	InputComponent->BindAction(TEXT("SaveControlGroup6"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup6);
+	InputComponent->BindAction(TEXT("SaveControlGroup7"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup7);
+	InputComponent->BindAction(TEXT("SaveControlGroup8"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup8);
+	InputComponent->BindAction(TEXT("SaveControlGroup9"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup9);
 
-	InputComponent->BindAction(TEXT("LoadControlGroup0"), IE_Released, this, &ARTSPlayerController::LoadControlGroup0);
-	InputComponent->BindAction(TEXT("LoadControlGroup1"), IE_Released, this, &ARTSPlayerController::LoadControlGroup1);
-	InputComponent->BindAction(TEXT("LoadControlGroup2"), IE_Released, this, &ARTSPlayerController::LoadControlGroup2);
-	InputComponent->BindAction(TEXT("LoadControlGroup3"), IE_Released, this, &ARTSPlayerController::LoadControlGroup3);
-	InputComponent->BindAction(TEXT("LoadControlGroup4"), IE_Released, this, &ARTSPlayerController::LoadControlGroup4);
-	InputComponent->BindAction(TEXT("LoadControlGroup5"), IE_Released, this, &ARTSPlayerController::LoadControlGroup5);
-	InputComponent->BindAction(TEXT("LoadControlGroup6"), IE_Released, this, &ARTSPlayerController::LoadControlGroup6);
-	InputComponent->BindAction(TEXT("LoadControlGroup7"), IE_Released, this, &ARTSPlayerController::LoadControlGroup7);
-	InputComponent->BindAction(TEXT("LoadControlGroup8"), IE_Released, this, &ARTSPlayerController::LoadControlGroup8);
-	InputComponent->BindAction(TEXT("LoadControlGroup9"), IE_Released, this, &ARTSPlayerController::LoadControlGroup9);
+	InputComponent->BindAction(TEXT("LoadControlGroup0"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup0);
+	InputComponent->BindAction(TEXT("LoadControlGroup1"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup1);
+	InputComponent->BindAction(TEXT("LoadControlGroup2"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup2);
+	InputComponent->BindAction(TEXT("LoadControlGroup3"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup3);
+	InputComponent->BindAction(TEXT("LoadControlGroup4"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup4);
+	InputComponent->BindAction(TEXT("LoadControlGroup5"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup5);
+	InputComponent->BindAction(TEXT("LoadControlGroup6"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup6);
+	InputComponent->BindAction(TEXT("LoadControlGroup7"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup7);
+	InputComponent->BindAction(TEXT("LoadControlGroup8"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup8);
+	InputComponent->BindAction(TEXT("LoadControlGroup9"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup9);
 
 	InputComponent->BindAxis(TEXT("MoveCameraLeftRight"), this, &ARTSPlayerController::MoveCameraLeftRight);
 	InputComponent->BindAxis(TEXT("MoveCameraUpDown"), this, &ARTSPlayerController::MoveCameraUpDown);
