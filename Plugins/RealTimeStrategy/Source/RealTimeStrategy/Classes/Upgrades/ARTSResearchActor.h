@@ -42,6 +42,9 @@ public:
      *  Called by URTSProductionComponent before starting production to prevent re-research. */
     bool CanResearchUpgrade(AController* PlayerController) const;
 
+    /** Returns the upgrade class this research actor will apply. */
+    TSubclassOf<URTSUpgrade> GetUpgradeClass() const { return UpgradeClass; }
+
 protected:
     virtual void BeginPlay() override;
 

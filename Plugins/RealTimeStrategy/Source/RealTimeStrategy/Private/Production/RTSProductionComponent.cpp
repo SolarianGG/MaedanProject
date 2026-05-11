@@ -18,6 +18,7 @@
 #include "Libraries/RTSGameplayTagLibrary.h"
 #include "Production/RTSProductionCostComponent.h"
 #include "Upgrades/ARTSResearchActor.h"
+#include "Upgrades/RTSStatUpgrade.h"
 
 
 URTSProductionComponent::URTSProductionComponent(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
@@ -319,6 +320,21 @@ void URTSProductionComponent::StartProduction(TSubclassOf<AActor> ProductClass)
                 *GetOwner()->GetName(), *ProductClass->GetName());
             return;
         }
+
+        // Prevent queuing the same non-stat research upgrade more than once simultaneously.
+        const TSubclassOf<URTSUpgrade> ResearchUpgradeClass = ResearchCDO->GetUpgradeClass();
+        if (ResearchUpgradeClass && !ResearchUpgradeClass->IsChildOf<URTSStatUpgrade>())
+        {
+            for (const FRTSProductionQueue& ProdQueue : ProductionQueues)
+            {
+                if (ProdQueue.Queue.Contains(ProductClass))
+                {
+                    UE_LOG(LogRTS, Log, TEXT("%s: research %s is already queued."),
+                        *GetOwner()->GetName(), *ProductClass->GetName());
+                    return;
+                }
+            }
+        }
     }
 
 	// Check production cost.
@@ -424,8 +440,11 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
 
     MostRecentProduct = Product;
 
-    // Use rally point.
-    IssueRallyPointDependentOrder(Product);
+    // Use rally point (skip for research actors — they self-destruct after BeginPlay).
+    if (!ProductClass->IsChildOf<ARTSResearchActor>())
+    {
+        IssueRallyPointDependentOrder(Product);
+    }
 
 	// Notify listeners.
 	NotifyOnProductionFinished(GetOwner(), Product, QueueIndex);
