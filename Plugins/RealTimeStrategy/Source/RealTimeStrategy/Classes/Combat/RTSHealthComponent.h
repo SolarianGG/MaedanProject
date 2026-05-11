@@ -34,7 +34,7 @@ public:
     virtual void BeginPlay() override;
 
 
-    /** Gets the maximum health of the actor. */
+    /** Gets the maximum health of the actor (base + upgrade bonus). */
     UFUNCTION(BlueprintPure)
     float GetMaximumHealth() const;
 
@@ -44,6 +44,11 @@ public:
 
     /** Sets the current health of the actor directly. */
     void SetCurrentHealth(float NewHealth, AActor* DamageCauser);
+
+    /** Sets the flat bonus added on top of MaximumHealth by upgrades.
+     *  Pass the new total bonus (absolute, not delta). Server-only.
+     *  If bScaleCurrentHealth, current HP is scaled proportionally. */
+    void SetMaximumHealthBonus(float NewBonus, bool bScaleCurrentHealth = true);
 
     /** Kills the actor immediately. */
     void KillActor(AActor* DamageCauser = nullptr);
@@ -92,6 +97,10 @@ private:
     /** Animation montage to play when the actor is killed. For DEATH_Destroy, the actor is destroyed after the montage finishes. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     UAnimMontage* DeathMontage;
+
+    /** Flat HP bonus from upgrades. Replicated so clients display correct HP bars. */
+    UPROPERTY(Replicated)
+    float MaximumHealthBonus = 0.f;
 
     /** Current health of the actor. */
     UPROPERTY(ReplicatedUsing=ReceivedCurrentHealth)

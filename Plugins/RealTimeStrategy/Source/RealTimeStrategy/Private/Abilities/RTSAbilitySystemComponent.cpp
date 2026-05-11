@@ -4,6 +4,7 @@
 #include "Animation/AnimMontage.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Controller.h"
 
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
@@ -13,6 +14,7 @@
 #include "Combat/RTSManaComponent.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
 #include "Orders/RTSOrderTargetData.h"
+#include "Upgrades/RTSPlayerUpgradeComponent.h"
 
 
 URTSAbilitySystemComponent::URTSAbilitySystemComponent(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
@@ -92,6 +94,19 @@ bool URTSAbilitySystemComponent::CanUseAbility(int32 AbilityIndex) const
 		URTSManaComponent* ManaComponent = GetOwner()->FindComponentByClass<URTSManaComponent>();
 
 		if (!IsValid(ManaComponent) || ManaComponent->GetCurrentMana() < AbilityCDO->GetManaCost())
+		{
+			return false;
+		}
+	}
+
+	// Check that the required upgrade has been researched by the owning player.
+	if (AbilityData.RequiredUpgrade)
+	{
+		AController* PC = Cast<AController>(GetOwner()->GetOwner());
+		URTSPlayerUpgradeComponent* UpgradeComp =
+			IsValid(PC) ? PC->FindComponentByClass<URTSPlayerUpgradeComponent>() : nullptr;
+
+		if (!IsValid(UpgradeComp) || !UpgradeComp->HasUpgrade(AbilityData.RequiredUpgrade))
 		{
 			return false;
 		}

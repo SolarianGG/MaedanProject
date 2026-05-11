@@ -43,8 +43,8 @@ bool URTSAbilityOrder::CanObeyOrder(const AActor* OrderedActor, int32 Index) con
         return false;
     }
 
-    const URTSAbility* AbilityCDO = Abilities[Index].AbilityClass->GetDefaultObject<URTSAbility>();
-    return AbilityCDO->CanActivateAbility(OrderedActor, Index);
+    // Delegate to CanUseAbility which also checks upgrade unlock, cooldown, and mana.
+    return AbilitySystem->CanUseAbility(Index);
 }
 
 bool URTSAbilityOrder::IsValidTarget(const AActor* OrderedActor, const FRTSOrderTargetData& TargetData, int32 Index) const

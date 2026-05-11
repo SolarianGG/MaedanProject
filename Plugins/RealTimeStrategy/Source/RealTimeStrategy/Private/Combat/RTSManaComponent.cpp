@@ -27,6 +27,7 @@ void URTSManaComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(URTSManaComponent, CurrentMana);
+	DOREPLIFETIME(URTSManaComponent, MaximumManaBonus);
 }
 
 void URTSManaComponent::BeginPlay()
@@ -53,7 +54,28 @@ void URTSManaComponent::BeginPlay()
 
 float URTSManaComponent::GetMaximumMana() const
 {
-    return MaximumMana;
+    return MaximumMana + MaximumManaBonus;
+}
+
+void URTSManaComponent::SetMaximumManaBonus(float NewBonus, bool bScaleCurrentMana /*= true*/)
+{
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
+    const float OldMax = GetMaximumMana();
+    MaximumManaBonus = FMath::Max(NewBonus, 0.f);
+    const float NewMax = GetMaximumMana();
+
+    if (bScaleCurrentMana && OldMax > KINDA_SMALL_NUMBER)
+    {
+        SetCurrentMana(CurrentMana * (NewMax / OldMax));
+    }
+    else
+    {
+        SetCurrentMana(FMath::Min(CurrentMana, NewMax));
+    }
 }
 
 float URTSManaComponent::GetCurrentMana() const
@@ -64,7 +86,7 @@ float URTSManaComponent::GetCurrentMana() const
 void URTSManaComponent::SetCurrentMana(float NewMana)
 {
     float OldMana = CurrentMana;
-    CurrentMana = FMath::Clamp(NewMana, 0.0f, MaximumMana);
+    CurrentMana = FMath::Clamp(NewMana, 0.0f, GetMaximumMana());
 
     // Notify listeners.
     AActor* Owner = GetOwner();
@@ -96,12 +118,14 @@ void URTSManaComponent::NotifyOnManaChanged(AActor* Actor, float OldMana, float 
 
 void URTSManaComponent::OnManaRegenerationTimerElapsed()
 {
-    if (CurrentMana >= MaximumMana)
+    const float MaxMana = GetMaximumMana();
+
+    if (CurrentMana >= MaxMana)
     {
         return;
     }
 
-    float NewMana = FMath::Clamp(CurrentMana + ManaRegenerationRate, 0.0f, MaximumMana);
+    float NewMana = FMath::Clamp(CurrentMana + ManaRegenerationRate, 0.0f, MaxMana);
     SetCurrentMana(NewMana);
 }
 

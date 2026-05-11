@@ -37,6 +37,7 @@ void URTSHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(URTSHealthComponent, CurrentHealth);
+	DOREPLIFETIME(URTSHealthComponent, MaximumHealthBonus);
 }
 
 void URTSHealthComponent::BeginPlay()
@@ -68,7 +69,28 @@ void URTSHealthComponent::BeginPlay()
 
 float URTSHealthComponent::GetMaximumHealth() const
 {
-    return MaximumHealth;
+    return MaximumHealth + MaximumHealthBonus;
+}
+
+void URTSHealthComponent::SetMaximumHealthBonus(float NewBonus, bool bScaleCurrentHealth /*= true*/)
+{
+    if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
+    const float OldMax = GetMaximumHealth();
+    MaximumHealthBonus = FMath::Max(NewBonus, 0.f);
+    const float NewMax = GetMaximumHealth();
+
+    if (bScaleCurrentHealth && OldMax > KINDA_SMALL_NUMBER)
+    {
+        SetCurrentHealth(FMath::Clamp(CurrentHealth * (NewMax / OldMax), 0.f, NewMax), nullptr);
+    }
+    else
+    {
+        SetCurrentHealth(FMath::Clamp(CurrentHealth, 0.f, NewMax), nullptr);
+    }
 }
 
 float URTSHealthComponent::GetCurrentHealth() const
@@ -199,12 +221,14 @@ void URTSHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, co
 
 void URTSHealthComponent::OnHealthRegenerationTimerElapsed()
 {
-    if (CurrentHealth >= MaximumHealth)
+    const float MaxHealth = GetMaximumHealth();
+
+    if (CurrentHealth >= MaxHealth)
     {
         return;
     }
 
-    float NewHealth = FMath::Clamp(CurrentHealth + HealthRegenerationRate, 0.0f, MaximumHealth);
+    float NewHealth = FMath::Clamp(CurrentHealth + HealthRegenerationRate, 0.0f, MaxHealth);
     SetCurrentHealth(NewHealth, GetOwner());
 }
 

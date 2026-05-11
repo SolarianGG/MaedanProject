@@ -17,6 +17,7 @@
 #include "Libraries/RTSGameplayLibrary.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
 #include "Production/RTSProductionCostComponent.h"
+#include "Upgrades/ARTSResearchActor.h"
 
 
 URTSProductionComponent::URTSProductionComponent(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
@@ -306,6 +307,18 @@ void URTSProductionComponent::StartProduction(TSubclassOf<AActor> ProductClass)
     {
         UE_LOG(LogRTS, Error, TEXT("%s wants to produce %s, but is missing requirement %s."), *GetOwner()->GetName(), *ProductClass->GetName(), *MissingRequirement->GetName());
         return;
+    }
+
+    // If this is a research product, verify the upgrade hasn't been researched already.
+    if (const ARTSResearchActor* ResearchCDO = Cast<ARTSResearchActor>(ProductClass->GetDefaultObject()))
+    {
+        AController* PC = Cast<AController>(GetOwner()->GetOwner());
+        if (!ResearchCDO->CanResearchUpgrade(PC))
+        {
+            UE_LOG(LogRTS, Log, TEXT("%s: upgrade for %s has already been researched."),
+                *GetOwner()->GetName(), *ProductClass->GetName());
+            return;
+        }
     }
 
 	// Check production cost.

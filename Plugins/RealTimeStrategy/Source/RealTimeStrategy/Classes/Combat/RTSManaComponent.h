@@ -29,7 +29,7 @@ public:
     virtual void BeginPlay() override;
 
 
-    /** Gets the maximum mana of the actor. */
+    /** Gets the maximum mana of the actor (base + upgrade bonus). */
     UFUNCTION(BlueprintPure)
     float GetMaximumMana() const;
 
@@ -39,6 +39,11 @@ public:
 
     /** Sets the current mana of the actor directly. */
     void SetCurrentMana(float NewMana);
+
+    /** Sets the flat bonus added on top of MaximumMana by upgrades.
+     *  Pass the new total bonus (absolute, not delta). Server-only.
+     *  If bScaleCurrentMana, current mana is scaled proportionally. */
+    void SetMaximumManaBonus(float NewBonus, bool bScaleCurrentMana = true);
 
     /** Attempts to consume the specified amount of mana. Returns true if successful (enough mana available). Server-authority only. */
     UFUNCTION(BlueprintCallable)
@@ -65,6 +70,10 @@ private:
     /** Mana restored for the actor, per second. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 0, EditCondition = "bRegenerateMana"))
     float ManaRegenerationRate;
+
+    /** Flat Mana bonus from upgrades. Replicated so clients display correct mana bars. */
+    UPROPERTY(Replicated)
+    float MaximumManaBonus = 0.f;
 
     /** Current mana of the actor. */
     UPROPERTY(ReplicatedUsing=ReceivedCurrentMana)
