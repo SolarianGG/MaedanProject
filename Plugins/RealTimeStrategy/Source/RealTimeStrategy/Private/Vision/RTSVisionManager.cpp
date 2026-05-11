@@ -116,6 +116,23 @@ void ARTSVisionManager::Tick(float DeltaSeconds)
         }
     }
 
+    // Lazy-init LocalVisionInfo on the client. Team is a UPROPERTY pointer in PlayerState
+    // with ReplicatedUsing = OnTeamChanged; if Team_N actor arrives AFTER the PlayerState,
+    // UE silently resolves the reference without re-firing OnRep_Team, so the
+    // NotifyOnTeamChanged -> NotifyOnVisionInfoAvailable -> SetLocalVisionInfo chain
+    // never runs and the fog-of-war texture stays at initial grey. Poll here instead.
+    if (!IsValid(LocalVisionInfo) && IsValid(LocalPlayerState))
+    {
+        if (ARTSTeamInfo* LocalTeam = LocalPlayerState->GetTeam())
+        {
+            ARTSVisionInfo* VI = ARTSVisionInfo::GetVisionInfoForTeam(this, LocalTeam->GetTeamIndex());
+            if (IsValid(VI))
+            {
+                SetLocalVisionInfo(VI);
+            }
+        }
+    }
+
     // Update unit vision.
     for (FRTSVisionActor& VisionActor : VisionActors)
     {
@@ -345,7 +362,9 @@ void ARTSVisionManager::UpdateVisionActor(const FRTSVisionActor& VisionActor)
     if (IsValid(OwnerComp))
     {
         ARTSPlayerState* PlayerOwner = OwnerComp->GetPlayerOwner();
-        if (IsValid(PlayerOwner) && !PlayerOwner->GetTeam())
+        // !IsValid covers the case where PlayerOwner itself hasn't replicated yet
+        // (DOREPLIFETIME field, arrives slightly after the actor on the client).
+        if (!IsValid(PlayerOwner) || !PlayerOwner->GetTeam())
         {
             return;
         }

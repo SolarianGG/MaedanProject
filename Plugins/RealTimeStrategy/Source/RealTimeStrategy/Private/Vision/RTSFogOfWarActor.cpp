@@ -75,16 +75,10 @@ void ARTSFogOfWarActor::Initialize(ARTSVisionVolume* InVisionVolume)
 	// Setup fog of war post-process volume.
 	FogOfWarVolume->AddOrUpdateBlendable(FogOfWarMaterialInstance);
 
-	// Bug C fix: pass the volume's world centre so the material can compute correct UVs when
-	// ARTSVisionVolume is not at world origin.  The material must implement:
-	//   UV = (WorldPos.xy - WorldCenter.xy) * OneOverWorldSize + 0.5
 	FVector VolumeLocation = VisionVolume->GetActorLocation();
 	FogOfWarMaterialInstance->SetVectorParameterValue(FName("WorldCenter"),
 		FLinearColor(VolumeLocation.X, VolumeLocation.Y, 0.f, 0.f));
 
-	// Bug A fix: upload the initialised grey buffer immediately so the GPU texture starts at
-	// VISION_Unknown grey instead of uninitialised (black) memory, which caused an all-black
-	// screen on clients while VisionInfo was still being replicated.
 	FogOfWarTexture->UpdateTextureRegions(0, 1, FogOfWarUpdateTextureRegion, SizeInTiles * 4, (uint32)4, FogOfWarTextureBuffer);
 
 	UE_LOG(LogRTS, Log, TEXT("Set up %s with %s."), *GetName(), *VisionVolume->GetName());
