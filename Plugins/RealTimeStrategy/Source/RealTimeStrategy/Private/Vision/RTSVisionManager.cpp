@@ -185,10 +185,11 @@ void ARTSVisionManager::Tick(float DeltaSeconds)
 
         if (GetNetMode() != NM_DedicatedServer)
         {
-            // Update client vision.
+            // While LocalVisionInfo isn't ready yet, default to Unknown so enemies stay
+            // hidden rather than visible through the grey fog.
             ERTSVisionState NewVision = IsValid(LocalVisionInfo)
                 ? LocalVisionInfo->GetVision(TileLocation.X, TileLocation.Y)
-                : ERTSVisionState::VISION_Visible;
+                : ERTSVisionState::VISION_Unknown;
 
             VisibleActor.VisibleComponent->SetClientVisionState(NewVision);
         }
@@ -330,10 +331,24 @@ void ARTSVisionManager::UpdateVisionActor(const FRTSVisionActor& VisionActor)
         }
     }
 
-    // We only need to update vision for actors who have moved onto a new tile.
     if (!VisionActor.IsActorValid())
     {
         return;
+    }
+
+    // If the actor's owner has no team yet (team replication still pending on this client),
+    // return WITHOUT caching the tile position so we retry next tick once the team arrives.
+    // Without this guard the tile gets cached on the first tick (when ApplyVisionForActor
+    // silently no-ops), and subsequent ticks skip it as "hasn't moved" — leaving the unit
+    // with zero vision permanently until it physically moves to a new tile.
+    URTSOwnerComponent* OwnerComp = VisionActor.Actor->FindComponentByClass<URTSOwnerComponent>();
+    if (IsValid(OwnerComp))
+    {
+        ARTSPlayerState* PlayerOwner = OwnerComp->GetPlayerOwner();
+        if (IsValid(PlayerOwner) && !PlayerOwner->GetTeam())
+        {
+            return;
+        }
     }
 
     FVector ActorLocationWorld = VisionActor.Actor->GetActorLocation();

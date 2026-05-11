@@ -91,11 +91,10 @@ ERTSVisionState ARTSVisionVolume::GetMinimumVisionState() const
 
 FIntVector ARTSVisionVolume::WorldToTile(const FVector& WorldPosition) const
 {
-	// Get relative world position.
-	float RelativeWorldX = WorldPosition.X / SizeInWorld.X + 0.5f;
-	float RelativeWorldY = WorldPosition.Y / SizeInWorld.Y + 0.5f;
+	const FVector Origin = GetActorLocation();
+	float RelativeWorldX = (WorldPosition.X - Origin.X) / SizeInWorld.X + 0.5f;
+	float RelativeWorldY = (WorldPosition.Y - Origin.Y) / SizeInWorld.Y + 0.5f;
 
-	// Convert to minimap coordinates.
 	int32 TileX = FMath::FloorToInt(RelativeWorldX * SizeInTiles);
 	int32 TileY = FMath::FloorToInt(RelativeWorldY * SizeInTiles);
 
