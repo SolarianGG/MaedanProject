@@ -122,6 +122,15 @@ void ARTSPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (IsLocalController())
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetHideCursorDuringCapture(false);
+		SetInputMode(InputMode);
+		bShowMouseCursor = true;
+	}
+
 	// Allow immediate updates for interested listeners.
 	for (int32 Index = 0; Index < PlayerResourcesComponent->GetResourceTypes().Num(); ++Index)
 	{
@@ -2119,6 +2128,12 @@ void ARTSPlayerController::NotifyOnGameHasEnded(bool bIsWinner)
     SetPause(true);
     SetInputMode(FInputModeUIOnly());
     bShowMouseCursor = true;
+
+    UWorld* World = GetWorld();
+    if (!IsValid(World) || World->bIsTearingDown)
+    {
+        return;
+    }
 
     TSubclassOf<UUserWidget> WidgetClass = bIsWinner ? VictoryWidgetClass : DefeatWidgetClass;
 
