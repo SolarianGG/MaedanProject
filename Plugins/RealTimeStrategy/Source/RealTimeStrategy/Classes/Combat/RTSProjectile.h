@@ -62,6 +62,11 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (EditCondition = bBallisticTrajectory))
     float BallisticTrajectoryFactor;
 
+    /** Radius (cm) of the probe sphere used to detect collision with the homing target's physical volume.
+     *  Should match the approximate visual radius of the projectile mesh. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 0))
+    float HomingHitRadius;
+
     /** Whether this projectile causes an area of effect when hitting its target location. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     bool bApplyAreaOfEffect;
@@ -118,6 +123,14 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "RTS")
 	UProjectileMovementComponent* ProjectileMovement;
+
+    UFUNCTION(NetMulticast, Reliable)
+    void MulticastNotifyHit(
+        AActor* ProjectileTarget,
+        float ProjectileDamage,
+        TSubclassOf<class UDamageType> ProjectileDamageType,
+        AController* ProjectileEventInstigator,
+        AActor* ProjectileDamageCauser);
 
     UFUNCTION(NetMulticast, Reliable)
     void MulticastFireAt(AActor* ProjectileTarget,

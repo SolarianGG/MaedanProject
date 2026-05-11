@@ -9,6 +9,7 @@
 #include "RTSLog.h"
 #include "RTSOwnerComponent.h"
 #include "Combat/RTSProjectileTargetComponent.h"
+#include "Libraries/RTSCollisionLibrary.h"
 
 
 ARTSProjectile::ARTSProjectile(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
@@ -22,6 +23,7 @@ ARTSProjectile::ARTSProjectile(const FObjectInitializer& ObjectInitializer /*= F
 	ProjectileMovement->InitialSpeed = 1000.0f;
 
     bFired = false;
+    HomingHitRadius = 15.0f;
 
 	// Enable replication.
 	// This might change in the future, as we don't really care about exact projectile positions on client-side.
@@ -59,33 +61,68 @@ void ARTSProjectile::Tick(float DeltaSeconds)
         return;
     }
 
-    TimeToImpact -= DeltaSeconds;
-
-    // Update ballistic trajectory.
-    if (bBallisticTrajectory)
+    if (ProjectileMovement->bIsHomingProjectile)
     {
-        static const float G = 9.8067f;
+        // Only the server runs authoritative hit detection.
+        if (!HasAuthority())
+        {
+            return;
+        }
 
-        // Calculate traveled distance.
-        float InitialTravelTime = InitialDistance / ProjectileMovement->InitialSpeed;
-        float PassedTravelTime = InitialTravelTime - TimeToImpact;
-        float TraveledDistance = PassedTravelTime * ProjectileMovement->InitialSpeed;
+        // Target died before projectile arrived — destroy silently.
+        if (!IsValid(Target))
+        {
+            Destroy();
+            return;
+        }
 
-        // Calculate current height.
-        float ProjectileHeight = TraveledDistance * FMath::Tan(LaunchAngle) -
-            ((G * (TraveledDistance * TraveledDistance)) /
-            (2 * FMath::Pow(ProjectileMovement->InitialSpeed * FMath::Cos(LaunchAngle), 2)));
+        // Test the projectile probe sphere against the target's actual collision volume.
+        TArray<AActor*> OverlappedActors;
+        TArray<AActor*> ActorsToIgnore;
+        ActorsToIgnore.Add(this);
 
-        FVector ProjectileLocation = GetActorLocation();
-        ProjectileLocation.Z = InitialHeight + (ProjectileHeight * BallisticTrajectoryFactor) +
-            ((TargetHeight - InitialHeight) * (PassedTravelTime / InitialTravelTime));
-        SetActorLocation(ProjectileLocation);
+        UKismetSystemLibrary::SphereOverlapActors(
+            this,
+            GetActorLocation(),
+            HomingHitRadius,
+            TArray<TEnumAsByte<EObjectTypeQuery>>(),
+            nullptr,
+            ActorsToIgnore,
+            OverlappedActors);
+
+        if (!OverlappedActors.Contains(Target))
+        {
+            return;
+        }
     }
+    else
+    {
+        TimeToImpact -= DeltaSeconds;
 
-	if (TimeToImpact > 0.0f)
-	{
-        return;
-	}
+        // Update ballistic trajectory.
+        if (bBallisticTrajectory)
+        {
+            static const float G = 9.8067f;
+
+            float InitialTravelTime = InitialDistance / ProjectileMovement->InitialSpeed;
+            float PassedTravelTime = InitialTravelTime - TimeToImpact;
+            float TraveledDistance = PassedTravelTime * ProjectileMovement->InitialSpeed;
+
+            float ProjectileHeight = TraveledDistance * FMath::Tan(LaunchAngle) -
+                ((G * (TraveledDistance * TraveledDistance)) /
+                (2 * FMath::Pow(ProjectileMovement->InitialSpeed * FMath::Cos(LaunchAngle), 2)));
+
+            FVector ProjectileLocation = GetActorLocation();
+            ProjectileLocation.Z = InitialHeight + (ProjectileHeight * BallisticTrajectoryFactor) +
+                ((TargetHeight - InitialHeight) * (PassedTravelTime / InitialTravelTime));
+            SetActorLocation(ProjectileLocation);
+        }
+
+        if (TimeToImpact > 0.0f)
+        {
+            return;
+        }
+    }
 
     if (HasAuthority())
     {
@@ -97,18 +134,12 @@ void ARTSProjectile::Tick(float DeltaSeconds)
         {
             HitTargetLocation();
         }
+
+        // Reliable multicast is queued before Destroy() replication, so clients receive it first.
+        MulticastNotifyHit(Target, Damage, DamageType, EventInstigator, DamageCauser);
     }
 
-    // Notify listeners.
-    NotifyOnProjectileDetonated(Target, Damage, DamageType, EventInstigator, DamageCauser);
-
-    // Play sound.
-    if (IsValid(ImpactSound))
-    {
-        UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), GetActorRotation());
-    }
-
-    // Destroy projectile.
+    // Destroy projectile. Server destroys; clients follow via replication.
     Destroy();
 }
 
@@ -173,6 +204,23 @@ void ARTSProjectile::HitTargetLocation()
     }
 }
 
+void ARTSProjectile::MulticastNotifyHit_Implementation(
+    AActor* ProjectileTarget,
+    float ProjectileDamage,
+    TSubclassOf<class UDamageType> ProjectileDamageType,
+    AController* ProjectileEventInstigator,
+    AActor* ProjectileDamageCauser)
+{
+    NotifyOnProjectileDetonated(
+        ProjectileTarget, ProjectileDamage, ProjectileDamageType,
+        ProjectileEventInstigator, ProjectileDamageCauser);
+
+    if (IsValid(ImpactSound))
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation(), GetActorRotation());
+    }
+}
+
 void ARTSProjectile::MulticastFireAt_Implementation(AActor* ProjectileTarget, float ProjectileDamage,
     TSubclassOf<class UDamageType> ProjectileDamageType, AController* ProjectileEventInstigator,
     AActor* ProjectileDamageCauser)
@@ -230,6 +278,7 @@ void ARTSProjectile::MulticastFireAt_Implementation(AActor* ProjectileTarget, fl
         UGameplayStatics::PlaySoundAtLocation(this, FiredSound, GetActorLocation(), GetActorRotation());
     }
 
-    // Clients will take it from here.
-    TearOff();
+    // Stop position replication (clients simulate locally) but keep the actor channel open
+    // so MulticastNotifyHit can reach clients when the projectile detonates.
+    SetReplicateMovement(false);
 }

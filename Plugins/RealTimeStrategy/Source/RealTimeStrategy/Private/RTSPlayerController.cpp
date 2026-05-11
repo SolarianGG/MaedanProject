@@ -2607,6 +2607,21 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 		return;
 	}
 
+	// Guard: actor must have an ability system with a valid ability at the requested index.
+	URTSAbilitySystemComponent* AbilitySystem = AbilityActor->FindComponentByClass<URTSAbilitySystemComponent>();
+	if (!IsValid(AbilitySystem))
+	{
+		return;
+	}
+
+	{
+		TArray<FRTSAbilityData> Abilities = AbilitySystem->GetAbilities();
+		if (!Abilities.IsValidIndex(AbilityIndex) || !Abilities[AbilityIndex].AbilityClass)
+		{
+			return;
+		}
+	}
+
 	// Cancel building placement if active.
 	if (BuildingCursor)
 	{
@@ -2615,7 +2630,7 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 
 	AbilityTargetingActor = AbilityActor;
 	AbilityTargetingIndex = AbilityIndex;
-	bAbilityTargetingJustEntered = true;
+	bAbilityTargetingJustEntered = false;
 
 	// Clean up any previous targeting visuals.
 	if (IsValid(AbilityTargetingDecalActor))
@@ -2626,8 +2641,6 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 
 	// Resolve circle radius: prefer TargetingCircleSize on the ability, fall back to the ability Range, then to the controller default.
 	float CircleRadius = AbilityTargetingCircleRadius;
-	URTSAbilitySystemComponent* AbilitySystem = AbilityActor->FindComponentByClass<URTSAbilitySystemComponent>();
-	if (AbilitySystem)
 	{
 		TArray<FRTSAbilityData> Abilities = AbilitySystem->GetAbilities();
 		if (Abilities.IsValidIndex(AbilityIndex) && Abilities[AbilityIndex].AbilityClass)
@@ -2641,6 +2654,10 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 			else if (AbilityCDO->GetRange() > 0.0f)
 			{
 				CircleRadius = AbilityCDO->GetRange();
+			}
+			else
+			{
+				CircleRadius = 0.0f;
 			}
 		}
 	}
