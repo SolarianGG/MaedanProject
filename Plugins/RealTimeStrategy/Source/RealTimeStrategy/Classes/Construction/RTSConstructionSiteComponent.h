@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 
+#include "InputCoreTypes.h"
 #include "RTSActorComponent.h"
 
 #include "Templates/SubclassOf.h"
@@ -119,6 +120,10 @@ public:
     /** Whether the attack range of the building should be previewed while selecting a construction location. */
     bool ShouldPreviewAttackRange() const;
 
+    /** Gets the keyboard key that enters building placement mode for this building. EKeys::Invalid means no hotkey assigned. */
+    UFUNCTION(BlueprintPure)
+    FKey GetHotkey() const;
+
     /** Whether the construction timer is currently being ticked, or not. */
     UFUNCTION(BlueprintPure)
     ERTSConstructionState GetState() const;
@@ -214,6 +219,10 @@ private:
     /** Sound to play when the actor finished construction. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     USoundCue* FinishedSound;
+
+    /** Keyboard key that enters building placement mode for this building when pressed. EKeys::Invalid means no hotkey. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    FKey Hotkey;
 
     /** Sound to play when construction stalls due to insufficient resources (PayOverTime). */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")

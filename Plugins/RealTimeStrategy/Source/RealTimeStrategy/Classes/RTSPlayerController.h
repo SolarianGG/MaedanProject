@@ -43,6 +43,7 @@ public:
     ARTSPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
     
     virtual void PlayerTick(float DeltaTime) override;
+    virtual bool InputKey(FKey Key, EInputEvent EventType, float AmountDepressed, bool bGamepad) override;
 
     virtual void InitPlayerState() override;
     virtual void OnRep_PlayerState() override;

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 
+#include "InputCoreTypes.h"
 #include "UObject/Object.h"
 
 #include "GameFramework/DamageType.h"
@@ -93,6 +94,10 @@ public:
     UFUNCTION(BlueprintPure)
     float GetTargetingCircleSize() const;
 
+    /** Gets the keyboard key that triggers this ability. EKeys::Invalid means no hotkey assigned. */
+    UFUNCTION(BlueprintPure)
+    FKey GetHotkey() const;
+
 protected:
     /** Mana cost to activate this ability. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS", meta = (ClampMin = 0))
@@ -157,4 +162,8 @@ protected:
     /** World-space diameter (cm) of the targeting circle decal. Set this to match the Niagara effect's Uniform Sprite Size. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|VFX", meta = (ClampMin = 0))
     float TargetingCircleSize;
+
+    /** Keyboard key that triggers this ability when pressed. EKeys::Invalid means no hotkey. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Input")
+    FKey Hotkey;
 };

@@ -146,6 +146,111 @@ void ARTSPlayerController::BeginPlay()
 	}
 }
 
+bool ARTSPlayerController::InputKey(FKey Key, EInputEvent EventType, float AmountDepressed, bool bGamepad)
+{
+    const bool bResult = Super::InputKey(Key, EventType, AmountDepressed, bGamepad);
+
+    if (EventType != IE_Pressed || Key == EKeys::Invalid)
+    {
+        return bResult;
+    }
+
+    // Ability hotkey: first selected unit that has a matching ability.
+    for (AActor* Actor : SelectedActors)
+    {
+        if (!IsValid(Actor))
+        {
+            continue;
+        }
+
+        URTSAbilitySystemComponent* AbilitySystem = Actor->FindComponentByClass<URTSAbilitySystemComponent>();
+        if (!IsValid(AbilitySystem))
+        {
+            continue;
+        }
+
+        const TArray<FRTSAbilityData>& Abilities = AbilitySystem->GetAbilities();
+        for (int32 i = 0; i < Abilities.Num(); ++i)
+        {
+            if (!Abilities[i].AbilityClass)
+            {
+                continue;
+            }
+
+            const URTSAbility* CDO = Abilities[i].AbilityClass->GetDefaultObject<URTSAbility>();
+            if (CDO->GetHotkey() == Key)
+            {
+                BeginAbilityTargeting(Actor, i);
+                return bResult;
+            }
+        }
+    }
+
+    // Production hotkey: all selected buildings with a matching product.
+    for (AActor* Actor : SelectedActors)
+    {
+        if (!IsValid(Actor))
+        {
+            continue;
+        }
+
+        URTSProductionComponent* ProductionComp = Actor->FindComponentByClass<URTSProductionComponent>();
+        if (!IsValid(ProductionComp))
+        {
+            continue;
+        }
+
+        for (TSubclassOf<AActor> ProductClass : ProductionComp->GetAvailableProducts())
+        {
+            if (!ProductClass)
+            {
+                continue;
+            }
+
+            URTSProductionCostComponent* CostCDO =
+                URTSGameplayLibrary::FindDefaultComponentByClass<URTSProductionCostComponent>(ProductClass);
+            if (CostCDO && CostCDO->GetHotkey() == Key)
+            {
+                IssueProductionOrder(ProductClass);
+                break;
+            }
+        }
+    }
+
+    // Construction hotkey: enter building placement mode for the first matched building class.
+    for (AActor* Actor : SelectedActors)
+    {
+        if (!IsValid(Actor))
+        {
+            continue;
+        }
+
+        URTSBuilderComponent* BuilderComp = Actor->FindComponentByClass<URTSBuilderComponent>();
+        if (!IsValid(BuilderComp))
+        {
+            continue;
+        }
+
+        for (TSubclassOf<AActor> BuildingClass : BuilderComp->GetConstructibleBuildingClasses())
+        {
+            if (!BuildingClass)
+            {
+                continue;
+            }
+
+            URTSConstructionSiteComponent* SiteCDO =
+                URTSGameplayLibrary::FindDefaultComponentByClass<URTSConstructionSiteComponent>(BuildingClass);
+            if (SiteCDO && SiteCDO->GetHotkey() == Key)
+            {
+                BeginBuildingPlacement(BuildingClass);
+                return bResult;
+            }
+        }
+    }
+
+    return bResult;
+}
+
 void ARTSPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();

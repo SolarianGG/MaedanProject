@@ -36,3 +36,8 @@ USoundCue* URTSProductionCostComponent::GetFinishedSound() const
 {
     return FinishedSound;
 }
+
+FKey URTSProductionCostComponent::GetHotkey() const
+{
+    return Hotkey;
+}

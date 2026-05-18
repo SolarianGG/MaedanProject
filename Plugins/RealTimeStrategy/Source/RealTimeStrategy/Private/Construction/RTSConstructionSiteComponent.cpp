@@ -492,6 +492,11 @@ bool URTSConstructionSiteComponent::ShouldPreviewAttackRange() const
     return bPreviewAttackRange;
 }
 
+FKey URTSConstructionSiteComponent::GetHotkey() const
+{
+    return Hotkey;
+}
+
 ERTSConstructionState URTSConstructionSiteComponent::GetState() const
 {
     return State;

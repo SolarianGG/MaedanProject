@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 
+#include "InputCoreTypes.h"
 #include "Components/ActorComponent.h"
 #include "Templates/SubclassOf.h"
 
@@ -44,6 +45,10 @@ public:
     UFUNCTION(BlueprintPure)
     USoundCue* GetFinishedSound() const;
 
+    /** Gets the keyboard key that queues production of this actor. EKeys::Invalid means no hotkey assigned. */
+    UFUNCTION(BlueprintPure)
+    FKey GetHotkey() const;
+
 
 private:
 	/** When to pay resources for production. */
@@ -65,4 +70,8 @@ private:
     /** Sound to play when the actor finished production. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     USoundCue* FinishedSound;
+
+    /** Keyboard key that queues production of this actor when pressed. EKeys::Invalid means no hotkey. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    FKey Hotkey;
 };
