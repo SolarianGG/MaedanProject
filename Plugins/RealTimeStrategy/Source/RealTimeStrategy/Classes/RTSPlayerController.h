@@ -486,6 +486,10 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
     float EdgeScrollSpeedMultiplier;
 
+    /** Interpolation speed for edge scroll velocity smoothing (higher = snappier, lower = more inertia). */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
+    float EdgeScrollInterpSpeed;
+
     /** Speed of camera pitch rotation, in degrees per second. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
     float CameraPitchSpeed;
@@ -593,6 +597,12 @@ private:
 
 	/** Accumulated pitch rotation input for the current tick. */
 	float CameraPitchAxisValue;
+
+	/** Smoothed edge-scroll velocity along the right axis, independent of keyboard input. */
+	float EdgeScrollVelocityX;
+
+	/** Smoothed edge-scroll velocity along the forward axis, independent of keyboard input. */
+	float EdgeScrollVelocityY;
 
 	/** Whether the camera is currently being rotated (middle mouse button held). */
 	bool bRotatingCamera;

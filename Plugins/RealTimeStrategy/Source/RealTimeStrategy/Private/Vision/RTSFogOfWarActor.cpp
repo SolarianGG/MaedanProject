@@ -43,7 +43,6 @@ void ARTSFogOfWarActor::Initialize(ARTSVisionVolume* InVisionVolume)
 	FogOfWarTextureBuffer = new uint8[BufferSize];
 	FogOfWarBlurBuffer = new uint8[BufferSize];
 
-	// Initialize buffer to Unknown state (30 grey, alpha 0).
 	for (int32 i = 0; i < SizeInTiles * SizeInTiles; ++i)
 	{
 		FogOfWarTextureBuffer[i * 4 + 0] = 30; // Blue

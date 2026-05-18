@@ -9,6 +9,7 @@
 #include "Components/InputComponent.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
+#include "Framework/Application/SlateApplication.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -87,6 +88,9 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 
 	CameraScrollThreshold = 50.0f;
 	EdgeScrollSpeedMultiplier = 1.5f;
+	EdgeScrollInterpSpeed = 8.0f;
+	EdgeScrollVelocityX = 0.0f;
+	EdgeScrollVelocityY = 0.0f;
 
 	CameraPitchSpeed = 50.0f;
 	MinCameraPitch = -80.0f;
@@ -2417,47 +2421,60 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 		return;
 	}
 
-	// Get mouse input.
-	float MouseX;
-	float MouseY;
+	// Edge scroll: compute target velocity from cursor position each frame.
+	// FSlateApplication::GetCursorPos() reads the OS-level cursor position directly,
+	// so it works reliably even when the cursor is at or beyond the screen/window edge.
+	float TargetEdgeScrollX = 0.0f;
+	float TargetEdgeScrollY = 0.0f;
 
-	const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
-
-	const float ScrollBorderRight = ViewportSize.X - CameraScrollThreshold;
-	const float ScrollBorderTop = ViewportSize.Y - CameraScrollThreshold;
-
-	if (GetMousePosition(MouseX, MouseY))
+	if (GEngine->GameViewport)
 	{
-		if (MouseX <= CameraScrollThreshold)
+		// Convert absolute screen-space cursor position to viewport-relative coords.
+		const FVector2D AbsCursorPos = FSlateApplication::Get().GetCursorPos();
+		FVector2D WindowPos(0.f, 0.f);
+		if (TSharedPtr<SWindow> GameWindow = GEngine->GameViewport->GetWindow())
 		{
-			float T = 1.0f - (MouseX / CameraScrollThreshold);
-			CameraLeftRightAxisValue -= T * T * EdgeScrollSpeedMultiplier;
-		}
-		else if (MouseX >= ScrollBorderRight)
-		{
-			float T = (MouseX - ScrollBorderRight) / CameraScrollThreshold;
-			CameraLeftRightAxisValue += T * T * EdgeScrollSpeedMultiplier;
+			WindowPos = GameWindow->GetPositionInScreen();
 		}
 
-		if (MouseY <= CameraScrollThreshold)
+		const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
+		// Clamp so cursor outside the window maps to the nearest edge (full scroll speed there).
+		const float CursorX = FMath::Clamp(AbsCursorPos.X - WindowPos.X, 0.f, ViewportSize.X);
+		const float CursorY = FMath::Clamp(AbsCursorPos.Y - WindowPos.Y, 0.f, ViewportSize.Y);
+
+		const float ScrollBorderRight = ViewportSize.X - (float)CameraScrollThreshold;
+		const float ScrollBorderTop   = ViewportSize.Y - (float)CameraScrollThreshold;
+
+		if (CursorX <= (float)CameraScrollThreshold)
 		{
-			float T = 1.0f - (MouseY / CameraScrollThreshold);
-			CameraUpDownAxisValue += T * T * EdgeScrollSpeedMultiplier;
+			float T = 1.0f - (CursorX / (float)CameraScrollThreshold);
+			TargetEdgeScrollX = -(T * T * EdgeScrollSpeedMultiplier);
 		}
-		else if (MouseY >= ScrollBorderTop)
+		else if (CursorX >= ScrollBorderRight)
 		{
-			float T = (MouseY - ScrollBorderTop) / CameraScrollThreshold;
-			CameraUpDownAxisValue -= T * T * EdgeScrollSpeedMultiplier;
+			float T = (CursorX - ScrollBorderRight) / (float)CameraScrollThreshold;
+			TargetEdgeScrollX = T * T * EdgeScrollSpeedMultiplier;
+		}
+
+		if (CursorY <= (float)CameraScrollThreshold)
+		{
+			float T = 1.0f - (CursorY / (float)CameraScrollThreshold);
+			TargetEdgeScrollY = T * T * EdgeScrollSpeedMultiplier;
+		}
+		else if (CursorY >= ScrollBorderTop)
+		{
+			float T = (CursorY - ScrollBorderTop) / (float)CameraScrollThreshold;
+			TargetEdgeScrollY = -(T * T * EdgeScrollSpeedMultiplier);
 		}
 	}
 
-	// Apply input.
-	CameraLeftRightAxisValue = FMath::Clamp(CameraLeftRightAxisValue, -EdgeScrollSpeedMultiplier, +EdgeScrollSpeedMultiplier);
-	CameraUpDownAxisValue = FMath::Clamp(CameraUpDownAxisValue, -EdgeScrollSpeedMultiplier, +EdgeScrollSpeedMultiplier);
+	// Smoothly interpolate edge scroll velocity toward target for gradual buildup and decay.
+	EdgeScrollVelocityX = FMath::FInterpTo(EdgeScrollVelocityX, TargetEdgeScrollX, DeltaTime, EdgeScrollInterpSpeed);
+	EdgeScrollVelocityY = FMath::FInterpTo(EdgeScrollVelocityY, TargetEdgeScrollY, DeltaTime, EdgeScrollInterpSpeed);
 
 	FVector Location = PlayerPawn->GetActorLocation();
-	Location += FVector::RightVector * CameraSpeed * CameraLeftRightAxisValue * DeltaTime;
-	Location += FVector::ForwardVector * CameraSpeed * CameraUpDownAxisValue * DeltaTime;
+	Location += FVector::RightVector   * CameraSpeed * (CameraLeftRightAxisValue + EdgeScrollVelocityX) * DeltaTime;
+	Location += FVector::ForwardVector * CameraSpeed * (CameraUpDownAxisValue    + EdgeScrollVelocityY) * DeltaTime;
 
 	// Enforce camera bounds.
 	if (!CameraBoundsVolume || CameraBoundsVolume->EncompassesPoint(Location))
