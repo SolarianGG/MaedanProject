@@ -103,6 +103,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IssueMoveOrder(const FVector& TargetLocation);
 
+	/** Orders all selected units to move to the specified location and attack enemies on the way. */
+	UFUNCTION(BlueprintCallable)
+	bool IssueAttackMoveOrderToSelectedActors(const FVector& TargetLocation);
+
     /** Gets a selected actor suitable for production. */
     AActor* GetSelectedProductionActorFor(TSubclassOf<AActor> ProductClass) const;
 
@@ -686,6 +690,9 @@ private:
 	/** Whether to add clicked units to the current selection, if they're not already selected, and deselect them otherwise. */
 	bool bToggleSelectionHotkeyPressed;
 
+	/** Whether the next left click should issue an attack-move order instead of selecting. */
+	bool bAttackMovePending = false;
+
     /** Time to wait before playing the next selection sound, in seconds. */
     float SelectionSoundCooldownRemaining;
 
@@ -817,6 +824,10 @@ private:
 	/** Stop showing all production progress bars. */
 	UFUNCTION()
 	void StopShowingProductionProgressBars();
+
+	/** Activates attack-move pending mode: next left click issues attack-move to that location. */
+	UFUNCTION()
+	void ActivateAttackMoveMode();
 
 	/** Start adding clicked units to the current selection. */
 	UFUNCTION()

@@ -52,6 +52,7 @@
 #include "Libraries/RTSGameplayLibrary.h"
 #include "Libraries/RTSGameplayTagLibrary.h"
 #include "Libraries/RTSOrderLibrary.h"
+#include "Orders/RTSAttackMoveOrder.h"
 #include "Orders/RTSAttackOrder.h"
 #include "Orders/RTSBeginConstructionOrder.h"
 #include "Orders/RTSContinueConstructionOrder.h"
@@ -349,6 +350,8 @@ void ARTSPlayerController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("CancelConstruction"), IE_Released, this,
 	                           &ARTSPlayerController::CancelConstruction);
 	InputComponent->BindAction(TEXT("CancelProduction"), IE_Released, this, &ARTSPlayerController::CancelProduction);
+
+	InputComponent->BindAction(TEXT("AttackMove"), IE_Pressed, this, &ARTSPlayerController::ActivateAttackMoveMode);
 
 	// Get camera bounds.
 	for (TActorIterator<ARTSCameraBoundsVolume> ActorItr(GetWorld()); ActorItr; ++ActorItr)
@@ -757,6 +760,7 @@ bool ARTSPlayerController::IsSelectableActor(AActor* Actor) const
 
 void ARTSPlayerController::StartContinuousOrder()
 {
+	bAttackMovePending = false;
 	IssueDefaultOrderToSelectedActors();
 	// When Shift is held each click adds exactly one waypoint — don't spam the queue with the repeat timer.
 	if (!IsInputKeyDown(EKeys::LeftShift) && !IsInputKeyDown(EKeys::RightShift))
@@ -987,6 +991,23 @@ bool ARTSPlayerController::IssueMoveOrder(const FVector& TargetLocation)
 	return IssueOrderToSelectedActors(MoveOrder);
 }
 
+bool ARTSPlayerController::IssueAttackMoveOrderToSelectedActors(const FVector& TargetLocation)
+{
+	FRTSOrderData Order;
+	Order.OrderClass = URTSAttackMoveOrder::StaticClass();
+	Order.TargetLocation = TargetLocation;
+
+	return IssueOrderToSelectedActors(Order);
+}
+
+void ARTSPlayerController::ActivateAttackMoveMode()
+{
+	if (SelectedActors.Num() > 0)
+	{
+		bAttackMovePending = true;
+	}
+}
+
 AActor* ARTSPlayerController::GetSelectedProductionActorFor(TSubclassOf<AActor> ProductClass) const
 {
 	// Find suitable selected actor.
@@ -1091,6 +1112,7 @@ void ARTSPlayerController::IssueProductionOrder(TSubclassOf<AActor> ProductClass
 
 void ARTSPlayerController::IssueStopOrder()
 {
+	bAttackMovePending = false;
 	FRTSOrderData StopOrder;
 	StopOrder.OrderClass = URTSStopOrder::StaticClass();
 
@@ -1710,6 +1732,19 @@ void ARTSPlayerController::FinishSelectActors()
 	{
 		bClickStartedOnAbilityIcons = false;
 		bCreatingSelectionFrame = false;
+		return;
+	}
+
+	// Attack-move pending: issue attack-move order to clicked world position.
+	if (bAttackMovePending)
+	{
+		bAttackMovePending = false;
+		bCreatingSelectionFrame = false;
+		FHitResult Hit;
+		if (GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery1, false, Hit))
+		{
+			IssueAttackMoveOrderToSelectedActors(Hit.Location);
+		}
 		return;
 	}
 

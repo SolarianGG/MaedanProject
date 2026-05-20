@@ -16,6 +16,9 @@ enum class ERTSOrderType : uint8
 
 	/** Attack another actor. */
 	ORDER_Attack,
+	
+	/** Attack another actor. */
+	ORDER_AttackMove,
 
 	/** Create a new construction site. */
 	ORDER_BeginConstruction,

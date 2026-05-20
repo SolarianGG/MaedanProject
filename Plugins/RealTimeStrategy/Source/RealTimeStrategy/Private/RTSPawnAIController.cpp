@@ -18,6 +18,7 @@
 #include "Orders/RTSGatherOrder.h"
 #include "Orders/RTSMoveOrder.h"
 #include "Orders/RTSReturnResourcesOrder.h"
+#include "Orders/RTSAttackMoveOrder.h"
 #include "Orders/RTSStopOrder.h"
 
 
@@ -73,18 +74,27 @@ void ARTSPawnAIController::FindTargetInAcquisitionRadius()
 {
 	if (!IsValid(AttackComponent))
 	{
+		UE_LOG(LogRTS, Warning, TEXT("[AttackMove] %s: AttackComponent is NULL, skipping target search."), GetPawn() ? *GetPawn()->GetName() : TEXT("?"));
 		return;
 	}
+
+	const float AcqRadius = AttackComponent->GetAcquisitionRadius();
 
 	// Find nearby actors.
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(GetPawn());
-	
+
 	TArray<AActor*> NearbyActors;
 	UKismetSystemLibrary::SphereOverlapActors(this, GetPawn()->GetActorLocation(),
-		AttackComponent->GetAcquisitionRadius(), AcquisitionObjectTypes, APawn::StaticClass(), ActorsToIgnore,
+		AcqRadius, AcquisitionObjectTypes, APawn::StaticClass(), ActorsToIgnore,
 		NearbyActors);
-	
+
+	const UClass* CurrentOrderClass = Blackboard->GetValueAsClass(TEXT("OrderClass"));
+	UE_LOG(LogRTS, Log, TEXT("[AcquireTargets] %s (Order=%s): SphereOverlap r=%.0f found %d actors."),
+		*GetPawn()->GetName(),
+		CurrentOrderClass ? *CurrentOrderClass->GetName() : TEXT("None"),
+		AcqRadius, NearbyActors.Num());
+
 	// Find target to acquire.
 	for (AActor* NearbyActor : NearbyActors)
 	{
@@ -102,6 +112,7 @@ void ARTSPawnAIController::FindTargetInAcquisitionRadius()
 
 			if (MyOwnerComponent && MyOwnerComponent->IsSameTeamAsActor(NearbyActor))
 			{
+				UE_LOG(LogRTS, Log, TEXT("[AcquireTargets] Skipping %s: same team."), *NearbyActor->GetName());
 				continue;
 			}
 		}
@@ -109,6 +120,7 @@ void ARTSPawnAIController::FindTargetInAcquisitionRadius()
 		// Check if found attackable actor.
 		if (!URTSGameplayTagLibrary::HasGameplayTag(NearbyActor, URTSGameplayTagLibrary::Status_Permanent_CanBeAttacked()))
 		{
+			UE_LOG(LogRTS, Log, TEXT("[AcquireTargets] Skipping %s: no CanBeAttacked tag."), *NearbyActor->GetName());
 			continue;
 		}
 
@@ -117,6 +129,15 @@ void ARTSPawnAIController::FindTargetInAcquisitionRadius()
 
 		UE_LOG(LogRTS, Log, TEXT("%s automatically acquired target %s."), *GetPawn()->GetName(), *NearbyActor->GetName());
 		return;
+	}
+
+	UE_LOG(LogRTS, Log, TEXT("[AcquireTargets] %s: No target acquired."), *GetPawn()->GetName());
+
+	// During attack-move, clear stale target so BT transitions correctly to the move branch.
+	// For explicit attack orders, preserve the target set by ApplyOrder.
+	if (Blackboard->GetValueAsClass(TEXT("OrderClass")) == URTSAttackMoveOrder::StaticClass())
+	{
+		Blackboard->ClearValue(TEXT("TargetActor"));
 	}
 }
 
@@ -186,6 +207,11 @@ void ARTSPawnAIController::ApplyOrder(const FRTSOrderData& Order)
     if (OrderType == ERTSOrderType::ORDER_None)
     {
         Blackboard->SetValueAsVector(TEXT("HomeLocation"), GetPawn()->GetActorLocation());
+    }
+    else if (Order.OrderClass == URTSAttackMoveOrder::StaticClass())
+    {
+        // Chase radius is measured from the attack-move destination, not the spawn point.
+        Blackboard->SetValueAsVector(TEXT("HomeLocation"), Order.TargetLocation);
     }
     else
     {
@@ -453,6 +479,10 @@ ERTSOrderType ARTSPawnAIController::OrderClassToType(UClass* OrderClass) const
     if (OrderClass == URTSAttackOrder::StaticClass())
     {
         return ERTSOrderType::ORDER_Attack;
+    }
+    else if (OrderClass == URTSAttackMoveOrder::StaticClass())
+    {
+        return ERTSOrderType::ORDER_AttackMove;
     }
     else if (OrderClass == URTSBeginConstructionOrder::StaticClass())
     {
