@@ -31,6 +31,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UseAttack(int32 AttackIndex, AActor* Target);
 
+	/** Spawns the projectile stored by the last UseAttack call. Called by RTSAnimNotify_FireProjectile. */
+	UFUNCTION(BlueprintCallable)
+	void FirePendingProjectile();
+
     /** Gets the radius in which the actor will automatically select and attack targets, in cm. */
     UFUNCTION(BlueprintPure)
     float GetAcquisitionRadius() const;
@@ -71,10 +75,32 @@ private:
 
     /** Time before the next attack can be used, in seconds. This is shared between attacks.*/
     float RemainingCooldown;
-	
+
+    struct FPendingProjectile
+    {
+        TWeakObjectPtr<AActor> Target;
+        float Damage = 0.f;
+        TSubclassOf<UDamageType> DamageType;
+        TSubclassOf<ARTSProjectile> ProjectileClass;
+        FName SpawnSocket;
+        TWeakObjectPtr<AController> Instigator;
+    };
+
+    FPendingProjectile PendingProjectile;
+    FTimerHandle ProjectileSpawnTimerHandle;
+
+    void SpawnPendingProjectile();
+
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastPlayAttackMontage(UAnimMontage* Montage);
+	void MulticastPlayAttackMontage(UAnimMontage* Montage, float PlayRate);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStopAttackMontage();
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastNotifyAttackUsed(AActor* InActor, AActor* InTarget);
+
+	/** The montage currently playing as part of an attack. Null when no attack is in progress. */
+	UPROPERTY()
+	UAnimMontage* CurrentAttackMontage = nullptr;
 };

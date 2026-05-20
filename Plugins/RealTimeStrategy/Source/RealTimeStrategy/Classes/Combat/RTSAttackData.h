@@ -40,4 +40,17 @@ public:
 	/** Type of the projectile to spawn. If not set, damage will be dealt instantly. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
 	TSubclassOf<ARTSProjectile> ProjectileClass;
+
+	/** Optional socket name on the owner's skeletal mesh to spawn the projectile from. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
+	FName ProjectileSpawnSocket;
+
+	/** Delay in seconds after UseAttack before the projectile is spawned. Simple but drifts if animation speed changes. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
+	float ProjectileSpawnDelay = 0.0f;
+
+	/** If true, the projectile is spawned when RTSAnimNotify_FireProjectile fires in the montage.
+	 *  Frame-perfect sync regardless of animation speed. Requires the notify to be placed in AttackMontage. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
+	bool bWaitForAnimNotify = false;
 };
