@@ -1,6 +1,7 @@
 #include "Combat/RTSAttackComponent.h"
 
 #include "Engine/World.h"
+#include "TimerManager.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/Pawn.h"
 
@@ -49,6 +50,31 @@ void URTSAttackComponent::TickComponent(float DeltaTime, enum ELevelTick TickTyp
 
 			// Notify listeners.
 			OnCooldownReady.Broadcast(GetOwner());
+		}
+	}
+
+	// On the server: cancel attack montage and pending projectile if the pawn starts moving.
+	AActor* Owner = GetOwner();
+	if (CurrentAttackMontage && Owner->HasAuthority())
+	{
+		USkeletalMeshComponent* Mesh = Owner->FindComponentByClass<USkeletalMeshComponent>();
+		const bool bMontageStillPlaying = Mesh && Mesh->GetAnimInstance()
+			&& Mesh->GetAnimInstance()->Montage_IsPlaying(CurrentAttackMontage);
+
+		if (bMontageStillPlaying)
+		{
+			APawn* Pawn = Cast<APawn>(Owner);
+			if (Pawn && Pawn->GetVelocity().SizeSquared() > 1.0f)
+			{
+				PendingProjectile.Target.Reset();
+				CurrentAttackMontage = nullptr;
+				MulticastStopAttackMontage();
+			}
+		}
+		else
+		{
+			// Montage finished naturally.
+			CurrentAttackMontage = nullptr;
 		}
 	}
 }
@@ -102,38 +128,73 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 
 	if (Attack.AttackMontage)
 	{
-		MulticastPlayAttackMontage(Attack.AttackMontage);
+		float PlayRate = 1.0f;
+		if (Attack.Cooldown > 0.0f)
+		{
+			PlayRate = Attack.AttackMontage->GetPlayLength() / Attack.Cooldown;
+		}
+		MulticastPlayAttackMontage(Attack.AttackMontage, PlayRate);
 	}
 
 	ARTSProjectile* SpawnedProjectile = nullptr;
 	if (Attack.ProjectileClass != nullptr)
 	{
-		// Fire projectile.
-		// Build spawn transform.
-		FVector SpawnLocation = Owner->GetActorLocation();
-		FRotator SpawnRotation = Owner->GetActorRotation();
-		FTransform SpawnTransform = FTransform(SpawnRotation, SpawnLocation);
-
-		// Build spawn info.
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.Instigator = OwnerPawn;
-		SpawnInfo.ObjectFlags |= RF_Transient;
-
-		// Spawn projectile.
-		SpawnedProjectile = GetWorld()->SpawnActor<ARTSProjectile>(Attack.ProjectileClass, SpawnTransform, SpawnInfo);
-
-		if (SpawnedProjectile)
+		if (Attack.bWaitForAnimNotify)
 		{
-			UE_LOG(LogRTS, Log, TEXT("%s fired projectile %s at target %s."), *Owner->GetName(),
-			       *SpawnedProjectile->GetName(), *Target->GetName());
+			// Store data and wait for RTSAnimNotify_FireProjectile in the montage.
+			PendingProjectile.Target = Target;
+			PendingProjectile.Damage = Damage;
+			PendingProjectile.DamageType = Attack.DamageType;
+			PendingProjectile.ProjectileClass = Attack.ProjectileClass;
+			PendingProjectile.SpawnSocket = Attack.ProjectileSpawnSocket;
+			PendingProjectile.Instigator = OwnerController;
+		}
+		else if (Attack.ProjectileSpawnDelay > 0.0f)
+		{
+			PendingProjectile.Target = Target;
+			PendingProjectile.Damage = Damage;
+			PendingProjectile.DamageType = Attack.DamageType;
+			PendingProjectile.ProjectileClass = Attack.ProjectileClass;
+			PendingProjectile.SpawnSocket = Attack.ProjectileSpawnSocket;
+			PendingProjectile.Instigator = OwnerController;
 
-			// Aim at target.
-			SpawnedProjectile->FireAt(
-				Target,
-				Damage,
-				Attack.DamageType,
-				OwnerController,
-				Owner);
+			GetWorld()->GetTimerManager().SetTimer(
+				ProjectileSpawnTimerHandle,
+				this,
+				&URTSAttackComponent::SpawnPendingProjectile,
+				Attack.ProjectileSpawnDelay,
+				false);
+		}
+		else
+		{
+			// Fire projectile immediately.
+			FVector SpawnLocation = Owner->GetActorLocation();
+			FRotator SpawnRotation = Owner->GetActorRotation();
+
+			if (!Attack.ProjectileSpawnSocket.IsNone())
+			{
+				USkeletalMeshComponent* MeshComp = Owner->FindComponentByClass<USkeletalMeshComponent>();
+				if (MeshComp && MeshComp->DoesSocketExist(Attack.ProjectileSpawnSocket))
+				{
+					SpawnLocation = MeshComp->GetSocketLocation(Attack.ProjectileSpawnSocket);
+					SpawnRotation = MeshComp->GetSocketRotation(Attack.ProjectileSpawnSocket);
+				}
+			}
+
+			FActorSpawnParameters SpawnInfo;
+			SpawnInfo.Instigator = OwnerPawn;
+			SpawnInfo.ObjectFlags |= RF_Transient;
+
+			SpawnedProjectile = GetWorld()->SpawnActor<ARTSProjectile>(
+				Attack.ProjectileClass, FTransform(SpawnRotation, SpawnLocation), SpawnInfo);
+
+			if (SpawnedProjectile)
+			{
+				UE_LOG(LogRTS, Log, TEXT("%s fired projectile %s at target %s."), *Owner->GetName(),
+				       *SpawnedProjectile->GetName(), *Target->GetName());
+
+				SpawnedProjectile->FireAt(Target, Damage, Attack.DamageType, OwnerController, Owner);
+			}
 		}
 	}
 	else
@@ -182,9 +243,70 @@ void URTSAttackComponent::MulticastNotifyAttackUsed_Implementation(AActor* InAct
 	}
 }
 
-void URTSAttackComponent::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage)
+void URTSAttackComponent::MulticastPlayAttackMontage_Implementation(UAnimMontage* Montage, float PlayRate)
 {
+	CurrentAttackMontage = Montage;
 	if (auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
 		if (auto* Anim = Mesh->GetAnimInstance())
-			Anim->Montage_Play(Montage);
+			Anim->Montage_Play(Montage, PlayRate);
+}
+
+void URTSAttackComponent::MulticastStopAttackMontage_Implementation()
+{
+	UAnimMontage* Montage = CurrentAttackMontage;
+	CurrentAttackMontage = nullptr;
+	if (auto* Mesh = GetOwner()->FindComponentByClass<USkeletalMeshComponent>())
+		if (auto* Anim = Mesh->GetAnimInstance())
+			Anim->Montage_Stop(0.1f, Montage);
+}
+
+void URTSAttackComponent::FirePendingProjectile()
+{
+	SpawnPendingProjectile();
+}
+
+void URTSAttackComponent::SpawnPendingProjectile()
+{
+	if (!PendingProjectile.Target.IsValid())
+	{
+		return;
+	}
+
+	AActor* Owner = GetOwner();
+	APawn* OwnerPawn = Cast<APawn>(Owner);
+
+	FVector SpawnLocation = Owner->GetActorLocation();
+	FRotator SpawnRotation = Owner->GetActorRotation();
+
+	if (!PendingProjectile.SpawnSocket.IsNone())
+	{
+		USkeletalMeshComponent* MeshComp = Owner->FindComponentByClass<USkeletalMeshComponent>();
+		if (MeshComp && MeshComp->DoesSocketExist(PendingProjectile.SpawnSocket))
+		{
+			SpawnLocation = MeshComp->GetSocketLocation(PendingProjectile.SpawnSocket);
+			SpawnRotation = MeshComp->GetSocketRotation(PendingProjectile.SpawnSocket);
+		}
+	}
+
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.Instigator = OwnerPawn;
+	SpawnInfo.ObjectFlags |= RF_Transient;
+
+	ARTSProjectile* SpawnedProjectile = GetWorld()->SpawnActor<ARTSProjectile>(
+		PendingProjectile.ProjectileClass,
+		FTransform(SpawnRotation, SpawnLocation),
+		SpawnInfo);
+
+	if (SpawnedProjectile)
+	{
+		UE_LOG(LogRTS, Log, TEXT("%s fired delayed projectile %s at target %s."),
+			*Owner->GetName(), *SpawnedProjectile->GetName(), *PendingProjectile.Target->GetName());
+
+		SpawnedProjectile->FireAt(
+			PendingProjectile.Target.Get(),
+			PendingProjectile.Damage,
+			PendingProjectile.DamageType,
+			PendingProjectile.Instigator.Get(),
+			Owner);
+	}
 }

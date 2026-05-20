@@ -34,6 +34,7 @@ public:
 		AActor* ProjectileDamageCauser);
 
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 
 
 	/** Event when this projectile hits its target. */
@@ -92,6 +93,7 @@ private:
     USoundCue* ImpactSound;
 
     bool bFired;
+    bool bImpactHandled;
 
     UPROPERTY()
 	AActor* Target;

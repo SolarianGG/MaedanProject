@@ -1,5 +1,6 @@
 #include "Combat/RTSProjectile.h"
 
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -23,7 +24,8 @@ ARTSProjectile::ARTSProjectile(const FObjectInitializer& ObjectInitializer /*= F
 	ProjectileMovement->InitialSpeed = 1000.0f;
 
     bFired = false;
-    HomingHitRadius = 15.0f;
+    bImpactHandled = false;
+    HomingHitRadius = 50.0f;
 
 	// Enable replication.
 	// This might change in the future, as we don't really care about exact projectile positions on client-side.
@@ -76,21 +78,16 @@ void ARTSProjectile::Tick(float DeltaSeconds)
             return;
         }
 
-        // Test the projectile probe sphere against the target's actual collision volume.
-        TArray<AActor*> OverlappedActors;
-        TArray<AActor*> ActorsToIgnore;
-        ActorsToIgnore.Add(this);
-
-        UKismetSystemLibrary::SphereOverlapActors(
-            this,
-            GetActorLocation(),
-            HomingHitRadius,
-            TArray<TEnumAsByte<EObjectTypeQuery>>(),
-            nullptr,
-            ActorsToIgnore,
-            OverlappedActors);
-
-        if (!OverlappedActors.Contains(Target))
+        // Check distance to the edge of the target's collision, not to its center.
+        float TargetRadius = 0.0f;
+        UCapsuleComponent* TargetCapsule = Target->FindComponentByClass<UCapsuleComponent>();
+        if (TargetCapsule)
+        {
+            TargetRadius = TargetCapsule->GetScaledCapsuleRadius();
+        }
+        const float EffectiveRadius = HomingHitRadius + TargetRadius;
+        const float DistSq = FVector::DistSquared(GetActorLocation(), Target->GetActorLocation());
+        if (DistSq > EffectiveRadius * EffectiveRadius)
         {
             return;
         }
@@ -124,8 +121,16 @@ void ARTSProjectile::Tick(float DeltaSeconds)
         }
     }
 
+    if (bImpactHandled)
+    {
+        Destroy();
+        return;
+    }
+
     if (HasAuthority())
     {
+        bImpactHandled = true;
+
         if (!bApplyAreaOfEffect)
         {
             HitTargetActor(Target);
@@ -204,6 +209,36 @@ void ARTSProjectile::HitTargetLocation()
     }
 }
 
+void ARTSProjectile::NotifyActorBeginOverlap(AActor* OtherActor)
+{
+    Super::NotifyActorBeginOverlap(OtherActor);
+
+    if (!HasAuthority() || !bFired || bImpactHandled)
+    {
+        return;
+    }
+
+    bool bShouldHit = bApplyAreaOfEffect ? IsValid(OtherActor) : (OtherActor == Target);
+    if (!bShouldHit)
+    {
+        return;
+    }
+
+    bImpactHandled = true;
+
+    if (!bApplyAreaOfEffect)
+    {
+        HitTargetActor(Target);
+    }
+    else
+    {
+        HitTargetLocation();
+    }
+
+    MulticastNotifyHit(Target, Damage, DamageType, EventInstigator, DamageCauser);
+    Destroy();
+}
+
 void ARTSProjectile::MulticastNotifyHit_Implementation(
     AActor* ProjectileTarget,
     float ProjectileDamage,
@@ -260,9 +295,16 @@ void ARTSProjectile::MulticastFireAt_Implementation(AActor* ProjectileTarget, fl
         ProjectileMovement->HomingTargetComponent = Target->GetRootComponent();
     }
 
-    // Set time to impact.
-    TimeToImpact = InitialDistance / ProjectileMovement->InitialSpeed;
+    // Reduce effective distance by target's capsule radius so the hit fires at collision edge, not center.
+    float TargetCapsuleRadius = 0.0f;
+    UCapsuleComponent* TargetCapsule = Target->FindComponentByClass<UCapsuleComponent>();
+    if (TargetCapsule)
+    {
+        TargetCapsuleRadius = TargetCapsule->GetScaledCapsuleRadius();
+    }
+    TimeToImpact = FMath::Max(0.f, InitialDistance - TargetCapsuleRadius) / ProjectileMovement->InitialSpeed;
     bFired = true;
+    bImpactHandled = false;
 
     // Setup ballistic trajectory.
     if (bBallisticTrajectory)
