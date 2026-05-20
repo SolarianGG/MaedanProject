@@ -495,17 +495,9 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
     float EdgeScrollInterpSpeed;
 
-    /** Speed of camera pitch rotation, in degrees per second. */
+    /** Speed of drag-to-pan camera movement, in world units per pixel. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera", meta = (ClampMin = 0))
-    float CameraPitchSpeed;
-
-    /** Minimum camera pitch angle (most top-down), in degrees. */
-    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera")
-    float MinCameraPitch;
-
-    /** Maximum camera pitch angle (most horizontal), in degrees. */
-    UPROPERTY(EditDefaultsOnly, Category = "RTS|Camera")
-    float MaxCameraPitch;
+    float CameraDragPanSpeed;
 
     /** Time between two group selections to be considered a double-selection (e.g. for centering the camera on that group). */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Input", meta = (ClampMin = 0))
@@ -600,8 +592,8 @@ private:
 	/** Last zoom axis input applied to camera movement. */
 	float CameraZoomAxisValue;
 
-	/** Accumulated pitch rotation input for the current tick. */
-	float CameraPitchAxisValue;
+	/** Mouse position at the start of the current drag-pan operation. */
+	FVector2D DragPanStartMousePosition;
 
 	/** Smoothed edge-scroll velocity along the right axis, independent of keyboard input. */
 	float EdgeScrollVelocityX;
@@ -789,9 +781,6 @@ private:
     /** Stops rotating the camera (middle mouse button released). */
     UFUNCTION()
     void StopRotateCamera();
-
-    /** Applies mouse Y delta to camera pitch rotation. */
-    void RotateCameraPitch(float Value);
 
     /** Remembers the current mouse position for multi-selection, finished by FinishSelectActors. */
     UFUNCTION()

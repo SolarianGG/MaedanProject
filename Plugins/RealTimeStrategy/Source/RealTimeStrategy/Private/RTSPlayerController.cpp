@@ -93,10 +93,8 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 	EdgeScrollVelocityX = 0.0f;
 	EdgeScrollVelocityY = 0.0f;
 
-	CameraPitchSpeed = 50.0f;
-	MinCameraPitch = -80.0f;
-	MaxCameraPitch = -20.0f;
-	CameraPitchAxisValue = 0.0f;
+	CameraDragPanSpeed = 2.0f;
+	DragPanStartMousePosition = FVector2D::ZeroVector;
 	bRotatingCamera = false;
 
 	DoubleGroupSelectionTime = 0.2f;
@@ -307,7 +305,6 @@ void ARTSPlayerController::SetupInputComponent()
 
 	InputComponent->BindAction(TEXT("RotateCamera"), IE_Pressed, this, &ARTSPlayerController::StartRotateCamera);
 	InputComponent->BindAction(TEXT("RotateCamera"), IE_Released, this, &ARTSPlayerController::StopRotateCamera);
-	InputComponent->BindAxis(TEXT("RotateCameraPitch"), this, &ARTSPlayerController::RotateCameraPitch);
 
 	InputComponent->BindAction(TEXT("SaveCameraLocation0"), IE_Pressed, this,
 	                           &ARTSPlayerController::SaveCameraLocationWithIndex<0>);
@@ -2174,23 +2171,16 @@ void ARTSPlayerController::ZoomCamera(float Value)
 void ARTSPlayerController::StartRotateCamera()
 {
 	bRotatingCamera = true;
+	float MouseX, MouseY;
+	GetMousePosition(MouseX, MouseY);
+	DragPanStartMousePosition = FVector2D(MouseX, MouseY);
+	bShowMouseCursor = false;
 }
 
 void ARTSPlayerController::StopRotateCamera()
 {
 	bRotatingCamera = false;
-}
-
-void ARTSPlayerController::RotateCameraPitch(float Value)
-{
-	if (bRotatingCamera)
-	{
-		CameraPitchAxisValue = Value;
-	}
-	else
-	{
-		CameraPitchAxisValue = 0.0f;
-	}
+	bShowMouseCursor = true;
 }
 
 float ARTSPlayerController::GetCameraDistance() const
@@ -2632,13 +2622,27 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 		CameraLocation.Z = FMath::Clamp(CameraLocation.Z, MinCameraDistance, MaxCameraDistance);
 		PlayerPawnCamera->SetRelativeLocation(CameraLocation);
 
-		// Apply pitch rotation input.
-		if (CameraPitchAxisValue != 0.0f)
+		// Apply drag-to-pan: move camera by mouse delta while MMB is held.
+		if (bRotatingCamera)
 		{
-			FRotator CameraRotation = PlayerPawnCamera->GetRelativeRotation();
-			CameraRotation.Pitch += CameraPitchSpeed * CameraPitchAxisValue * DeltaTime;
-			CameraRotation.Pitch = FMath::Clamp(CameraRotation.Pitch, MinCameraPitch, MaxCameraPitch);
-			PlayerPawnCamera->SetRelativeRotation(CameraRotation);
+			float MouseX, MouseY;
+			GetMousePosition(MouseX, MouseY);
+			FVector2D CurrentMousePos(MouseX, MouseY);
+			FVector2D Delta = CurrentMousePos - DragPanStartMousePosition;
+
+			if (!Delta.IsNearlyZero())
+			{
+				FVector PanLocation = PlayerPawn->GetActorLocation();
+				PanLocation += FVector::RightVector   * (-Delta.X * CameraDragPanSpeed);
+				PanLocation += FVector::ForwardVector * ( Delta.Y * CameraDragPanSpeed);
+
+				if (!CameraBoundsVolume || CameraBoundsVolume->EncompassesPoint(PanLocation))
+				{
+					PlayerPawn->SetActorLocation(PanLocation);
+				}
+
+				SetMouseLocation(DragPanStartMousePosition.X, DragPanStartMousePosition.Y);
+			}
 		}
 	}
 
