@@ -113,8 +113,8 @@ void URTSHealthComponent::SetCurrentHealth(float NewHealth, AActor* DamageCauser
         LastTimeDamageTaken = GetWorld()->GetRealTimeSeconds();
     }
 
-    // Check if we've just died.
-    if (CurrentHealth <= 0)
+    // Check if we've just died (guard against re-entry while death montage plays).
+    if (CurrentHealth <= 0 && OldHealth > 0)
     {
         UE_LOG(LogRTS, Log, TEXT("Actor %s has been killed."), *Owner->GetName());
 
@@ -150,6 +150,10 @@ void URTSHealthComponent::SetCurrentHealth(float NewHealth, AActor* DamageCauser
         // Stop or destroy actor.
         switch (ActorDeathType)
         {
+        case ERTSActorDeathType::DEATH_DoNothing:
+            URTSGameplayLibrary::StopGameplayFor(Owner);
+            break;
+
         case ERTSActorDeathType::DEATH_StopGameplay:
             URTSGameplayLibrary::StopGameplayFor(Owner);
             if (IsValid(DeathMontage))
@@ -200,8 +204,8 @@ void URTSHealthComponent::NotifyOnHealthChanged(AActor* Actor, float OldHealth, 
     // Notify listeners.
     OnHealthChanged.Broadcast(Actor, OldHealth, NewHealth, DamageCauser);
 
-    // Play sound.
-    if (NewHealth <= 0.0f && IsValid(DeathSound))
+    // Play sound — guard OldHealth so this fires exactly once on the alive→dead transition.
+    if (NewHealth <= 0.0f && OldHealth > 0.0f && IsValid(DeathSound))
     {
         UGameplayStatics::PlaySoundAtLocation(this, DeathSound,
             Actor->GetActorLocation(), Actor->GetActorRotation());
@@ -212,6 +216,11 @@ void URTSHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, co
 {
     // Only the server should modify health; clients receive the authoritative value via replication.
     if (!GetOwner()->HasAuthority())
+    {
+        return;
+    }
+
+    if (CurrentHealth <= 0)
     {
         return;
     }
