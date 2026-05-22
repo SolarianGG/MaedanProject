@@ -308,6 +308,9 @@ public:
 	/** Event when an actor has received an attack order. */
 	virtual void NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target);
 
+	/** Event when an attack-move order has been issued to a ground location. */
+	virtual void NotifyOnIssuedAttackMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation);
+
 	/** Event when an actor has received a begin construction order. */
 	virtual void NotifyOnIssuedBeginConstructionOrder(APawn* OrderedPawn, TSubclassOf<AActor> BuildingClass, const FVector& TargetLocation);
 
@@ -388,6 +391,10 @@ public:
 	/** Event when an actor has received an attack order. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedAttackOrder"))
 	void ReceiveOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target);
+
+	/** Event when an attack-move order has been issued to a ground location. */
+	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedAttackMoveOrder"))
+	void ReceiveOnIssuedAttackMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation);
 
 	/** Event when an actor has received a begin construction order. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Orders", meta = (DisplayName = "OnIssuedBeginConstructionOrder"))
@@ -538,6 +545,10 @@ private:
     /** Niagara effect to spawn when an attack order is issued on an enemy. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
     UNiagaraSystem* EnemyOrderEffect;
+
+    /** Niagara effect to spawn at the ground location when an attack-move order is issued. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
+    UNiagaraSystem* AttackMoveOrderEffect;
 
     /** Niagara effect to spawn when a gather order is issued on a resource. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Feedback")
@@ -817,6 +828,10 @@ private:
 	/** Activates attack-move pending mode: next left click issues attack-move to that location. */
 	UFUNCTION()
 	void ActivateAttackMoveMode();
+	
+	/** Deactivates attack-move pending mode */
+	UFUNCTION()
+	void DeactivateAttackMoveMode();
 
 	/** Start adding clicked units to the current selection. */
 	UFUNCTION()

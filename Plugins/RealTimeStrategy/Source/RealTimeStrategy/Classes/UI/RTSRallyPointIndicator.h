@@ -6,7 +6,6 @@
 
 class UNiagaraComponent;
 class UNiagaraSystem;
-class URTSProductionComponent;
 
 
 /**
@@ -26,7 +25,7 @@ public:
     virtual void Destroyed() override;
 
     void Initialize(UNiagaraSystem* TravelEffect, UNiagaraSystem* ArrivalEffect,
-                    const FVector& Start, const FVector& End, AActor* Building);
+                    const FVector& Start, const FVector& End);
 
 private:
     void StartTravelLoop();
@@ -43,9 +42,6 @@ private:
 
     UPROPERTY()
     UNiagaraSystem* ArrivalEffectSystem;
-
-    UPROPERTY()
-    URTSProductionComponent* ProductionComponent;
 
     FVector StartLocation;
     FVector EndLocation;

@@ -349,6 +349,7 @@ void ARTSPlayerController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("CancelProduction"), IE_Released, this, &ARTSPlayerController::CancelProduction);
 
 	InputComponent->BindAction(TEXT("AttackMove"), IE_Pressed, this, &ARTSPlayerController::ActivateAttackMoveMode);
+	InputComponent->BindAction(TEXT("AttackMove"), IE_Released, this, &ARTSPlayerController::DeactivateAttackMoveMode);
 
 	// Get camera bounds.
 	for (TActorIterator<ARTSCameraBoundsVolume> ActorItr(GetWorld()); ActorItr; ++ActorItr)
@@ -1003,6 +1004,11 @@ void ARTSPlayerController::ActivateAttackMoveMode()
 	{
 		bAttackMovePending = true;
 	}
+}
+
+void ARTSPlayerController::DeactivateAttackMoveMode()
+{
+	bAttackMovePending = false;
 }
 
 AActor* ARTSPlayerController::GetSelectedProductionActorFor(TSubclassOf<AActor> ProductClass) const
@@ -1732,15 +1738,53 @@ void ARTSPlayerController::FinishSelectActors()
 		return;
 	}
 
-	// Attack-move pending: issue attack-move order to clicked world position.
+	// Attack-move pending: attack visible enemy under cursor, otherwise attack-move to location.
 	if (bAttackMovePending)
 	{
-		bAttackMovePending = false;
 		bCreatingSelectionFrame = false;
-		FHitResult Hit;
-		if (GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery1, false, Hit))
+
+		TArray<FHitResult> HitResults;
+		if (!GetObjectsAtPointerPosition(HitResults))
 		{
-			IssueAttackMoveOrderToSelectedActors(Hit.Location);
+			return;
+		}
+
+		FVector FallbackLocation = FVector::ZeroVector;
+		bool bFoundLocation = false;
+
+		for (const FHitResult& Hit : HitResults)
+		{
+			bool bIgnored = false;
+			if (Hit.Actor.IsValid())
+			{
+				for (TSubclassOf<AActor> IgnoredClass : DefaultOrderIgnoreTargetClasses)
+				{
+					if (Hit.Actor->IsA(IgnoredClass)) { bIgnored = true; break; }
+				}
+			}
+			if (bIgnored) continue;
+
+			if (!bFoundLocation)
+			{
+				FallbackLocation = Hit.Location;
+				bFoundLocation = true;
+			}
+
+			if (Hit.Actor.IsValid())
+			{
+				URTSVisibleComponent* VisComp = Hit.Actor->FindComponentByClass<URTSVisibleComponent>();
+				if (IsValid(VisComp) && !VisComp->IsVisibleForLocalClient()) { bFoundLocation = false; continue;}
+			}
+
+			if (Hit.Actor.IsValid() && IssueAttackOrder(Hit.Actor.Get()))
+			{
+				return;
+			}
+		}
+
+		if (bFoundLocation)
+		{
+			IssueAttackMoveOrderToSelectedActors(FallbackLocation);
 		}
 		return;
 	}
@@ -2312,6 +2356,10 @@ void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrd
 	{
 		NotifyOnIssuedGatherOrder(OrderedPawn, Order.TargetActor);
 	}
+	else if (Order.OrderClass == URTSAttackMoveOrder::StaticClass())
+	{
+		NotifyOnIssuedAttackMoveOrder(OrderedPawn, Order.TargetLocation);
+	}
 	else if (Order.OrderClass == URTSMoveOrder::StaticClass())
 	{
 		NotifyOnIssuedMoveOrder(OrderedPawn, Order.TargetLocation);
@@ -2335,6 +2383,11 @@ void ARTSPlayerController::NotifyOnIssuedOrder(APawn* OrderedPawn, const FRTSOrd
 void ARTSPlayerController::NotifyOnIssuedAttackOrder(APawn* OrderedPawn, AActor* Target)
 {
 	ReceiveOnIssuedAttackOrder(OrderedPawn, Target);
+}
+
+void ARTSPlayerController::NotifyOnIssuedAttackMoveOrder(APawn* OrderedPawn, const FVector& TargetLocation)
+{
+	ReceiveOnIssuedAttackMoveOrder(OrderedPawn, TargetLocation);
 }
 
 void ARTSPlayerController::NotifyOnIssuedBeginConstructionOrder(APawn* OrderedPawn, TSubclassOf<AActor> BuildingClass,
@@ -2385,6 +2438,17 @@ void ARTSPlayerController::NotifyOnIssuedOrderVisualFeedback(const FRTSOrderData
 				FRotator::ZeroRotator);
 		}
 	}
+	else if (Order.OrderClass == URTSAttackMoveOrder::StaticClass())
+	{
+		if (AttackMoveOrderEffect)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				AttackMoveOrderEffect,
+				Order.TargetLocation,
+				FRotator::ZeroRotator);
+		}
+	}
 }
 
 void ARTSPlayerController::NotifyOnIssuedSetRallyPoint(AActor* OrderedActor, const FVector& TargetLocation)
@@ -2411,8 +2475,7 @@ void ARTSPlayerController::NotifyOnIssuedSetRallyPoint(AActor* OrderedActor, con
                 RallyPointTravelEffect,
                 RallyPointArrivalEffect,
                 StartLocation,
-                TargetLocation,
-                OrderedActor);
+                TargetLocation);
         }
     }
 

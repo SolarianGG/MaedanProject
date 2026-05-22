@@ -3,8 +3,6 @@
 #include "Components/MeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "GameFramework/Controller.h"
-
 #include "RTSLog.h"
 #include "RTSOwnerComponent.h"
 #include "RTSPlayerState.h"
@@ -57,12 +55,20 @@ void URTSTeamMaterialComponent::OnOwnerChanged(AActor* Actor, AController* NewOw
 {
 	UnsubscribeFromTeamChanged();
 
-	if (!IsValid(NewOwner))
+	// AController* is nullptr on clients for non-local players — read PlayerOwner
+	// directly from the OwnerComponent, which is replicated to all clients.
+	if (!IsValid(Actor))
 	{
 		return;
 	}
 
-	ARTSPlayerState* PlayerState = Cast<ARTSPlayerState>(NewOwner->PlayerState);
+	URTSOwnerComponent* OwnerComponent = Actor->FindComponentByClass<URTSOwnerComponent>();
+	if (!IsValid(OwnerComponent))
+	{
+		return;
+	}
+
+	ARTSPlayerState* PlayerState = OwnerComponent->GetPlayerOwner();
 	if (!IsValid(PlayerState))
 	{
 		return;

@@ -2,7 +2,6 @@
 
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Production/RTSProductionComponent.h"
 
 
 ARTSRallyPointIndicator::ARTSRallyPointIndicator()
@@ -16,7 +15,6 @@ ARTSRallyPointIndicator::ARTSRallyPointIndicator()
     ArrivalNiagaraComponent = nullptr;
     TravelEffectSystem = nullptr;
     ArrivalEffectSystem = nullptr;
-    ProductionComponent = nullptr;
     TotalDistance = 0.0f;
     Alpha = 0.0f;
     bInitialized = false;
@@ -24,18 +22,13 @@ ARTSRallyPointIndicator::ARTSRallyPointIndicator()
 }
 
 void ARTSRallyPointIndicator::Initialize(UNiagaraSystem* TravelEffect, UNiagaraSystem* ArrivalEffect,
-                                          const FVector& Start, const FVector& End, AActor* Building)
+                                          const FVector& Start, const FVector& End)
 {
     StartLocation = Start + FVector(0.0f, 0.0f, HeightOffset);
     EndLocation = End + FVector(0.0f, 0.0f, HeightOffset);
     TravelEffectSystem = TravelEffect;
     ArrivalEffectSystem = ArrivalEffect;
     TotalDistance = FVector::Dist(StartLocation, EndLocation);
-
-    if (IsValid(Building))
-    {
-        ProductionComponent = Building->FindComponentByClass<URTSProductionComponent>();
-    }
 
     if (TotalDistance < 1.0f)
     {
@@ -110,24 +103,16 @@ void ARTSRallyPointIndicator::Tick(float DeltaTime)
         return;
     }
 
-    bool bIsProducing = IsValid(ProductionComponent) && ProductionComponent->IsProducing();
-
-    // Not active — only start if building is producing.
     if (!bEffectsActive)
     {
-        if (bIsProducing)
-        {
-            StartTravelLoop();
-        }
+        StartTravelLoop();
         return;
     }
 
-    // Active — always complete the current 3s cycle, never interrupt mid-flight.
     Alpha += DeltaTime / TravelDuration;
 
     if (Alpha >= 1.0f)
     {
-        // Cycle complete — spawn arrival effect.
         if (ArrivalNiagaraComponent)
         {
             ArrivalNiagaraComponent->DeactivateImmediate();
@@ -142,15 +127,7 @@ void ARTSRallyPointIndicator::Tick(float DeltaTime)
                 FVector(1.0f), false);
         }
 
-        // Only loop if still producing, otherwise stop.
-        if (bIsProducing)
-        {
-            StartTravelLoop();
-        }
-        else
-        {
-            StopAllEffects();
-        }
+        StartTravelLoop();
         return;
     }
 
