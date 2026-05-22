@@ -124,6 +124,13 @@ void ARTSPawnAIController::FindTargetInAcquisitionRadius()
 			continue;
 		}
 
+		// Skip dead actors (death animation may still be playing).
+		if (!URTSGameplayTagLibrary::HasGameplayTag(NearbyActor, URTSGameplayTagLibrary::Status_Changing_Alive()))
+		{
+			UE_LOG(LogRTS, Log, TEXT("[AcquireTargets] Skipping %s: not alive."), *NearbyActor->GetName());
+			continue;
+		}
+
 		// Acquire target.
 		Blackboard->SetValueAsObject(TEXT("TargetActor"), NearbyActor);
 
