@@ -53,4 +53,10 @@ public:
 	 *  Frame-perfect sync regardless of animation speed. Requires the notify to be placed in AttackMontage. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS")
 	bool bWaitForAnimNotify = false;
+
+	/** Maximum PlayRate for the attack montage. When the cooldown-derived PlayRate (MontageLength / Cooldown)
+	 *  exceeds this value, the montage plays at MaxPlayRate and damage is applied immediately instead of via
+	 *  AnimNotify, keeping damage correct while the animation looks natural. 0 = no cap (default behavior). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RTS", meta = (ClampMin = 0))
+	float MaxPlayRate = 0.0f;
 };

@@ -126,6 +126,8 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 	// Use attack.
 	UE_LOG(LogRTS, Log, TEXT("Actor %s attacks %s."), *Owner->GetName(), *Target->GetName());
 
+	// Calculate montage PlayRate, capping if MaxPlayRate is set.
+	bool bPlayRateCapped = false;
 	if (Attack.AttackMontage)
 	{
 		float PlayRate = 1.0f;
@@ -133,13 +135,22 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 		{
 			PlayRate = Attack.AttackMontage->GetPlayLength() / Attack.Cooldown;
 		}
+		if (Attack.MaxPlayRate > 0.0f && PlayRate > Attack.MaxPlayRate)
+		{
+			PlayRate = Attack.MaxPlayRate;
+			bPlayRateCapped = true;
+		}
 		MulticastPlayAttackMontage(Attack.AttackMontage, PlayRate);
 	}
+
+	// When PlayRate is capped the animation outlasts the cooldown, so the next UseAttack call will
+	// interrupt the current montage before AnimNotify fires. In that case damage is applied immediately.
+	const bool bUseAnimNotify = Attack.bWaitForAnimNotify && !bPlayRateCapped;
 
 	ARTSProjectile* SpawnedProjectile = nullptr;
 	if (Attack.ProjectileClass != nullptr)
 	{
-		if (Attack.bWaitForAnimNotify)
+		if (bUseAnimNotify)
 		{
 			// Store data and wait for RTSAnimNotify_FireProjectile in the montage.
 			PendingProjectile.Target = Target;
@@ -149,7 +160,7 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 			PendingProjectile.SpawnSocket = Attack.ProjectileSpawnSocket;
 			PendingProjectile.Instigator = OwnerController;
 		}
-		else if (Attack.ProjectileSpawnDelay > 0.0f)
+		else if (Attack.ProjectileSpawnDelay > 0.0f && !bPlayRateCapped)
 		{
 			PendingProjectile.Target = Target;
 			PendingProjectile.Damage = Damage;
@@ -199,8 +210,19 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 	}
 	else
 	{
-		// Deal damage immediately.
-		Target->TakeDamage(Damage, FDamageEvent(Attack.DamageType), OwnerController, Owner);
+		if (bUseAnimNotify)
+		{
+			PendingProjectile.Target          = Target;
+			PendingProjectile.Damage          = Damage;
+			PendingProjectile.DamageType      = Attack.DamageType;
+			PendingProjectile.ProjectileClass = nullptr;
+			PendingProjectile.SpawnSocket     = NAME_None;
+			PendingProjectile.Instigator      = OwnerController;
+		}
+		else
+		{
+			Target->TakeDamage(Damage, FDamageEvent(Attack.DamageType), OwnerController, Owner);
+		}
 	}
 
 	// Start cooldown timer.
@@ -263,6 +285,27 @@ void URTSAttackComponent::MulticastStopAttackMontage_Implementation()
 void URTSAttackComponent::FirePendingProjectile()
 {
 	SpawnPendingProjectile();
+}
+
+void URTSAttackComponent::ApplyPendingMeleeAttack()
+{
+	if (!PendingProjectile.Target.IsValid())
+	{
+		return;
+	}
+
+	AActor* Owner = GetOwner();
+
+	UE_LOG(LogRTS, Log, TEXT("%s applies pending melee damage to %s."),
+		*Owner->GetName(), *PendingProjectile.Target->GetName());
+
+	PendingProjectile.Target->TakeDamage(
+		PendingProjectile.Damage,
+		FDamageEvent(PendingProjectile.DamageType),
+		PendingProjectile.Instigator.Get(),
+		Owner);
+
+	PendingProjectile.Target.Reset();
 }
 
 void URTSAttackComponent::SpawnPendingProjectile()

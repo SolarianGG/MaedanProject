@@ -35,6 +35,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void FirePendingProjectile();
 
+	/** Applies melee damage stored by the last UseAttack call. Called by RTSAnimNotify_MeleeAttack. */
+	UFUNCTION(BlueprintCallable)
+	void ApplyPendingMeleeAttack();
+
     /** Gets the radius in which the actor will automatically select and attack targets, in cm. */
     UFUNCTION(BlueprintPure)
     float GetAcquisitionRadius() const;

@@ -78,15 +78,30 @@ void ARTSProjectile::Tick(float DeltaSeconds)
             return;
         }
 
-        // Check distance to the edge of the target's collision, not to its center.
-        float TargetRadius = 0.0f;
+        // Capsule center + radius for units/buildings; bounding box projected extent as fallback.
         UCapsuleComponent* TargetCapsule = Target->FindComponentByClass<UCapsuleComponent>();
-        if (TargetCapsule)
+        FVector TargetCenter;
+        float SurfaceRadius = 0.0f;
+        if (IsValid(TargetCapsule))
         {
-            TargetRadius = TargetCapsule->GetScaledCapsuleRadius();
+            TargetCenter = TargetCapsule->GetComponentLocation();
+            SurfaceRadius = TargetCapsule->GetScaledCapsuleRadius();
         }
-        const float EffectiveRadius = HomingHitRadius + TargetRadius;
-        const float DistSq = FVector::DistSquared(GetActorLocation(), Target->GetActorLocation());
+        else
+        {
+            FBox TargetBox = Target->GetComponentsBoundingBox(true);
+            TargetCenter = TargetBox.IsValid ? TargetBox.GetCenter() : Target->GetActorLocation();
+            if (TargetBox.IsValid)
+            {
+                FVector DirToTarget = (TargetCenter - GetActorLocation()).GetSafeNormal(0.01f);
+                FVector Extent = TargetBox.GetExtent();
+                SurfaceRadius = FMath::Abs(DirToTarget.X) * Extent.X
+                              + FMath::Abs(DirToTarget.Y) * Extent.Y
+                              + FMath::Abs(DirToTarget.Z) * Extent.Z;
+            }
+        }
+        const float EffectiveRadius = HomingHitRadius + SurfaceRadius;
+        const float DistSq = FVector::DistSquared(GetActorLocation(), TargetCenter);
         if (DistSq > EffectiveRadius * EffectiveRadius)
         {
             return;
@@ -276,7 +291,16 @@ void ARTSProjectile::MulticastFireAt_Implementation(AActor* ProjectileTarget, fl
     }
     else
     {
-        TargetLocation = Target->GetActorLocation();
+        UCapsuleComponent* TargetCapsuleComp = Target->FindComponentByClass<UCapsuleComponent>();
+        if (IsValid(TargetCapsuleComp))
+        {
+            TargetLocation = TargetCapsuleComp->GetComponentLocation();
+        }
+        else
+        {
+            FBox BoundingBox = Target->GetComponentsBoundingBox(true);
+            TargetLocation = BoundingBox.IsValid ? BoundingBox.GetCenter() : Target->GetActorLocation();
+        }
     }
 
     // Set direction.
@@ -291,18 +315,33 @@ void ARTSProjectile::MulticastFireAt_Implementation(AActor* ProjectileTarget, fl
 
     if (ProjectileMovement->bIsHomingProjectile)
     {
-        // Set target.
-        ProjectileMovement->HomingTargetComponent = Target->GetRootComponent();
+        // Home toward capsule center; fall back to root if no capsule exists.
+        UCapsuleComponent* TargetCapsuleForHoming = Target->FindComponentByClass<UCapsuleComponent>();
+        ProjectileMovement->HomingTargetComponent =
+            IsValid(TargetCapsuleForHoming) ? (USceneComponent*)TargetCapsuleForHoming : Target->GetRootComponent();
     }
 
-    // Reduce effective distance by target's capsule radius so the hit fires at collision edge, not center.
-    float TargetCapsuleRadius = 0.0f;
-    UCapsuleComponent* TargetCapsule = Target->FindComponentByClass<UCapsuleComponent>();
-    if (TargetCapsule)
+    // Stop at the surface of the target's collision rather than its center.
+    float SurfaceOffset = 0.0f;
     {
-        TargetCapsuleRadius = TargetCapsule->GetScaledCapsuleRadius();
+        UCapsuleComponent* TargetCapsule = Target->FindComponentByClass<UCapsuleComponent>();
+        if (TargetCapsule)
+        {
+            SurfaceOffset = TargetCapsule->GetScaledCapsuleRadius();
+        }
+        else
+        {
+            FBox TargetBox = Target->GetComponentsBoundingBox(true);
+            if (TargetBox.IsValid)
+            {
+                FVector Extent = TargetBox.GetExtent();
+                SurfaceOffset = FMath::Abs(DirectionNormalized.X) * Extent.X
+                              + FMath::Abs(DirectionNormalized.Y) * Extent.Y
+                              + FMath::Abs(DirectionNormalized.Z) * Extent.Z;
+            }
+        }
     }
-    TimeToImpact = FMath::Max(0.f, InitialDistance - TargetCapsuleRadius) / ProjectileMovement->InitialSpeed;
+    TimeToImpact = FMath::Max(0.f, InitialDistance - SurfaceOffset) / ProjectileMovement->InitialSpeed;
     bFired = true;
     bImpactHandled = false;
 
