@@ -15,6 +15,8 @@
 #include "Sound/SoundCue.h"
 
 #include "UI/RTSHUD.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Blueprint/UserWidget.h"
 #include "Abilities/RTSAbility.h"
 #include "Abilities/RTSAbilitySystemComponent.h"
 #include "Components/DecalComponent.h"
@@ -1551,6 +1553,17 @@ void ARTSPlayerController::StartSelectActors()
 		{
 			bClickStartedOnAbilityIcons = true;
 			return;
+		}
+
+		// Check if mouse is over any UMG widget (e.g., status window navigation buttons).
+		TArray<UUserWidget*> FoundWidgets;
+		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UUserWidget::StaticClass(), false);
+		for (UUserWidget* Widget : FoundWidgets)
+		{
+			if (Widget->IsHovered())
+			{
+				return;
+			}
 		}
 
 		SelectionFrameMouseStartPosition = FVector2D(MouseX, MouseY);
