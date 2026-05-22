@@ -1,5 +1,6 @@
 #include "Combat/RTSProjectileTargetComponent.h"
 
+#include "Components/CapsuleComponent.h"
 #include "Components/MeshComponent.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -41,6 +42,17 @@ void URTSProjectileTargetComponent::BeginPlay()
     }
 }
 
+static FVector GetActorBodyCenter(AActor* Actor)
+{
+    UCapsuleComponent* Capsule = Actor->FindComponentByClass<UCapsuleComponent>();
+    if (IsValid(Capsule))
+    {
+        return Capsule->GetComponentLocation();
+    }
+    FBox Box = Actor->GetComponentsBoundingBox(true);
+    return Box.IsValid ? Box.GetCenter() : Actor->GetActorLocation();
+}
+
 FVector URTSProjectileTargetComponent::GetRandomProjectileTargetLocation() const
 {
     AActor* Owner = GetOwner();
@@ -52,12 +64,12 @@ FVector URTSProjectileTargetComponent::GetRandomProjectileTargetLocation() const
 
     if (!IsValid(MeshComponent))
     {
-        return Owner->GetActorLocation();
+        return GetActorBodyCenter(Owner);
     }
 
     if (TargetSockets.Num() <= 0)
     {
-        return Owner->GetActorLocation();
+        return GetActorBodyCenter(Owner);
     }
 
     int32 RandomIndex = UKismetMathLibrary::RandomIntegerInRange(0, TargetSockets.Num() - 1);
