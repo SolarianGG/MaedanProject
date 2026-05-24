@@ -38,7 +38,9 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\\\\Source\\\\RealTimeStrategy\" -Directory)",
       "Bash(Select-Object -ExpandProperty Name)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\" -Recurse -Filter \"*.cpp\" -o File)",
-      "Bash(Select-Object -First 5)"
+      "Bash(Select-Object -First 5)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)"
     ]
   }
 }
