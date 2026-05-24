@@ -29,8 +29,10 @@ class REALTIMESTRATEGY_API URTSAbility : public UObject
     GENERATED_BODY()
 
 public:
-    /** Whether the specified caster can activate this ability. */
-    virtual bool CanActivateAbility(const AActor* Caster, int32 AbilityIndex) const;
+    /** Whether the specified caster can activate this ability.
+     *  Override in Blueprint to return false for passive abilities that should never be manually activated. */
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RTS")
+    bool CanActivateAbility(const AActor* Caster, int32 AbilityIndex) const;
 
     /** Whether the specified target data is valid for this ability. */
     virtual bool IsValidAbilityTarget(const AActor* Caster, const FRTSOrderTargetData& TargetData) const;

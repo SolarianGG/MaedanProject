@@ -10,7 +10,7 @@
 #include "Libraries/RTSGameplayTagLibrary.h"
 
 
-bool URTSAbility::CanActivateAbility(const AActor* Caster, int32 AbilityIndex) const
+bool URTSAbility::CanActivateAbility_Implementation(const AActor* Caster, int32 AbilityIndex) const
 {
     return true;
 }
