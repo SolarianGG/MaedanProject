@@ -290,6 +290,17 @@ void ARTSPlayerController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("SaveControlGroup8"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup8);
 	InputComponent->BindAction(TEXT("SaveControlGroup9"), IE_Pressed, this, &ARTSPlayerController::SaveControlGroup9);
 
+	InputComponent->BindAction(TEXT("AppendControlGroup0"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup0);
+	InputComponent->BindAction(TEXT("AppendControlGroup1"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup1);
+	InputComponent->BindAction(TEXT("AppendControlGroup2"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup2);
+	InputComponent->BindAction(TEXT("AppendControlGroup3"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup3);
+	InputComponent->BindAction(TEXT("AppendControlGroup4"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup4);
+	InputComponent->BindAction(TEXT("AppendControlGroup5"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup5);
+	InputComponent->BindAction(TEXT("AppendControlGroup6"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup6);
+	InputComponent->BindAction(TEXT("AppendControlGroup7"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup7);
+	InputComponent->BindAction(TEXT("AppendControlGroup8"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup8);
+	InputComponent->BindAction(TEXT("AppendControlGroup9"), IE_Pressed, this, &ARTSPlayerController::AppendControlGroup9);
+
 	InputComponent->BindAction(TEXT("LoadControlGroup0"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup0);
 	InputComponent->BindAction(TEXT("LoadControlGroup1"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup1);
 	InputComponent->BindAction(TEXT("LoadControlGroup2"), IE_Pressed, this, &ARTSPlayerController::LoadControlGroup2);
@@ -1372,6 +1383,15 @@ void ARTSPlayerController::SaveControlGroup(int32 Index)
 	ControlGroup.Actors = SelectedActors;
 	ControlGroups[Index] = ControlGroup;
 
+	// Track actor deaths so stale pointers are cleaned up automatically.
+	for (AActor* Actor : ControlGroups[Index].Actors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->OnDestroyed.AddUniqueDynamic(this, &ARTSPlayerController::OnControlGroupActorDestroyed);
+		}
+	}
+
 	UE_LOG(LogRTS, Log, TEXT("Saved selection to control group %d."), Index);
 }
 
@@ -1386,6 +1406,36 @@ void ARTSPlayerController::SaveControlGroup7() { SaveControlGroup(7); }
 void ARTSPlayerController::SaveControlGroup8() { SaveControlGroup(8); }
 void ARTSPlayerController::SaveControlGroup9() { SaveControlGroup(9); }
 
+void ARTSPlayerController::AppendControlGroup(int32 Index)
+{
+	if (Index < 0 || Index > 9)
+	{
+		return;
+	}
+
+	for (AActor* Actor : SelectedActors)
+	{
+		if (IsValid(Actor))
+		{
+			ControlGroups[Index].Actors.AddUnique(Actor);
+			Actor->OnDestroyed.AddUniqueDynamic(this, &ARTSPlayerController::OnControlGroupActorDestroyed);
+		}
+	}
+
+	UE_LOG(LogRTS, Log, TEXT("Appended selection to control group %d."), Index);
+}
+
+void ARTSPlayerController::AppendControlGroup0() { AppendControlGroup(0); }
+void ARTSPlayerController::AppendControlGroup1() { AppendControlGroup(1); }
+void ARTSPlayerController::AppendControlGroup2() { AppendControlGroup(2); }
+void ARTSPlayerController::AppendControlGroup3() { AppendControlGroup(3); }
+void ARTSPlayerController::AppendControlGroup4() { AppendControlGroup(4); }
+void ARTSPlayerController::AppendControlGroup5() { AppendControlGroup(5); }
+void ARTSPlayerController::AppendControlGroup6() { AppendControlGroup(6); }
+void ARTSPlayerController::AppendControlGroup7() { AppendControlGroup(7); }
+void ARTSPlayerController::AppendControlGroup8() { AppendControlGroup(8); }
+void ARTSPlayerController::AppendControlGroup9() { AppendControlGroup(9); }
+
 void ARTSPlayerController::LoadControlGroup(int32 Index)
 {
 	if (Index < 0 || Index > 9)
@@ -1393,7 +1443,10 @@ void ARTSPlayerController::LoadControlGroup(int32 Index)
 		return;
 	}
 
-	SelectActors(ControlGroups[Index].Actors, ERTSSelectionCameraFocusMode::SELECTIONFOCUS_FocusOnDoubleSelection);
+	// Remove any actors that died since the group was saved.
+	ControlGroups[Index].Actors.RemoveAll([](AActor* Actor) { return !IsValid(Actor); });
+
+	ApplyControlGroupSelection(ControlGroups[Index].Actors);
 
 	UE_LOG(LogRTS, Log, TEXT("Loaded selection from control group %d."), Index);
 }
@@ -1408,6 +1461,95 @@ void ARTSPlayerController::LoadControlGroup6() { LoadControlGroup(6); }
 void ARTSPlayerController::LoadControlGroup7() { LoadControlGroup(7); }
 void ARTSPlayerController::LoadControlGroup8() { LoadControlGroup(8); }
 void ARTSPlayerController::LoadControlGroup9() { LoadControlGroup(9); }
+
+void ARTSPlayerController::OnControlGroupActorDestroyed(AActor* DestroyedActor)
+{
+	for (FRTSControlGroup& Group : ControlGroups)
+	{
+		Group.Actors.RemoveSwap(DestroyedActor);
+	}
+}
+
+void ARTSPlayerController::ApplyControlGroupSelection(TArray<AActor*>& Actors)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	// Double-tap the same group: focus camera instead of re-selecting.
+	const float CurrentSelectionTime = World->GetRealTimeSeconds();
+	const float SelectionTimeDelta = CurrentSelectionTime - LastSelectionTime;
+	LastSelectionTime = CurrentSelectionTime;
+
+	if (DoubleGroupSelectionTime > 0.0f && SelectionTimeDelta < DoubleGroupSelectionTime &&
+		Actors.Num() == SelectedActors.Num())
+	{
+		bool bSameSelection = true;
+		for (AActor* Actor : Actors)
+		{
+			if (!SelectedActors.Contains(Actor))
+			{
+				bSameSelection = false;
+				break;
+			}
+		}
+		if (bSameSelection)
+		{
+			if (SelectedActors.Num() > 0)
+			{
+				FocusCameraOnActor(SelectedActors[0]);
+			}
+			return;
+		}
+	}
+
+	// Deselect current actors.
+	for (AActor* SelectedActor : SelectedActors)
+	{
+		URTSSelectableComponent* SelectableComponent = SelectedActor->FindComponentByClass<URTSSelectableComponent>();
+		if (SelectableComponent)
+		{
+			SelectableComponent->DeselectActor();
+		}
+	}
+
+	// Apply saved selection without priority filtering — restore exactly what was saved.
+	SelectedActors = Actors;
+
+	for (AActor* SelectedActor : SelectedActors)
+	{
+		URTSSelectableComponent* SelectableComponent = SelectedActor->FindComponentByClass<URTSSelectableComponent>();
+		if (!SelectableComponent)
+		{
+			continue;
+		}
+
+		UMaterialInterface* SelectionMaterialOverride = nullptr;
+		if (SelectedActor->FindComponentByClass<URTSResourceSourceComponent>())
+		{
+			SelectionMaterialOverride = ResourceSelectionCircleMaterial;
+		}
+		else if (!URTSGameplayLibrary::IsOwnedByLocalPlayer(SelectedActor))
+		{
+			SelectionMaterialOverride = EnemySelectionCircleMaterial;
+		}
+
+		SelectableComponent->SelectActor(SelectionMaterialOverride);
+
+		if (SelectionSoundCooldownRemaining <= 0.0f &&
+			URTSGameplayLibrary::IsOwnedByLocalPlayer(SelectedActor) &&
+			IsValid(SelectableComponent->GetSelectedSound()))
+		{
+			UGameplayStatics::PlaySound2D(this, SelectableComponent->GetSelectedSound());
+			SelectionSoundCooldownRemaining = SelectableComponent->GetSelectedSound()->GetDuration();
+		}
+	}
+
+	SelectFirstSubgroup();
+	NotifyOnSelectionChanged(SelectedActors);
+}
 
 void ARTSPlayerController::FocusCameraOnLocation(FVector2D NewCameraLocation)
 {

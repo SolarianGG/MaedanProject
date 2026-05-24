@@ -189,6 +189,21 @@ public:
 	UFUNCTION(BlueprintCallable) void SaveControlGroup8();
 	UFUNCTION(BlueprintCallable) void SaveControlGroup9();
 
+	/** Appends the current selection to the specified control group without overwriting existing members. */
+	UFUNCTION(BlueprintCallable)
+	void AppendControlGroup(int32 Index);
+
+	UFUNCTION(BlueprintCallable) void AppendControlGroup0();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup1();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup2();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup3();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup4();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup5();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup6();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup7();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup8();
+	UFUNCTION(BlueprintCallable) void AppendControlGroup9();
+
 	/** Restores the selection saved in the specified control group. */
 	UFUNCTION(BlueprintCallable)
 	void LoadControlGroup(int32 Index);
@@ -864,4 +879,11 @@ private:
 	/** Cancels the current production of the first selected building. */
 	UFUNCTION()
 	void CancelProduction();
+
+	/** Removes a destroyed actor from all control groups. */
+	UFUNCTION()
+	void OnControlGroupActorDestroyed(AActor* DestroyedActor);
+
+	/** Applies a control group actor list as the new selection, bypassing priority filtering. */
+	void ApplyControlGroupSelection(TArray<AActor*>& Actors);
 };
