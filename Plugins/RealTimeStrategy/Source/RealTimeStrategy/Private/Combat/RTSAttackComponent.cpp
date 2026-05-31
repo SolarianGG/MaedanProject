@@ -222,6 +222,7 @@ void URTSAttackComponent::UseAttack(int32 AttackIndex, AActor* Target)
 		else
 		{
 			Target->TakeDamage(Damage, FDamageEvent(Attack.DamageType), OwnerController, Owner);
+		OnAttackLanded.Broadcast(Owner, Target);
 		}
 	}
 
@@ -299,11 +300,15 @@ void URTSAttackComponent::ApplyPendingMeleeAttack()
 	UE_LOG(LogRTS, Log, TEXT("%s applies pending melee damage to %s."),
 		*Owner->GetName(), *PendingProjectile.Target->GetName());
 
-	PendingProjectile.Target->TakeDamage(
+	AActor* HitTarget = PendingProjectile.Target.Get();
+
+	HitTarget->TakeDamage(
 		PendingProjectile.Damage,
 		FDamageEvent(PendingProjectile.DamageType),
 		PendingProjectile.Instigator.Get(),
 		Owner);
+
+	OnAttackLanded.Broadcast(Owner, HitTarget);
 
 	PendingProjectile.Target.Reset();
 }

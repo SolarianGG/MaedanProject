@@ -10,7 +10,6 @@
 
 class URTSResourceType;
 
-
 UCLASS(Blueprintable, Within = PlayerController)
 class REALTIMESTRATEGY_API URTSCheatManager : public UCheatManager
 {

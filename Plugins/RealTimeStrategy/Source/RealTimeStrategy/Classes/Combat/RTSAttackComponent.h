@@ -11,6 +11,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FRTSAttackComponentCooldownReadySignature, AActor*, Actor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FRTSAttackComponentAttackedUsedSignature, AActor*, Actor, const FRTSAttackData&, Attack, AActor*, Target, ARTSProjectile*, Projectile);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FRTSAttackComponentAttackLandedSignature, AActor*, Attacker, AActor*, Target);
 
 
 /**
@@ -63,6 +64,10 @@ public:
 	/** Event when an actor has used an attack. */
 	UPROPERTY(BlueprintAssignable, Category = "RTS")
 	FRTSAttackComponentAttackedUsedSignature OnAttackUsed;
+
+	/** Event when an attack actually lands on the target (anim notify hit or direct melee damage). */
+	UPROPERTY(BlueprintAssignable, Category = "RTS")
+	FRTSAttackComponentAttackLandedSignature OnAttackLanded;
 
 private:
     /** Radius in which the actor will automatically select and attack targets, in cm. */

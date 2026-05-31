@@ -4,11 +4,7 @@
 
 #include "Components/ActorComponent.h"
 
-#include "Combat/RTSAttackData.h"
-
 #include "RTSPassiveStunComponent.generated.h"
-
-class ARTSProjectile;
 
 
 /** Adds a percentage chance to stun enemies on each attack, blocking both movement and attacks. */
@@ -33,7 +29,7 @@ private:
     TMap<TWeakObjectPtr<AActor>, FTimerHandle> ActiveStuns;
 
     UFUNCTION()
-    void HandleAttackUsed(AActor* Actor, const FRTSAttackData& Attack, AActor* Target, ARTSProjectile* Projectile);
+    void HandleAttackLanded(AActor* Attacker, AActor* Target);
 
     void ApplyStun(AActor* Target);
     void RemoveStun(TWeakObjectPtr<AActor> WeakTarget);

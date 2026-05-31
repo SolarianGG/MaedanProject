@@ -40,7 +40,15 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\" -Recurse -Filter \"*.cpp\" -o File)",
       "Bash(Select-Object -First 5)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\" -Recurse -Directory)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Source\" -Recurse -Filter \"*.h\" -o \"*.cpp\")",
+      "Bash(Select-String -Pattern \"\\(?i\\)snake\" -List)",
+      "Bash(Select-Object Path)",
+      "Bash(git -C \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\" log --oneline --all)",
+      "Bash(git -C \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\" branch -a)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\\\\Source\\\\RealTimeStrategy\" -Recurse -File -Filter \"*.h\" -o -Filter \"*.cpp\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\\\\Source\\\\RealTimeStrategy\" -Recurse -File | Where-Object { $_.Extension -eq '.h' -or $_.Extension -eq '.cpp' } | Select-Object -ExpandProperty FullName)"
     ]
   }
 }

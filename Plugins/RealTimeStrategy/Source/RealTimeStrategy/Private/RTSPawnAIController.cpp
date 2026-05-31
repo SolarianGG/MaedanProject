@@ -72,6 +72,17 @@ void ARTSPawnAIController::OnPossess(APawn* InPawn)
 
 void ARTSPawnAIController::FindTargetInAcquisitionRadius()
 {
+    // Don't acquire targets while stunned — the BT's internal MoveTo bypasses the order system,
+    // so we block at this level to prevent movement/attack under Immobilized.
+    if (APawn* MyPawn = GetPawn())
+    {
+        if (URTSGameplayTagLibrary::HasGameplayTag(MyPawn, URTSGameplayTagLibrary::Status_Changing_Immobilized()))
+        {
+            Blackboard->ClearValue(TEXT("TargetActor"));
+            return;
+        }
+    }
+
 	if (!IsValid(AttackComponent))
 	{
 		UE_LOG(LogRTS, Warning, TEXT("[AttackMove] %s: AttackComponent is NULL, skipping target search."), GetPawn() ? *GetPawn()->GetName() : TEXT("?"));
