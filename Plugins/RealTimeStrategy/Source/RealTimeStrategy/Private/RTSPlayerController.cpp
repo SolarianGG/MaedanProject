@@ -1349,6 +1349,7 @@ void ARTSPlayerController::SelectFirstSubgroup()
 void ARTSPlayerController::SelectNextSubgroup()
 {
 	SelectNextSubgroupInDirection(+1);
+	ReceiveOnNextPageRequested();
 }
 
 void ARTSPlayerController::SelectPreviousSubgroup()
@@ -2657,6 +2658,20 @@ void ARTSPlayerController::NotifyOnIssuedStopOrder(APawn* OrderedPawn)
 void ARTSPlayerController::NotifyOnSelectionChanged(const TArray<AActor*>& Selection)
 {
 	ReceiveOnSelectionChanged(Selection);
+	
+	AActor* ProductionActor = nullptr;
+	
+	for (AActor* Actor : Selection)
+	{
+		if (!IsValid(Actor)) continue;
+		auto* ProductionComponent = Actor->FindComponentByClass<URTSProductionComponent>();
+		if (ProductionComponent)
+		{
+			ProductionActor = Actor;
+			break;
+		}
+	}
+	ReceiveOnProductionActorChanged(ProductionActor);
 }
 
 void ARTSPlayerController::NotifyOnTeamChanged(ARTSTeamInfo* NewTeam)

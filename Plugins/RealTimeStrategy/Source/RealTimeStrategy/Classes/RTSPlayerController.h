@@ -61,6 +61,7 @@ public:
 	TArray<AActor*> GetSelectedActors() const;
 
 	/** Requests cancellation of a specific product in a building's queue. */
+	UFUNCTION(BlueprintCallable, Category = "RTS|Production")
 	void RequestCancelProductionAt(AActor* ProductionActor, int32 QueueIndex, int32 ProductIndex);
 
 	/** Casts a ray from the specified screen position and collects the results. */
@@ -463,6 +464,13 @@ public:
     UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Selection", meta = (DisplayName = "OnSelectedSubgroupChanged"))
     void ReceiveOnSelectedSubgroupChanged(TSubclassOf<AActor> Subgroup);
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|UI", meta = (DisplayName = "OnNextPageRequested"))
+	void ReceiveOnNextPageRequested();
+	
+	/** Fired when the selected building producing units changes, or nullptr if none. */
+	UFUNCTION(BlueprintImplementableEvent, Category = "RTS|UI", meta = (DisplayName = "OnProductionActorChanged"))
+	void ReceiveOnProductionActorChanged(AActor* ProductionActor);
+	
     /** Event when the set of selected actors of this player has changed. */
     UFUNCTION(BlueprintImplementableEvent, Category = "RTS|Selection", meta = (DisplayName = "OnSelectionChanged"))
     void ReceiveOnSelectionChanged(const TArray<AActor*>& Selection);
