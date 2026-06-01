@@ -446,11 +446,11 @@ void URTSProductionComponent::FinishProduction(int32 QueueIndex /*= 0*/)
         IssueRallyPointDependentOrder(Product);
     }
 
-	// Notify listeners.
-	NotifyOnProductionFinished(GetOwner(), Product, QueueIndex);
-
 	// Remove product from queue.
 	DequeueProduct(QueueIndex);
+
+	// Notify listeners.
+	NotifyOnProductionFinished(GetOwner(), Product, QueueIndex);
 }
 
 void URTSProductionComponent::CancelProduction(int32 QueueIndex /*= 0*/, int32 ProductIndex /*= 0*/)

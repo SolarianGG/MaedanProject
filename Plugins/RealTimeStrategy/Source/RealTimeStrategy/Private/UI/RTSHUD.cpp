@@ -37,7 +37,7 @@ void ARTSHUD::DrawHUD()
 	DrawConstructionProgressBars();
 	DrawProductionProgressBars();
 	DrawHoveredActorWidget();
-	DrawProductionQueue();
+	//DrawProductionQueue();
 	DrawAbilityIcons();
 }
 
@@ -590,7 +590,7 @@ void ARTSHUD::HideProductionProgressBar(AActor* Actor)
     ProductionProgressBarWidgetComponent->SetVisibility(false);
 }
 
-void ARTSHUD::DrawProductionQueue()
+/*void ARTSHUD::DrawProductionQueue()
 {
 	ProductionQueueIcons.Reset();
 
@@ -733,7 +733,7 @@ void ARTSHUD::DrawProductionQueue()
 			ProductionQueueIcons.Add(IconData);
 		}
 	}
-}
+}*/
 
 bool ARTSHUD::IsPositionOnProductionQueue(float ScreenX, float ScreenY) const
 {
@@ -755,7 +755,7 @@ void ARTSHUD::NotifyHitBoxClick(FName BoxName)
 	const FString BoxString = BoxName.ToString();
 
 	// Handle production queue clicks.
-	if (BoxString.StartsWith(TEXT("ProdQueue_")))
+	/*if (BoxString.StartsWith(TEXT("ProdQueue_")))
 	{
 		// Parse "ProdQueue_{QueueIndex}_{ProductIndex}".
 		int32 QueueIndex = 0;
@@ -783,7 +783,7 @@ void ARTSHUD::NotifyHitBoxClick(FName BoxName)
 			}
 		}
 		return;
-	}
+	}*/
 
 	// Handle ability icon clicks.
 	if (BoxString.StartsWith(TEXT("Ability_")))
