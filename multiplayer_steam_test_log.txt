@@ -1,0 +1,796 @@
+LogInit: Build: ++UE4+Release-4.27-CL-18319896
+LogInit: Engine Version: 4.27.2-18319896+++UE4+Release-4.27
+LogInit: Compatible Engine Version: 4.27.0-17155196+++UE4+Release-4.27
+LogInit: Net CL: 17155196
+LogInit: OS: Windows 10 (Release 2009) (), CPU: 12th Gen Intel(R) Core(TM) i7-12700H, GPU: Intel(R) Iris(R) Xe Graphics
+LogInit: Compiled (64-bit): Nov 30 2021 07:26:28
+LogInit: Compiled with Visual C++: 19.16.27032.01
+LogInit: Build Configuration: Development
+LogInit: Branch Name: ++UE4+Release-4.27
+LogInit: Command Line:  -log
+LogInit: Base Directory: C:/Users/margaryta/Desktop/qwezxc/qwe/RTSProject/Binaries/Win64/
+LogInit: Allocator: binned2
+LogInit: Installed Engine Build: 0
+LogDevObjectVersion: Number of dev versions registered: 29
+LogDevObjectVersion:   Dev-Blueprints (B0D832E4-1F89-4F0D-ACCF-7EB736FD4AA2): 10
+LogDevObjectVersion:   Dev-Build (E1C64328-A22C-4D53-A36C-8E866417BD8C): 0
+LogDevObjectVersion:   Dev-Core (375EC13C-06E4-48FB-B500-84F0262A717E): 4
+LogDevObjectVersion:   Dev-Editor (E4B068ED-F494-42E9-A231-DA0B2E46BB41): 40
+LogDevObjectVersion:   Dev-Framework (CFFC743F-43B0-4480-9391-14DF171D2073): 37
+LogDevObjectVersion:   Dev-Mobile (B02B49B5-BB20-44E9-A304-32B752E40360): 3
+LogDevObjectVersion:   Dev-Networking (A4E4105C-59A1-49B5-A7C5-40C4547EDFEE): 0
+LogDevObjectVersion:   Dev-Online (39C831C9-5AE6-47DC-9A44-9C173E1C8E7C): 0
+LogDevObjectVersion:   Dev-Physics (78F01B33-EBEA-4F98-B9B4-84EACCB95AA2): 14
+LogDevObjectVersion:   Dev-Platform (6631380F-2D4D-43E0-8009-CF276956A95A): 0
+LogDevObjectVersion:   Dev-Rendering (12F88B9F-8875-4AFC-A67C-D90C383ABD29): 45
+LogDevObjectVersion:   Dev-Sequencer (7B5AE74C-D270-4C10-A958-57980B212A5A): 13
+LogDevObjectVersion:   Dev-VR (D7296918-1DD6-4BDD-9DE2-64A83CC13884): 3
+LogDevObjectVersion:   Dev-LoadTimes (C2A15278-BFE7-4AFE-6C17-90FF531DF755): 1
+LogDevObjectVersion:   Private-Geometry (6EACA3D4-40EC-4CC1-B786-8BED09428FC5): 3
+LogDevObjectVersion:   Dev-AnimPhys (29E575DD-E0A3-4627-9D10-D276232CDCEA): 17
+LogDevObjectVersion:   Dev-Anim (AF43A65D-7FD3-4947-9873-3E8ED9C1BB05): 15
+LogDevObjectVersion:   Dev-ReflectionCapture (6B266CEC-1EC7-4B8F-A30B-E4D90942FC07): 1
+LogDevObjectVersion:   Dev-Automation (0DF73D61-A23F-47EA-B727-89E90C41499A): 1
+LogDevObjectVersion:   FortniteMain (601D1886-AC64-4F84-AA16-D3DE0DEAC7D6): 47
+LogDevObjectVersion:   FortniteRelease (E7086368-6B23-4C58-8439-1B7016265E91): 1
+LogDevObjectVersion:   Dev-Enterprise (9DFFBCD6-494F-0158-E221-12823C92A888): 10
+LogDevObjectVersion:   Dev-Niagara (F2AED0AC-9AFE-416F-8664-AA7FFA26D6FC): 1
+LogDevObjectVersion:   Dev-Destruction (174F1F0B-B4C6-45A5-B13F-2EE8D0FB917D): 10
+LogDevObjectVersion:   Dev-Physics-Ext (35F94A83-E258-406C-A318-09F59610247C): 41
+LogDevObjectVersion:   Dev-PhysicsMaterial-Chaos (B68FC16E-8B1B-42E2-B453-215C058844FE): 1
+LogDevObjectVersion:   Dev-CineCamera (B2E18506-4273-CFC2-A54E-F4BB758BBA07): 1
+LogDevObjectVersion:   Dev-VirtualProduction (64F58936-FD1B-42BA-BA96-7289D5D0FA4E): 1
+LogDevObjectVersion:   Dev-MediaFramework (6F0ED827-A609-4895-9C91-998D90180EA4): 2
+LogInit: Presizing for max 2097152 objects, including 1 objects not considered by GC, pre-allocating 0 bytes for permanent pool.
+LogConfig: Applying CVar settings from Section [/Script/Engine.StreamingSettings] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+LogConfig: Setting CVar [[s.MinBulkDataSizeForAsyncLoading:131072]]
+LogConfig: Setting CVar [[s.AsyncLoadingThreadEnabled:0]]
+LogConfig: Setting CVar [[s.EventDrivenLoaderEnabled:1]]
+LogConfig: Setting CVar [[s.WarnIfTimeLimitExceeded:0]]
+LogConfig: Setting CVar [[s.TimeLimitExceededMultiplier:1.5]]
+LogConfig: Setting CVar [[s.TimeLimitExceededMinTime:0.005]]
+LogConfig: Setting CVar [[s.UseBackgroundLevelStreaming:1]]
+LogConfig: Setting CVar [[s.PriorityAsyncLoadingExtraTime:15.0]]
+LogConfig: Setting CVar [[s.LevelStreamingActorsUpdateTimeLimit:5.0]]
+LogConfig: Setting CVar [[s.PriorityLevelStreamingActorsUpdateExtraTime:5.0]]
+LogConfig: Setting CVar [[s.LevelStreamingComponentsRegistrationGranularity:10]]
+LogConfig: Setting CVar [[s.UnregisterComponentsTimeLimit:1.0]]
+LogConfig: Setting CVar [[s.LevelStreamingComponentsUnregistrationGranularity:5]]
+LogConfig: Setting CVar [[s.FlushStreamingOnExit:1]]
+LogStreaming: Display: Async Loading initialized: Event Driven Loader: true, Async Loading Thread: false, Async Post Load: true
+LogInit: Object subsystem initialized
+LogConfig: Setting CVar [[con.DebugEarlyDefault:1]]
+LogConfig: Setting CVar [[r.setres:1280x720]]
+LogConfig: Setting CVar [[fx.NiagaraAllowRuntimeScalabilityChanges:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[con.DebugEarlyDefault:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.setres:1280x720]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[fx.NiagaraAllowRuntimeScalabilityChanges:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.RendererSettings] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.GPUCrashDebugging:0]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.MobileHDR:0]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.Mobile.DisableVertexFog:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.Shadow.CSM.MaxMobileCascades:2]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.MobileMSAA:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.Mobile.AllowDitheredLODTransition:0]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.Mobile.AllowSoftwareOcclusion:0]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.DiscardUnusedQuality:0]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.AllowOcclusionQueries:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.MinScreenRadiusForLights:0.030000]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.MinScreenRadiusForDepthPrepass:0.030000]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.MinScreenRadiusForCSMDepth:0.010000]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.PrecomputedVisibilityWarning:0]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[r.TextureStreaming:1]]
+[2026.06.01-11.09.56:214][  0]LogConfig: Setting CVar [[Compat.UseDXT5NormalMaps:0]]
+[2026.06.01-11.09.56:216][  0]LogConfig: Setting CVar [[r.ClearCoatNormal:0]]
+[2026.06.01-11.09.56:216][  0]LogConfig: Setting CVar [[r.ReflectionCaptureResolution:128]]
+[2026.06.01-11.09.56:216][  0]LogConfig: Setting CVar [[r.ReflectionEnvironmentLightmapMixBasedOnRoughness:1]]
+[2026.06.01-11.09.56:216][  0]LogConfig: Setting CVar [[r.ForwardShading:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.VertexFoggingForOpaque:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.AllowStaticLighting:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.NormalMapsForStaticLighting:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.GenerateMeshDistanceFields:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DistanceFieldBuild.EightBit:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.GenerateLandscapeGIData:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DistanceFieldBuild.Compress:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.TessellationAdaptivePixelsPerTriangle:48.000000]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.SeparateTranslucency:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.TranslucentSortPolicy:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.CustomDepth:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.CustomDepthTemporalAAJitter:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.PostProcessing.PropagateAlpha:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.Bloom:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.AmbientOcclusion:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.AmbientOcclusionStaticFraction:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.AutoExposure:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.AutoExposure.Method:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.AutoExposure.ExtendDefaultLuminanceRange:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.UsePreExposure:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.MotionBlur:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.LensFlare:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.TemporalAA.Upsampling:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.AntiAliasing:0]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultFeature.LightUnits:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.DefaultBackBufferPixelFormat:4]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.Shadow.UnbuiltPreviewInGame:1]]
+[2026.06.01-11.09.56:220][  0]LogConfig: Setting CVar [[r.StencilForLODDither:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.EarlyZPass:3]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.EarlyZPassOnlyMaterialMasking:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.DBuffer:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.ClearSceneMethod:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.BasePassOutputsVelocity:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SelectiveBasePassOutputs:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[fx.GPUSimulationTextureSizeX:1024]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[fx.GPUSimulationTextureSizeY:1024]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.AllowGlobalClipPlane:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.GBufferFormat:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.MorphTarget.Mode:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[vr.InstancedStereo:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[vr.MobileMultiView:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[vr.RoundRobinOcclusion:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[vr.ODSCapture:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.WireframeCullThreshold:5.000000]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SupportStationarySkylight:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SupportLowQualityLightmaps:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SupportPointLightWholeSceneShadows:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SupportAtmosphericFog:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SkinCache.CompileShaders:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.Mobile.EnableStaticAndCSMShadowReceivers:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.Mobile.EnableMovableLightCSMShaderCulling:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.Mobile.AllowDistanceFieldShadows:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.Mobile.AllowMovableDirectionalLights:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.MobileNumDynamicPointLights:4]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.MobileDynamicPointLightsUseStaticBranch:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SkinCache.SceneMemoryLimitInMB:128.000000]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.GPUSkin.Limit2BoneInfluences:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SupportDepthOnlyIndexBuffers:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[r.SupportReversedIndexBuffers:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.RendererOverrideSettings] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+[2026.06.01-11.09.56:224][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.StreamingSettings] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.MinBulkDataSizeForAsyncLoading:131072]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.AsyncLoadingThreadEnabled:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.EventDrivenLoaderEnabled:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.WarnIfTimeLimitExceeded:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.TimeLimitExceededMultiplier:1.5]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.TimeLimitExceededMinTime:0.005]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.UseBackgroundLevelStreaming:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.PriorityAsyncLoadingExtraTime:15.0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.LevelStreamingActorsUpdateTimeLimit:5.0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.PriorityLevelStreamingActorsUpdateExtraTime:5.0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.LevelStreamingComponentsRegistrationGranularity:10]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.UnregisterComponentsTimeLimit:1.0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.LevelStreamingComponentsUnregistrationGranularity:5]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[s.FlushStreamingOnExit:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.GarbageCollectionSettings] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.MaxObjectsNotConsideredByGC:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.SizeOfPermanentObjectPool:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.FlushStreamingOnGC:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.NumRetriesBeforeForcingGC:10]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.AllowParallelGC:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.TimeBetweenPurgingPendingKillObjects:61.1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.MaxObjectsInEditor:25165824]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.IncrementalBeginDestroyEnabled:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.CreateGCClusters:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.MinGCClusterSize:5]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.ActorClusteringEnabled:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.BlueprintClusteringEnabled:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.UseDisregardForGCOnDedicatedServers:0]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Setting CVar [[gc.MultithreadedDestructionEnabled:1]]
+[2026.06.01-11.09.56:224][  0]LogConfig: Applying CVar settings from Section [/Script/Engine.NetworkSettings] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+[2026.06.01-11.09.56:237][  0]LogConfig: Applying CVar settings from Section [ViewDistanceQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:237][  0]LogConfig: Setting CVar [[r.SkeletalMeshLODBias:0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.ViewDistanceScale:1.0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Applying CVar settings from Section [AntiAliasingQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.PostProcessAAQuality:4]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Applying CVar settings from Section [ShadowQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.LightFunctionQuality:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.ShadowQuality:5]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.CSM.MaxCascades:10]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.MaxResolution:2048]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.MaxCSMResolution:2048]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.RadiusThreshold:0.01]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.DistanceScale:1.0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.CSM.TransitionScale:1.0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Shadow.PreShadowResolutionFactor:1.0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DistanceFieldShadowing:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DistanceFieldAO:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.AOQuality:2]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.VolumetricFog:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.VolumetricFog.GridPixelSize:8]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.VolumetricFog.GridSizeZ:128]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.VolumetricFog.HistoryMissSupersampleCount:4]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.LightMaxDrawDistanceScale:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.CapsuleShadows:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Applying CVar settings from Section [PostProcessQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.MotionBlurQuality:4]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.AmbientOcclusionMipLevelFactor:0.4]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.AmbientOcclusionMaxQuality:100]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.AmbientOcclusionLevels:-1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.AmbientOcclusionRadiusScale:1.0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DepthOfFieldQuality:2]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.RenderTargetPoolMin:400]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.LensFlareQuality:2]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.SceneColorFringeQuality:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.EyeAdaptationQuality:2]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.BloomQuality:5]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.FastBlurThreshold:100]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Upscale.Quality:3]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Tonemapper.GrainQuantization:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.LightShaftQuality:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Filter.SizeScale:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Tonemapper.Quality:5]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Gather.AccumulatorQuality:1        ; higher gathering accumulator quality]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Gather.PostfilterMethod:1          ; Median3x3 postfilering method]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Gather.EnableBokehSettings:0       ; no bokeh simulation when gathering]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Gather.RingCount:4                 ; medium number of samples when gathering]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Scatter.ForegroundCompositing:1    ; additive foreground scattering]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Scatter.BackgroundCompositing:2    ; additive background scattering]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Scatter.EnableBokehSettings:1      ; bokeh simulation when scattering]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Scatter.MaxSpriteRatio:0.1         ; only a maximum of 10% of scattered bokeh]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Recombine.Quality:1                ; cheap slight out of focus]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Recombine.EnableBokehSettings:0    ; no bokeh simulation on slight out of focus]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.TemporalAAQuality:1                ; more stable temporal accumulation]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Kernel.MaxForegroundRadius:0.025]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.DOF.Kernel.MaxBackgroundRadius:0.025]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Applying CVar settings from Section [TextureQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Streaming.MipBias:0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Streaming.AmortizeCPUToGPUCopy:0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Streaming.MaxNumTexturesToStreamPerFrame:0]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.Streaming.Boost:1]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.MaxAnisotropy:8]]
+[2026.06.01-11.09.56:238][  0]LogConfig: Setting CVar [[r.VT.MaxAnisotropy:8]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Streaming.LimitPoolSizeToVRAM:0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Streaming.PoolSize:1000]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Streaming.MaxEffectiveScreenSize:0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [EffectsQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.TranslucencyLightingVolumeDim:64]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.RefractionQuality:2]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSR.Quality:3]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSR.HalfResSceneColor:0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SceneColorFormat:4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.DetailMode:2]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.TranslucencyVolumeBlur:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.MaterialQualityLevel:1 ; High quality]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.AnisotropicMaterials:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSS.Scale:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSS.SampleSet:2]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSS.Quality:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSS.HalfRes:0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SSGI.Quality:3]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.EmitterSpawnRateScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.ParticleLightQuality:2]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque:1 ; Always have FastSkyLUT 1 in this case to avoid wrong sky]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.SampleCountMaxPerSlice:4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.DepthResolution:16.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.FastSkyLUT:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.FastSkyLUT.SampleCountMin:4.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.FastSkyLUT.SampleCountMax:128.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.SampleCountMin:4.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.SampleCountMax:128.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.TransmittanceLUT.UseSmallFormat:0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.TransmittanceLUT.SampleCount:10.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.MultiScatteringLUT.SampleCount:15.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkyLight.RealTimeReflectionCapture:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[fx.Niagara.QualityLevel:3]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [FoliageQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[foliage.DensityScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[grass.DensityScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [ShadingQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.HairStrands.SkyLighting.IntegrationType:2]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.HairStrands.SkyAO.SampleCount:4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.HairStrands.Visibility.MSAA.SamplePerPixel:4]]
+[2026.06.01-11.09.56:241][  0]LogInit: Selected Device Profile: [WindowsNoEditor]
+[2026.06.01-11.09.56:241][  0]LogInit: Applying CVar settings loaded from the selected device profile: [WindowsNoEditor]
+[2026.06.01-11.09.56:241][  0]LogHAL: Display: Platform has ~ 32 GB [34050162688 / 34359738368 / 32], which maps to Largest [LargestMinGB=32, LargerMinGB=12, DefaultMinGB=8, SmallerMinGB=6, SmallestMinGB=0)
+[2026.06.01-11.09.56:241][  0]LogInit: Going up to parent DeviceProfile [Windows]
+[2026.06.01-11.09.56:241][  0]LogInit: Going up to parent DeviceProfile []
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [ViewDistanceQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.SkeletalMeshLODBias:0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.ViewDistanceScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [AntiAliasingQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.PostProcessAAQuality:4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [ShadowQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.LightFunctionQuality:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.ShadowQuality:5]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.CSM.MaxCascades:10]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.MaxResolution:2048]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.MaxCSMResolution:2048]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.RadiusThreshold:0.01]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.DistanceScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.CSM.TransitionScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.Shadow.PreShadowResolutionFactor:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.DistanceFieldShadowing:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.DistanceFieldAO:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.AOQuality:2]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.VolumetricFog:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.VolumetricFog.GridPixelSize:8]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.VolumetricFog.GridSizeZ:128]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.VolumetricFog.HistoryMissSupersampleCount:4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.LightMaxDrawDistanceScale:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.CapsuleShadows:1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Applying CVar settings from Section [PostProcessQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.MotionBlurQuality:4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.AmbientOcclusionMipLevelFactor:0.4]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.AmbientOcclusionMaxQuality:100]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.AmbientOcclusionLevels:-1]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.AmbientOcclusionRadiusScale:1.0]]
+[2026.06.01-11.09.56:241][  0]LogConfig: Setting CVar [[r.DepthOfFieldQuality:2]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.RenderTargetPoolMin:400]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.LensFlareQuality:2]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.SceneColorFringeQuality:1]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.EyeAdaptationQuality:2]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.BloomQuality:5]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.FastBlurThreshold:100]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Upscale.Quality:3]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Tonemapper.GrainQuantization:1]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.LightShaftQuality:1]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Filter.SizeScale:1]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Tonemapper.Quality:5]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Gather.AccumulatorQuality:1        ; higher gathering accumulator quality]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Gather.PostfilterMethod:1          ; Median3x3 postfilering method]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Gather.EnableBokehSettings:0       ; no bokeh simulation when gathering]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Gather.RingCount:4                 ; medium number of samples when gathering]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Scatter.ForegroundCompositing:1    ; additive foreground scattering]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Scatter.BackgroundCompositing:2    ; additive background scattering]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Scatter.EnableBokehSettings:1      ; bokeh simulation when scattering]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Scatter.MaxSpriteRatio:0.1         ; only a maximum of 10% of scattered bokeh]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Recombine.Quality:1                ; cheap slight out of focus]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Recombine.EnableBokehSettings:0    ; no bokeh simulation on slight out of focus]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.TemporalAAQuality:1                ; more stable temporal accumulation]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Kernel.MaxForegroundRadius:0.025]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.DOF.Kernel.MaxBackgroundRadius:0.025]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Applying CVar settings from Section [TextureQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.MipBias:0]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.AmortizeCPUToGPUCopy:0]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.MaxNumTexturesToStreamPerFrame:0]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.Boost:1]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.MaxAnisotropy:8]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.VT.MaxAnisotropy:8]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.LimitPoolSizeToVRAM:0]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.PoolSize:1000]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.Streaming.MaxEffectiveScreenSize:0]]
+[2026.06.01-11.09.56:245][  0]LogConfig: Applying CVar settings from Section [EffectsQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:245][  0]LogConfig: Setting CVar [[r.TranslucencyLightingVolumeDim:64]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.RefractionQuality:2]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSR.Quality:3]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSR.HalfResSceneColor:0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SceneColorFormat:4]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.DetailMode:2]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.TranslucencyVolumeBlur:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.MaterialQualityLevel:1 ; High quality]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.AnisotropicMaterials:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSS.Scale:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSS.SampleSet:2]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSS.Quality:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSS.HalfRes:0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SSGI.Quality:3]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.EmitterSpawnRateScale:1.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.ParticleLightQuality:2]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.FastApplyOnOpaque:1 ; Always have FastSkyLUT 1 in this case to avoid wrong sky]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.SampleCountMaxPerSlice:4]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.AerialPerspectiveLUT.DepthResolution:16.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.FastSkyLUT:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.FastSkyLUT.SampleCountMin:4.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.FastSkyLUT.SampleCountMax:128.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.SampleCountMin:4.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.SampleCountMax:128.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.TransmittanceLUT.UseSmallFormat:0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.TransmittanceLUT.SampleCount:10.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyAtmosphere.MultiScatteringLUT.SampleCount:15.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.SkyLight.RealTimeReflectionCapture:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[fx.Niagara.QualityLevel:3]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Applying CVar settings from Section [FoliageQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[foliage.DensityScale:1.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[grass.DensityScale:1.0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Applying CVar settings from Section [ShadingQuality@3] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Scalability.ini]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.HairStrands.SkyLighting.IntegrationType:2]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.HairStrands.SkyAO.SampleCount:4]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[r.HairStrands.Visibility.MSAA.SamplePerPixel:4]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Applying CVar settings from Section [Startup] File [../../../Engine/Config/ConsoleVariables.ini]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[net.UseAdaptiveNetUpdateFrequency:0]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[p.chaos.AllowCreatePhysxBodies:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Setting CVar [[fx.SkipVectorVMBackendOptimizations:1]]
+[2026.06.01-11.09.56:250][  0]LogConfig: Applying CVar settings from Section [ConsoleVariables] File [../../../RTSProject/Saved/Config/WindowsNoEditor/Engine.ini]
+[2026.06.01-11.09.56:252][  0]LogInit: Computer: MSI
+[2026.06.01-11.09.56:252][  0]LogInit: User: margaryta
+[2026.06.01-11.09.56:252][  0]LogInit: CPU Page size=4096, Cores=14
+[2026.06.01-11.09.56:252][  0]LogInit: High frequency timer resolution =10.000000 MHz
+[2026.06.01-11.09.56:252][  0]LogMemory: Memory total: Physical=31.7GB (32GB approx)
+[2026.06.01-11.09.56:252][  0]LogMemory: Platform Memory Stats for WindowsNoEditor
+[2026.06.01-11.09.56:252][  0]LogMemory: Process Physical Memory: 122.57 MB used, 124.69 MB peak
+[2026.06.01-11.09.56:252][  0]LogMemory: Process Virtual Memory: 101.00 MB used, 101.00 MB peak
+[2026.06.01-11.09.56:252][  0]LogMemory: Physical Memory: 22553.24 MB used,  9919.52 MB free, 32472.77 MB total
+[2026.06.01-11.09.56:252][  0]LogMemory: Virtual Memory: 134193112.00 MB used,  24614.89 MB free, 134217728.00 MB total
+[2026.06.01-11.09.56:293][  0]LogWindows: WindowsPlatformFeatures enabled
+[2026.06.01-11.09.56:333][  0]LogInit: Physics initialised using underlying interface: PhysX
+[2026.06.01-11.09.56:334][  0]LogInit: Using OS detected language (ru-RU).
+[2026.06.01-11.09.56:336][  0]LogInit: Using OS detected locale (ru-BY).
+[2026.06.01-11.09.56:336][  0]LogTextLocalizationManager: No localization for 'ru-RU' exists, so 'en' will be used for the language.
+[2026.06.01-11.09.56:336][  0]LogTextLocalizationManager: No localization for 'ru-BY' exists, so 'en' will be used for the locale.
+[2026.06.01-11.09.56:360][  0]LogWindowsTextInputMethodSystem: Display: IME system deactivated.
+[2026.06.01-11.09.56:379][  0]LogSlate: New Slate User Created.  User Index 0, Is Virtual User: 0
+[2026.06.01-11.09.56:379][  0]LogSlate: Slate User Registered.  User Index 0, Is Virtual User: 0
+[2026.06.01-11.09.56:402][  0]LogD3D11RHI: Loaded GFSDK_Aftermath_Lib.x64.dll
+[2026.06.01-11.09.56:404][  0]LogHMD: Failed to initialize OpenVR with code 110
+[2026.06.01-11.09.56:404][  0]LogD3D11RHI: D3D11 min allowed feature level: 11_0
+[2026.06.01-11.09.56:404][  0]LogD3D11RHI: D3D11 max allowed feature level: 11_0
+[2026.06.01-11.09.56:404][  0]LogD3D11RHI: D3D11 adapters:
+[2026.06.01-11.09.57:857][  0]LogD3D11RHI:    0. 'NVIDIA GeForce RTX 3070 Laptop GPU' (Feature Level 11_0)
+[2026.06.01-11.09.57:857][  0]LogD3D11RHI:       8018/0/16236 MB DedicatedVideo/DedicatedSystem/SharedSystem, Outputs:1, VendorId:0x10de
+[2026.06.01-11.09.57:934][  0]LogD3D11RHI:    1. 'Intel(R) Iris(R) Xe Graphics' (Feature Level 11_0)
+[2026.06.01-11.09.57:934][  0]LogD3D11RHI:       128/0/16236 MB DedicatedVideo/DedicatedSystem/SharedSystem, Outputs:0, VendorId:0x8086
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:    2. 'Microsoft Basic Render Driver' (Feature Level 11_0)
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:       0/0/16236 MB DedicatedVideo/DedicatedSystem/SharedSystem, Outputs:0, VendorId:0x1414
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI: Chosen D3D11 Adapter:
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     Description : NVIDIA GeForce RTX 3070 Laptop GPU
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     VendorId    : 10de
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     DeviceId    : 249d
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     SubSysId    : 13331462
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     Revision    : 00a1
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     DedicatedVideoMemory : 8407482368 bytes
+[2026.06.01-11.09.57:938][  0]LogD3D11RHI:     DedicatedSystemMemory : 0 bytes
+[2026.06.01-11.09.57:939][  0]LogD3D11RHI:     SharedSystemMemory : 17025081344 bytes
+[2026.06.01-11.09.57:939][  0]LogD3D11RHI:     AdapterLuid : 0 1290434286
+[2026.06.01-11.09.57:948][  0]LogD3D11RHI: Creating new Direct3DDevice
+[2026.06.01-11.09.57:948][  0]LogD3D11RHI:     GPU DeviceId: 0x249d (for the marketing name, search the web for "GPU Device Id")
+[2026.06.01-11.09.57:948][  0]LogWindows: EnumDisplayDevices:
+[2026.06.01-11.09.57:949][  0]LogWindows:    0. 'Intel(R) Iris(R) Xe Graphics' (P:1 D:1)
+[2026.06.01-11.09.57:951][  0]LogWindows:    1. 'Intel(R) Iris(R) Xe Graphics' (P:0 D:0)
+[2026.06.01-11.09.57:951][  0]LogWindows:    2. 'Intel(R) Iris(R) Xe Graphics' (P:0 D:0)
+[2026.06.01-11.09.57:951][  0]LogWindows:    3. 'Intel(R) Iris(R) Xe Graphics' (P:0 D:0)
+[2026.06.01-11.09.57:952][  0]LogWindows:    4. 'NVIDIA GeForce RTX 3070 Laptop GPU' (P:0 D:0)
+[2026.06.01-11.09.57:952][  0]LogWindows: DebugString: PrimaryIsNotTheChoosenAdapter PrimaryIsNotTheChoosenAdapter PrimaryIsNotTheChoosenAdapter PrimaryIsNotTheChoosenAdapter
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     Adapter Name: NVIDIA GeForce RTX 3070 Laptop GPU
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:   Driver Version: 610.47 (internal:32.0.16.1047, unified:610.47)
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:      Driver Date: 5-19-2026
+[2026.06.01-11.09.57:952][  0]LogRHI: Texture pool is 5612 MB (70% of 8018 MB)
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI: Creating D3DDevice using adapter:
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     Description : NVIDIA GeForce RTX 3070 Laptop GPU
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     VendorId    : 10de
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     DeviceId    : 249d
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     SubSysId    : 13331462
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     Revision    : 00a1
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     DedicatedVideoMemory : 8407482368 bytes
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     DedicatedSystemMemory : 0 bytes
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     SharedSystemMemory : 17025081344 bytes
+[2026.06.01-11.09.57:952][  0]LogD3D11RHI:     AdapterLuid : 0 1290434286
+[2026.06.01-11.09.58:179][  0]LogD3D11RHI: RHI has support for 64 bit atomics
+[2026.06.01-11.09.58:180][  0]LogD3D11RHI: Async texture creation enabled
+[2026.06.01-11.09.58:180][  0]LogD3D11RHI: Array index from any shader is supported
+[2026.06.01-11.09.58:197][  0]LogD3D11RHI: GPU Timing Frequency: 1000.000000 (Debug: 2 1)
+[2026.06.01-11.09.58:224][  0]LogRHI: GeForceNow SDK initialized: 1
+[2026.06.01-11.09.58:225][  0]LogRendererCore: Ray tracing is disabled. Reason: r.RayTracing=0.
+[2026.06.01-11.09.58:225][  0]LogODSC: ODSC Thread active.
+[2026.06.01-11.09.58:242][  0]LogSlate: Using FreeType 2.10.0
+[2026.06.01-11.09.58:243][  0]LogSlate: SlateFontServices - WITH_FREETYPE: 1, WITH_HARFBUZZ: 1
+[2026.06.01-11.09.58:353][  0]LogInit: Using OS detected language (ru-RU).
+[2026.06.01-11.09.58:353][  0]LogInit: Using OS detected locale (ru-BY).
+[2026.06.01-11.09.58:355][  0]LogTextLocalizationManager: No localization for 'ru-RU' exists, so 'en' will be used for the language.
+[2026.06.01-11.09.58:355][  0]LogTextLocalizationManager: No localization for 'ru-BY' exists, so 'en' will be used for the locale.
+[2026.06.01-11.09.58:357][  0]LogAssetRegistry: FAssetRegistry took 0.0008 seconds to start up
+[2026.06.01-11.09.58:426][  0]LogTextLocalizationManager: Compacting localization data took   1.00ms
+[2026.06.01-11.09.58:429][  0]LogStreaming: Display: FlushAsyncLoading: 1 QueuedPackages, 0 AsyncPackages
+[2026.06.01-11.09.58:430][  0]LogPackageLocalizationCache: Processed 28 localized package path(s) for 1 prioritized culture(s) in 0.000059 seconds
+[2026.06.01-11.09.58:431][  0]LogPakFile: New pak file ../../../RTSProject/Content/Paks/RTSProject-WindowsNoEditor.pak added to pak precacher.
+[2026.06.01-11.09.58:435][  0]LogSerialization: Display: AllowBulkDataInIoStore: 'true'
+[2026.06.01-11.09.58:436][  0]LogInit: Selected Device Profile: [WindowsNoEditor]
+[2026.06.01-11.09.58:437][  0]LogInit: Active device profile: [00000214DED3D9C0][00000214D19524A0 49] WindowsNoEditor
+[2026.06.01-11.09.58:437][  0]LogInit: Profiles: [00000214DED3D840][00000214DE39DB70 49] Windows, [00000214DED3D9C0][00000214D19524A0 49] WindowsNoEditor,
+[2026.06.01-11.09.58:457][  0]LogNetVersion: RTSProject 1.0.0, NetCL: 17155196, EngineNetVer: 17, GameNetVer: 0 (Checksum: 3407303114)
+[2026.06.01-11.09.58:479][  0]LogStats: UGameplayTagsManager::InitializeManager -  0.001 s
+[2026.06.01-11.09.58:494][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.06.01-11.09.58:494][  0]LogAudioCaptureCore: Display: No Audio Capture implementations found. Audio input will be silent.
+[2026.06.01-11.09.58:495][  0]LogHMD: PokeAHoleMaterial loaded successfully
+[2026.06.01-11.09.58:511][  0]LogMoviePlayer: Initializing movie player
+[2026.06.01-11.09.58:511][  0]LogNiagaraDebuggerClient: Niagara Debugger Client Initialized | Session: 6DFEBAE74A579923C5E01897C1E271F3 | Instance: 2F5AD8BA40B90BF2FE381DA4DE82D019 (MSI-21136).
+[2026.06.01-11.09.58:512][  0]LogSteamRTS: SteamRTS started. OnlineSubsystem = 'Steam'.
+[2026.06.01-11.09.58:513][  0]LogAndroidPermission: UAndroidPermissionCallbackProxy::GetInstance
+[2026.06.01-11.09.58:513][  0]LogOcInput: OculusInput pre-init called
+[2026.06.01-11.09.58:517][  0]LogUObjectArray: 16661 objects as part of root set at end of initial load.
+[2026.06.01-11.09.58:518][  0]LogUObjectArray: 2 objects are not in the root set, but can never be destroyed because they are in the DisregardForGC set.
+[2026.06.01-11.09.58:518][  0]LogUObjectAllocator: 3414408 out of 0 bytes used by permanent object pool.
+[2026.06.01-11.09.58:518][  0]LogUObjectArray: CloseDisregardForGC: 16661/16661 objects in disregard for GC pool
+[2026.06.01-11.09.58:523][  0]LogEngine: Initializing Engine...
+[2026.06.01-11.09.58:527][  0]LogHMD: Failed to enumerate extensions. Please check that you have a valid OpenXR runtime installed.
+[2026.06.01-11.09.58:527][  0]LogHMD: Failed to initialize OpenVR with code 110
+[2026.06.01-11.09.58:577][  0]LogPakFile: Precache HighWater 16MB
+
+[2026.06.01-11.09.58:578][  0]LogPakFile: Precache HighWater 32MB
+
+[2026.06.01-11.09.58:579][  0]LogInit: Initializing FReadOnlyCVARCache
+[2026.06.01-11.09.58:579][  0]LogAudio: Display: Initializing Audio Device Manager...
+[2026.06.01-11.09.58:579][  0]LogAudio: Display: Loading Default Audio Settings Objects...
+[2026.06.01-11.09.58:580][  0]LogAudio: Display: No default SoundConcurrencyObject specified (or failed to load).
+[2026.06.01-11.09.58:580][  0]LogAudio: Display: Audio Device Manager Initialized
+[2026.06.01-11.09.58:580][  0]LogAudio: Display: Creating Audio Device:                 Id: 1, Scope: Shared, Realtime: True
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display: Audio Mixer Platform Settings:
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display:   Sample Rate:                                              48000
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display:   Callback Buffer Frame Size Requested: 1024
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display:   Callback Buffer Frame Size To Use:        1024
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display:   Number of buffers to queue:                       2
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display:   Max Channels (voices):                            32
+[2026.06.01-11.09.58:580][  0]LogAudioMixer: Display:   Number of Async Source Workers:           0
+[2026.06.01-11.09.58:581][  0]LogAudio: Display: AudioDevice MaxSources: 32
+[2026.06.01-11.09.58:581][  0]LogAudio: Display: Audio Spatialization Plugin: None (built-in).
+[2026.06.01-11.09.58:581][  0]LogAudio: Display: Audio Reverb Plugin: None (built-in).
+[2026.06.01-11.09.58:581][  0]LogAudio: Display: Audio Occlusion Plugin: None (built-in).
+[2026.06.01-11.09.58:581][  0]LogAudioMixer: Display: Initializing audio mixer.
+[2026.06.01-11.09.58:588][  0]LogAudioDebug: Display: Lib vorbis DLL was dynamically loaded.
+[2026.06.01-11.09.58:597][  0]LogAudioMixer: Display: 0: FrontLeft
+[2026.06.01-11.09.58:597][  0]LogAudioMixer: Display: 1: FrontRight
+[2026.06.01-11.09.58:617][  0]LogAudioMixer: Display: Using Audio Device Sluchátka (MAJOR V)
+[2026.06.01-11.09.58:618][  0]LogAudioMixer: Display: Initializing Sound Submixes...
+[2026.06.01-11.09.58:618][  0]LogAudioMixer: Display: Creating Master Submix 'MasterSubmixDefault'
+[2026.06.01-11.09.58:618][  0]LogAudioMixer: Display: Creating Master Submix 'MasterReverbSubmixDefault'
+[2026.06.01-11.09.58:620][  0]LogAudioMixer: Display: Creating Master Submix 'MasterEQSubmixDefault'
+[2026.06.01-11.09.58:620][  0]LogAudioMixer: FMixerPlatformXAudio2::StartAudioStream() called
+[2026.06.01-11.09.58:621][  0]LogAudioMixer: Display: Output buffers initialized: Frames=1024, Channels=2, Samples=2048
+[2026.06.01-11.09.58:621][  0]LogAudioMixer: Display: Starting AudioMixerPlatformInterface::RunInternal()
+[2026.06.01-11.09.58:621][  0]LogAudioMixer: Display: FMixerPlatformXAudio2::SubmitBuffer() called for the first time
+[2026.06.01-11.09.58:621][  0]LogInit: FAudioDevice initialized.
+[2026.06.01-11.09.58:622][  0]LogNetVersion: Set ProjectVersion to 1.0.0.0. Version Checksum will be recalculated on next use.
+[2026.06.01-11.09.58:622][  0]LogInit: Texture streaming: Enabled
+[2026.06.01-11.09.58:624][  0]LogSteamRTS: USteamFriendsSubsystem initialized.
+[2026.06.01-11.09.58:625][  0]LogSteamRTS: USteamLobbySubsystem initialized.
+[2026.06.01-11.09.58:625][  0]LogSteamRTS: USteamRTSSubsystem initialized. SteamAvailable=1
+[2026.06.01-11.09.58:625][  0]LogAudio: Display: Audio Device (ID: 1) registered with world 'Untitled'.
+[2026.06.01-11.09.58:625][  0]LogSlate: Updating window title bar state: overlay mode, drag disabled, window buttons hidden, title bar hidden
+[2026.06.01-11.09.58:625][  0]LogInit: Display: Game Engine Initialized.
+[2026.06.01-11.09.58:626][  0]LogInit: Display: Starting Game.
+[2026.06.01-11.09.58:626][  0]LogNet: Browse: /Game/Maps/M_MainMenu?Name=Player
+[2026.06.01-11.09.58:626][  0]LogLoad: LoadMap: /Game/Maps/M_MainMenu?Name=Player
+[2026.06.01-11.09.58:626][  0]LogWorld: BeginTearingDown for /Temp/Untitled_0
+[2026.06.01-11.09.58:627][  0]LogWorld: UWorld::CleanupWorld for Untitled, bSessionEnded=true, bCleanupResources=true
+[2026.06.01-11.09.58:627][  0]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.06.01-11.09.58:630][  0]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2026.06.01-11.09.58:632][  0]LogUObjectHash: Compacting FUObjectHashTables data took   0.71ms
+[2026.06.01-11.09.58:639][  0]LogAudio: Display: Audio Device (ID: 1) registered with world 'M_MainMenu'.
+[2026.06.01-11.09.58:641][  0]LogAIModule: Creating AISystem for world M_MainMenu
+[2026.06.01-11.09.58:642][  0]LogLoad: Game class is 'BP_MainMenuGameMode_C'
+[2026.06.01-11.09.58:643][  0]LogWorld: Bringing World /Game/Maps/M_MainMenu.M_MainMenu up for play (max tick rate 0) at 2026.06.01-20.09.58
+[2026.06.01-11.09.58:643][  0]LogWorld: Bringing up level for play took: 0.000361
+[2026.06.01-11.09.58:644][  0]LogGameMode: FindPlayerStart: PATHS NOT DEFINED or NO PLAYERSTART with positive rating
+[2026.06.01-11.09.58:645][  0]LogLoad: Took 0.019448 seconds to LoadMap(/Game/Maps/M_MainMenu)
+[2026.06.01-11.09.58:646][  0]LogSlate: Took 0.000156 seconds to synchronously load lazily loaded font '../../../Engine/Content/EngineFonts/Faces/RobotoBold.ufont' (160K)
+[2026.06.01-11.09.58:682][  0]LogSlate: Took 0.000166 seconds to synchronously load lazily loaded font '../../../Engine/Content/Slate/Fonts/Roboto-Regular.ttf' (155K)
+[2026.06.01-11.09.58:705][  0]LogRenderer: Reallocating scene render targets to support 1708x960 Format 10 NumSamples 1 (Frame:1).
+[2026.06.01-11.09.58:705][  0]LogPakFile: AllPaks IndexSizes: DirectoryHashSize=314352, PathHashSize=16, EntriesSize=32752, TotalSize=347120
+[2026.06.01-11.09.58:706][  0]LogInit: Display: Engine is initialized. Leaving FEngineLoop::Init()
+[2026.06.01-11.09.58:706][  0]LogLoad: (Engine Initialization) Total time: 2.88 seconds
+[2026.06.01-11.09.58:710][  0]LogContentStreaming: Texture pool size now 1000 MB
+[2026.06.01-11.10.06:640][752]LogOnlineSession: Warning: STEAM: Empty session setting GameMode  : OnlineService of type String
+[2026.06.01-11.10.06:641][752]LogOnlineSession: Verbose: OSS: dumping NamedSession:
+[2026.06.01-11.10.06:641][752]LogOnlineSession: Verbose: OSS:   SessionName: GameSession
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   HostingPlayerNum: 0
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   SessionState: Pending
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   RegisteredPlayers:
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:       0 registered players
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS: dumping Session:
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   OwningPlayerName: Batya
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   OwningPlayerId: Batya [0x110000133CBE7DD]
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   NumOpenPrivateConnections: 0
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   NumOpenPublicConnections: 1
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   SessionInfo: HostIP: INVALID SteamP2P: 76561198829266909:7777 Type: Lobby session SessionId: Lobby[0x186000063690BDB]
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS: dumping SessionSettings:
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   NumPublicConnections: 2
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   NumPrivateConnections: 0
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bIsLanMatch: false
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bIsDedicated: false
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bUsesStats: false
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bShouldAdvertise: true
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bAllowJoinInProgress: true
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bAllowInvites: true
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bUsesPresence: true
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bAllowJoinViaPresence: true
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   bAllowJoinViaPresenceFriendsOnly: false
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   BuildUniqueId: 0x0105c47c
+[2026.06.01-11.10.06:642][752]LogOnlineSession: Verbose: OSS:   Settings:
+[2026.06.01-11.10.06:643][752]LogOnlineSession: Verbose: OSS:           RTSLOBBYNAME=qwezxdc : OnlineService
+[2026.06.01-11.10.06:643][752]LogOnlineSession: Verbose: OSS:           MapName=/Game/Maps/SKM-DarkSpace : OnlineService
+[2026.06.01-11.10.06:643][752]LogOnlineSession: Verbose: OSS:           GameMode= : OnlineService
+[2026.06.01-11.10.06:643][752]LogOnlineSession: Verbose: OSS:           RTSBUILDVERSION=++UE4+Release-4.27-CL-18319896 : OnlineService
+[2026.06.01-11.10.06:643][752]LogSteamRTS: HandleCreateSessionComplete: 'GameSession' success=1
+[2026.06.01-11.10.06:643][752]LogSteamRTS: Host travelling to listen server: /Game/Maps/L_Lobby?listen
+[2026.06.01-11.10.06:645][752]LogGameMode: ProcessServerTravel: /Game/Maps/L_Lobby?listen
+[2026.06.01-11.10.06:645][752]LogEngine: Server switch level: /Game/Maps/L_Lobby?Name=Player?listen
+[2026.06.01-11.10.06:646][752]LogNet: Browse: /Game/Maps/L_Lobby?Name=Player?listen
+[2026.06.01-11.10.06:646][752]LogLoad: LoadMap: /Game/Maps/L_Lobby?Name=Player?listen
+[2026.06.01-11.10.06:646][752]LogWorld: BeginTearingDown for /Game/Maps/M_MainMenu
+[2026.06.01-11.10.06:647][752]LogWorld: UWorld::CleanupWorld for M_MainMenu, bSessionEnded=true, bCleanupResources=true
+[2026.06.01-11.10.06:648][752]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.06.01-11.10.06:679][752]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2026.06.01-11.10.06:680][752]LogUObjectHash: Compacting FUObjectHashTables data took   0.49ms
+[2026.06.01-11.10.06:682][752]LogStreaming: Display: FlushAsyncLoading: 1 QueuedPackages, 0 AsyncPackages
+[2026.06.01-11.10.06:684][752]LogAudio: Display: Audio Device (ID: 1) registered with world 'L_Lobby'.
+[2026.06.01-11.10.06:685][752]LogAIModule: Creating AISystem for world L_Lobby
+[2026.06.01-11.10.06:685][752]LogLoad: Game class is 'BP_LobbyGameMode_C'
+[2026.06.01-11.10.06:687][752]LogNet: ReplicationDriverClass is null! Not using ReplicationDriver.
+[2026.06.01-11.10.06:687][752]LogNetCore: DDoS detection status: detection enabled: 0 analytics enabled: 0
+[2026.06.01-11.10.06:687][752]LogNet: Display: SteamNetDriver_2147482506 bound to port 7777
+[2026.06.01-11.10.06:687][752]PacketHandlerLog: Loaded PacketHandler component: Engine.EngineHandlerComponentFactory (StatelessConnectHandlerComponent)
+[2026.06.01-11.10.06:688][752]LogNet: GameNetDriver SteamNetDriver_2147482506 IpNetDriver listening on port 7777
+[2026.06.01-11.10.06:688][752]LogWorld: Bringing World /Game/Maps/L_Lobby.L_Lobby up for play (max tick rate 0) at 2026.06.01-20.10.06
+[2026.06.01-11.10.06:688][752]LogWorld: Bringing up level for play took: 0.000233
+[2026.06.01-11.10.06:689][752]LogGameMode: FindPlayerStart: PATHS NOT DEFINED or NO PLAYERSTART with positive rating
+[2026.06.01-11.10.06:690][752]LogLoad: Took 0.044723 seconds to LoadMap(/Game/Maps/L_Lobby)
+[2026.06.01-11.10.28:922][246]LogOnlineSession: STEAM: Updating lobby joinability to false.
+[2026.06.01-11.10.29:327][744]LogOnline: STEAM: Adding P2P connection information with user 76561198250116014 (Name: дрысло [0x11000011146C3AE])
+[2026.06.01-11.10.32:744][962]LogNet: NotifyAcceptingConnection accepted from: 76561198250116014:7777
+[2026.06.01-11.10.32:746][962]LogHandshake: SendConnectChallenge. Timestamp: 26.104955, Cookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:746][962]LogNet: NotifyAcceptingConnection accepted from: 76561198250116014:7777
+[2026.06.01-11.10.32:746][962]LogHandshake: SendConnectChallenge. Timestamp: 26.104955, Cookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:746][962]LogNet: NotifyAcceptingConnection accepted from: 76561198250116014:7777
+[2026.06.01-11.10.32:747][962]LogHandshake: SendConnectChallenge. Timestamp: 26.104955, Cookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:747][962]LogNet: NotifyAcceptingConnection accepted from: 76561198250116014:7777
+[2026.06.01-11.10.32:747][962]LogHandshake: SendConnectChallenge. Timestamp: 26.104955, Cookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:768][988]LogNet: NotifyAcceptingConnection accepted from: 76561198250116014:7777
+[2026.06.01-11.10.32:768][988]LogHandshake: SendChallengeAck. InCookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:768][988]LogNet: Server accepting post-challenge connection from: 76561198250116014:7777
+[2026.06.01-11.10.32:769][988]PacketHandlerLog: Loaded PacketHandler component: Engine.EngineHandlerComponentFactory (StatelessConnectHandlerComponent)
+[2026.06.01-11.10.32:769][988]LogOnline: STEAM: Adding user 76561198250116014:7777 from RegisterConnection
+[2026.06.01-11.10.32:770][988]LogNet: NotifyAcceptedConnection: Name: L_Lobby, TimeStamp: 06/01/26 20:10:32, [UNetConnection] RemoteAddr: 76561198250116014:7777, Name: SteamNetConnection_2147482476, Driver: GameNetDriver SteamNetDriver_2147482506, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: INVALID
+[2026.06.01-11.10.32:770][988]LogNet: AddClientConnection: Added client connection: [UNetConnection] RemoteAddr: 76561198250116014:7777, Name: SteamNetConnection_2147482476, Driver: GameNetDriver SteamNetDriver_2147482506, IsServer: YES, PC: NULL, Owner: NULL, UniqueId: INVALID
+[2026.06.01-11.10.32:777][994]LogHandshake: Received unexpected post-connect handshake packet - resending ack for LastChallengeSuccessAddress 76561198250116014:7777 and LastCookie 096002009067116213204091040239072079051055083080102065018056.
+[2026.06.01-11.10.32:777][994]LogHandshake: SendChallengeAck. InCookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:778][994]LogHandshake: Received unexpected post-connect handshake packet - resending ack for LastChallengeSuccessAddress 76561198250116014:7777 and LastCookie 096002009067116213204091040239072079051055083080102065018056.
+[2026.06.01-11.10.32:778][994]LogHandshake: SendChallengeAck. InCookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:778][994]LogHandshake: Received unexpected post-connect handshake packet - resending ack for LastChallengeSuccessAddress 76561198250116014:7777 and LastCookie 096002009067116213204091040239072079051055083080102065018056.
+[2026.06.01-11.10.32:778][994]LogHandshake: SendChallengeAck. InCookie: 096002009067116213204091040239072079051055083080102065018056
+[2026.06.01-11.10.32:779][994]LogNet: NotifyAcceptingChannel Control 0 server World /Game/Maps/L_Lobby.L_Lobby: Accepted
+[2026.06.01-11.10.32:779][994]LogNet: Remote platform little endian=1
+[2026.06.01-11.10.32:779][994]LogNet: This platform little endian=1
+[2026.06.01-11.10.32:779][994]LogNetVersion: RTSProject 1.0.0.0, NetCL: 17155196, EngineNetVer: 17, GameNetVer: 0 (Checksum: 3374816309)
+[2026.06.01-11.10.32:790][  6]LogNet: Login request: ?Name=дрысло userId: Steam:дрысло [0x11000011146C3AE] platform: Steam
+[2026.06.01-11.10.32:858][ 85]LogNet: Client netspeed is 100000
+[2026.06.01-11.10.32:858][ 85]LogNet: Join request: /Game/Maps/M_MainMenu?Name=дрысло?SplitscreenCount=1
+[2026.06.01-11.10.32:859][ 85]LogGameMode: FindPlayerStart: PATHS NOT DEFINED or NO PLAYERSTART with positive rating
+[2026.06.01-11.10.32:864][ 85]LogNet: Join succeeded: дрысло
+[2026.06.01-11.10.39:729][640]LogSteamRTS: StartMatch: seamless travel to /Game/Maps/SKM-DarkSpace?listen
+[2026.06.01-11.10.39:730][640]LogGameMode: ProcessServerTravel: /Game/Maps/SKM-DarkSpace?listen
+[2026.06.01-11.10.39:733][640]LogWorld: SeamlessTravel to: /Game/Maps/SKM-DarkSpace
+[2026.06.01-11.10.39:735][640]LogWorld: BeginTearingDown for /Game/Maps/L_Lobby
+[2026.06.01-11.10.39:736][640]LogWorld: UWorld::CleanupWorld for L_Lobby, bSessionEnded=false, bCleanupResources=true
+[2026.06.01-11.10.39:737][640]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.06.01-11.10.39:768][640]LogAudio: Display: Audio Device (ID: 1) registered with world 'Untitled'.
+[2026.06.01-11.10.39:770][640]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2026.06.01-11.10.39:772][640]LogUObjectHash: Compacting FUObjectHashTables data took   0.58ms
+[2026.06.01-11.10.39:773][640]LogStats:     SeamlessTravel FlushLevelStreaming  -  0.000 s
+[2026.06.01-11.10.39:773][640]LogAIModule: Creating AISystem for world Untitled
+[2026.06.01-11.10.39:773][640]LogWorld: Bringing World /Temp/Untitled_1.Untitled up for play (max tick rate 0) at 2026.06.01-20.10.39
+[2026.06.01-11.10.39:773][640]LogWorld: Bringing up level for play took: 0.000160
+[2026.06.01-11.10.39:774][640]LogWorld: Sending NotifyLoadedWorld for LP: LocalPlayer_2147482576 PC: BP_LobbyPlayerController_C_2147482496
+[2026.06.01-11.10.39:774][640]LogNet: Verbose: NotifyLoadedWorld Begin
+[2026.06.01-11.10.39:774][640]LogNet: VeryVerbose: GetFunctionCallspace Server calling Server function: ServerNotifyLoadedWorld Local
+[2026.06.01-11.10.39:774][640]LogNet: Verbose: NotifyLoadedWorld End
+[2026.06.01-11.10.39:774][640]LogWorld: StartLoadingDestination to: /Game/Maps/SKM-DarkSpace
+[2026.06.01-11.10.39:969][648]LogWorld: BeginTearingDown for /Temp/Untitled_1
+[2026.06.01-11.10.39:970][648]LogWorld: UWorld::CleanupWorld for Untitled, bSessionEnded=true, bCleanupResources=true
+[2026.06.01-11.10.39:974][648]LogSlate: InvalidateAllWidgets triggered.  All widgets were invalidated
+[2026.06.01-11.10.39:974][648]LogAudio: Display: Audio Device (ID: 1) registered with world 'SKM-DarkSpace'.
+[2026.06.01-11.10.39:980][648]LogAudio: Display: Audio Device unregistered from world 'None'.
+[2026.06.01-11.10.39:983][648]LogUObjectHash: Compacting FUObjectHashTables data took   0.88ms
+[2026.06.01-11.10.39:988][648]LogAIModule: Creating AISystem for world SKM-DarkSpace
+[2026.06.01-11.10.39:989][648]LogLoad: Game class is 'BP_RTSGameMode_C'
+[2026.06.01-11.10.39:990][648]LogStats:     SeamlessTravel FlushLevelStreaming  -  0.000 s
+[2026.06.01-11.10.39:993][648]LogWorld: Bringing World /Game/Maps/SKM-DarkSpace.SKM-DarkSpace up for play (max tick rate 0) at 2026.06.01-20.10.39
+[2026.06.01-11.10.39:993][648]LogRTS: Set up team RTSTeamInfo_2147482401 (team index 0).
+[2026.06.01-11.10.39:993][648]LogRTS: Set up team RTSTeamInfo_2147482399 (team index 1).
+[2026.06.01-11.10.39:994][648]LogWorld: Bringing up level for play took: 0.003698
+[2026.06.01-11.10.39:995][648]LogWorld: Sending NotifyLoadedWorld for LP: LocalPlayer_2147482576 PC: BP_LobbyPlayerController_C_2147482496
+[2026.06.01-11.10.39:995][648]LogNet: Verbose: NotifyLoadedWorld Begin
+[2026.06.01-11.10.39:995][648]LogNet: VeryVerbose: GetFunctionCallspace Server calling Server function: ServerNotifyLoadedWorld Local
+[2026.06.01-11.10.39:995][648]LogNet: Verbose: NotifyLoadedWorld End
+[2026.06.01-11.10.39:996][648]LogWorld: ----SeamlessTravel finished in 0.26 seconds ------
+[2026.06.01-11.10.39:998][648]LogRTS: Player BP_RTSPlayerController_C_2147482391 set up player state BP_RTSPlayerState_C_2147482390 ().
+[2026.06.01-11.10.39:999][648]LogRTS: Start spot BP_RTSPlayerStart2 is now occupied by player BP_RTSPlayerController_C_2147482391.
+[2026.06.01-11.10.39:999][648]LogRTS: Player BP_RTSPlayerState_C_2147482390 added to team 1.
+[2026.06.01-11.10.40:013][648]LogRTS: Spawned BP_WaspWorker_C_2147482374 for player BP_RTSPlayerController_C_2147482391 at X=3850.000 Y=-3990.000 Z=0.000.
+[2026.06.01-11.10.40:013][648]LogRTS: Player BP_RTSPlayerController_C_2147482391 is now owning BP_WaspWorker_C_2147482374.
+[2026.06.01-11.10.40:014][648]LogRTS: Spawned BP_Muhomor_C_2147482364 for player BP_RTSPlayerController_C_2147482391 at X=3976.626 Y=-3990.000 Z=0.000.
+[2026.06.01-11.10.40:014][648]LogRTS: Player BP_RTSPlayerController_C_2147482391 is now owning BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:014][648]LogRTS: Construction BP_Muhomor_C_2147482364 finished.
+[2026.06.01-11.10.40:015][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeGathered for BP_OreAsteroid2.
+[2026.06.01-11.10.40:015][648]LogRTS: Added gameplay tag Container.ResourceSource for BP_OreAsteroid2.
+[2026.06.01-11.10.40:015][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeGathered for BP_OreAsteroid3.
+[2026.06.01-11.10.40:015][648]LogRTS: Added gameplay tag Container.ResourceSource for BP_OreAsteroid3.
+[2026.06.01-11.10.40:016][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeGathered for BP_OreAsteroid4.
+[2026.06.01-11.10.40:016][648]LogRTS: Added gameplay tag Container.ResourceSource for BP_OreAsteroid4.
+[2026.06.01-11.10.40:016][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeGathered for BP_OreAsteroid5.
+[2026.06.01-11.10.40:016][648]LogRTS: Added gameplay tag Container.ResourceSource for BP_OreAsteroid5.
+[2026.06.01-11.10.40:016][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeGathered for BP_OreAsteroid6.
+[2026.06.01-11.10.40:016][648]LogRTS: Added gameplay tag Container.ResourceSource for BP_OreAsteroid6.
+[2026.06.01-11.10.40:017][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeGathered for BP_OreAsteroid_2.
+[2026.06.01-11.10.40:017][648]LogRTS: Added gameplay tag Container.ResourceSource for BP_OreAsteroid_2.
+[2026.06.01-11.10.40:018][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeAttacked for BP_WaspWorker_C_2147482374.
+[2026.06.01-11.10.40:018][648]LogRTS: Added initial gameplay tag Status.Changing.Alive for BP_WaspWorker_C_2147482374.
+[2026.06.01-11.10.40:018][648]LogRTS: Added initial gameplay tag Status.Permanent.CanAttack for BP_WaspWorker_C_2147482374.
+[2026.06.01-11.10.40:018][648]LogRTS: Added initial gameplay tag Status.Permanent.CanConstruct for BP_WaspWorker_C_2147482374.
+[2026.06.01-11.10.40:018][648]LogRTS: Added initial gameplay tag Status.Permanent.CanGather for BP_WaspWorker_C_2147482374.
+[2026.06.01-11.10.40:019][648]LogRTS: BP_WaspWorker_C_2147482374: Setting material slot 0 to MI_Wasp_Pe on SkeletalMesh.
+[2026.06.01-11.10.40:019][648]LogRTS: Added gameplay tag Container.ConstructionSite for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:019][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeAttacked for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:019][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeConstructed for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:019][648]LogRTS: Added initial gameplay tag Status.Changing.Immobilized for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:019][648]LogRTS: Added initial gameplay tag Status.Changing.Alive for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:019][648]LogRTS: Added initial gameplay tag Status.Permanent.CanProduce for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:020][648]LogRTS: Added initial gameplay tag Status.Permanent.AcceptsReturnedResources for BP_Muhomor_C_2147482364.
+[2026.06.01-11.10.40:020][648]LogRTS: Using local player state BP_RTSPlayerState_C_2147482390.
+[2026.06.01-11.10.40:020][648]LogRTS: RTSVisionVolume_2 has 256 tiles of world size 39.062500.
+[2026.06.01-11.10.40:111][648]LogRTS: Set up RTSVisionInfo_2147482400 with RTSVisionVolume_2.
+[2026.06.01-11.10.40:111][648]LogRTS: Set up RTSVisionInfo_2147482398 with RTSVisionVolume_2.
+[2026.06.01-11.10.40:115][648]LogRTS: Set up RTSFogOfWarActor_1 with RTSVisionVolume_2.
+[2026.06.01-11.10.40:123][648]LogViewport: Display: Viewport MouseLockMode Changed, LockOnCapture -> DoNotLock
+[2026.06.01-11.10.40:124][648]LogViewport: Display: Viewport MouseCaptureMode Changed, CapturePermanently_IncludingInitialMouseDown -> CaptureDuringMouseDown
+[2026.06.01-11.10.40:124][648]LogRTS: NumAIPlayers = 0
+[2026.06.01-11.10.40:125][648]LogRTS: Player BP_RTSPlayerController_C_2147482341 set up player state BP_RTSPlayerState_C_2147482340 ().
+[2026.06.01-11.10.40:125][648]LogRTS: Using local player state BP_RTSPlayerState_C_2147482340.
+[2026.06.01-11.10.40:126][648]LogRTS: Start spot BP_RTSPlayerStart_2 is now occupied by player BP_RTSPlayerController_C_2147482341.
+[2026.06.01-11.10.40:126][648]LogRTS: Player BP_RTSPlayerState_C_2147482340 added to team 0.
+[2026.06.01-11.10.40:128][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeAttacked for BP_WaspWorker_C_2147482327.
+[2026.06.01-11.10.40:128][648]LogRTS: Added initial gameplay tag Status.Changing.Alive for BP_WaspWorker_C_2147482327.
+[2026.06.01-11.10.40:128][648]LogRTS: Added initial gameplay tag Status.Permanent.CanAttack for BP_WaspWorker_C_2147482327.
+[2026.06.01-11.10.40:128][648]LogRTS: Added initial gameplay tag Status.Permanent.CanConstruct for BP_WaspWorker_C_2147482327.
+[2026.06.01-11.10.40:129][648]LogRTS: Added initial gameplay tag Status.Permanent.CanGather for BP_WaspWorker_C_2147482327.
+[2026.06.01-11.10.40:129][648]LogRTS: Spawned BP_WaspWorker_C_2147482327 for player BP_RTSPlayerController_C_2147482341 at X=-4040.000 Y=3810.000 Z=0.000.
+[2026.06.01-11.10.40:129][648]LogRTS: BP_WaspWorker_C_2147482327: Setting material slot 0 to MI_Wasp_Bl on SkeletalMesh.
+[2026.06.01-11.10.40:129][648]LogRTS: Player BP_RTSPlayerController_C_2147482341 is now owning BP_WaspWorker_C_2147482327.
+[2026.06.01-11.10.40:130][648]LogRTS: Added gameplay tag Container.ConstructionSite for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:130][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeAttacked for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:130][648]LogRTS: Added initial gameplay tag Status.Permanent.CanBeConstructed for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:130][648]LogRTS: Added initial gameplay tag Status.Changing.Immobilized for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:130][648]LogRTS: Added initial gameplay tag Status.Changing.UnderConstruction for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:131][648]LogRTS: Added initial gameplay tag Status.Changing.Alive for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:131][648]LogRTS: Added initial gameplay tag Status.Permanent.CanProduce for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:131][648]LogRTS: Added initial gameplay tag Status.Permanent.AcceptsReturnedResources for BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:131][648]LogRTS: Spawned BP_Muhomor_C_2147482321 for player BP_RTSPlayerController_C_2147482341 at X=-3913.374 Y=3810.000 Z=0.000.
+[2026.06.01-11.10.40:131][648]LogRTS: Player BP_RTSPlayerController_C_2147482341 is now owning BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:131][648]LogRTS: Construction BP_Muhomor_C_2147482321 finished.
+[2026.06.01-11.10.40:131][648]LogRTS: Removed gameplay tag Status.Changing.UnderConstruction from BP_Muhomor_C_2147482321.
+[2026.06.01-11.10.40:133][648]LogRTS: Using local vision info RTSVisionInfo_2147482400.
+[2026.06.01-11.10.40:138][648]LogGameplayTags: NetworkGameplayTagNodeIndexHash is b561373e
+[2026.06.01-11.10.40:142][648]LogSlate: Took 0.000602 seconds to synchronously load lazily loaded font '../../../Engine/Content/EngineFonts/Faces/RobotoRegular.ufont' (155K)
+[2026.06.01-11.10.40:144][648]LogSlate: Took 0.001995 seconds to synchronously load lazily loaded font '../../../RTSProject/Content/UI/Fonts/FF_NotoSansDisplay-Regular.ufont' (445K)
+[2026.06.01-11.10.40:147][648]LogSlate: Took 0.001706 seconds to synchronously load lazily loaded font '../../../RTSProject/Content/UI/Fonts/FF_NotoSansDisplay-Bold.ufont' (446K)
+[2026.06.01-11.10.40:404][736]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.40:404][736]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482321: same team.
+[2026.06.01-11.10.40:405][736]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327: No target acquired.
+[2026.06.01-11.10.40:455][758]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.40:455][758]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.40:456][758]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.40:880][929]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.40:880][929]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482321: same team.
+[2026.06.01-11.10.40:881][929]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327: No target acquired.
+[2026.06.01-11.10.41:032][996]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.41:032][996]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.41:033][996]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.41:293][ 87]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.41:293][ 87]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482321: same team.
+[2026.06.01-11.10.41:294][ 87]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327: No target acquired.
+[2026.06.01-11.10.41:499][153]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.41:499][153]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.41:501][153]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.42:053][386]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.42:053][386]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.42:054][386]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.42:486][567]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.42:486][567]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.42:486][567]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.43:089][792]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.52:413][792]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.52:418][792]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.52:420][793]LogNet: UNetDriver::TickDispatch: Very long time between ticks. DeltaTime: 9.33, Realtime: 9.33. SteamNetDriver_2147482506
+[2026.06.01-11.10.52:421][793]LogRTS: BP_Muhomor_C_2147482321 queued BP_Spider_C for production in queue 0.
+[2026.06.01-11.10.52:421][793]LogRTS: BP_Muhomor_C_2147482321 started producing BP_Spider_C in queue 0.
+[2026.06.01-11.10.52:421][793]LogRTS: BP_Muhomor_C_2147482321 queued BP_WaspWorker_C for production in queue 0.
+[2026.06.01-11.10.52:421][793]LogRTS: BP_Muhomor_C_2147482321 queued BP_Toad_C for production in queue 0.
+[2026.06.01-11.10.52:441][794]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327 (Order=RTSStopOrder): SphereOverlap r=1000 found 0 actors.
+[2026.06.01-11.10.52:441][794]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327: No target acquired.
+[2026.06.01-11.10.52:532][800]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.52:532][800]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.52:533][800]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.52:889][898]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327 (Order=RTSStopOrder): SphereOverlap r=1000 found 0 actors.
+[2026.06.01-11.10.52:889][898]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327: No target acquired.
+[2026.06.01-11.10.52:939][913]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374 (Order=RTSStopOrder): SphereOverlap r=1000 found 1 actors.
+[2026.06.01-11.10.52:939][913]LogRTS: [AcquireTargets] Skipping BP_Muhomor_C_2147482364: same team.
+[2026.06.01-11.10.52:939][913]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482374: No target acquired.
+[2026.06.01-11.10.53:383][112]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327 (Order=RTSStopOrder): SphereOverlap r=1000 found 0 actors.
+[2026.06.01-11.10.53:384][112]LogRTS: [AcquireTargets] BP_WaspWorker_C_2147482327: No target acquired.

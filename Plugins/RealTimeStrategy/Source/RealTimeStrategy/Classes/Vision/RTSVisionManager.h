@@ -76,6 +76,13 @@ private:
     UPROPERTY()
     TArray<FRTSVisionActor> VisionActors;
 
+    /**
+     * Returns the vision info tracking the specified team, matched by its actual TeamIndex.
+     * VisionInfos is populated in TActorIterator order, which is NOT guaranteed to equal team
+     * index order, so the array must never be indexed by team index directly.
+     */
+    ARTSVisionInfo* GetVisionInfoForTeamIndex(uint8 InTeamIndex) const;
+
     /** Checks whether vision needs to be updated for the specified actor, and does so if necessary. */
     void UpdateVisionActor(const FRTSVisionActor& VisionActor);
 

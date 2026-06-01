@@ -308,6 +308,11 @@ TArray<ARTSTeamInfo*> ARTSGameMode::GetTeams() const
     return Teams;
 }
 
+void ARTSGameMode::SetNumTeams(uint8 InNumTeams)
+{
+    NumTeams = InNumTeams;
+}
+
 void ARTSGameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
