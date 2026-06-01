@@ -408,16 +408,23 @@ void ARTSPlayerController::OnPlayerStateAvailable(ARTSPlayerState* NewPlayerStat
 		}
 	}
 
-	// Setup fog of war.
-	ARTSGameState* GameState = Cast<ARTSGameState>(GetWorld()->GetGameState());
-
-	if (IsValid(GameState))
+	// Setup fog of war — only the locally controlled player drives the local vision.
+	// On a listen server every player's controller (incl. the server-side proxy of a
+	// remote client) runs OnPlayerStateAvailable; without this guard they clobber the
+	// single VisionManager->LocalPlayerState, and the Tick lazy-init then derives
+	// LocalVisionInfo from the wrong team, so the host renders another team's fog of war.
+	if (IsLocalController())
 	{
-		ARTSVisionManager* VisionManager = GameState->GetVisionManager();
+		ARTSGameState* GameState = Cast<ARTSGameState>(GetWorld()->GetGameState());
 
-		if (IsValid(VisionManager))
+		if (IsValid(GameState))
 		{
-			VisionManager->SetLocalPlayerState(NewPlayerState);
+			ARTSVisionManager* VisionManager = GameState->GetVisionManager();
+
+			if (IsValid(VisionManager))
+			{
+				VisionManager->SetLocalPlayerState(NewPlayerState);
+			}
 		}
 	}
 

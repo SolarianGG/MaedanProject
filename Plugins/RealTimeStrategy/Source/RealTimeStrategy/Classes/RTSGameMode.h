@@ -61,6 +61,10 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "RTS", meta = (DisplayName = "OnPlayerDefeated"))
 	void ReceiveOnPlayerDefeated(AController* Player);
 
+protected:
+	/** Sets the number of teams to create. Must be called before InitGame spawns the teams. */
+	void SetNumTeams(uint8 InNumTeams);
+
 private:
 	/** Controllers that have already been defeated. Guards against duplicate defeat processing. */
 	UPROPERTY(Transient)

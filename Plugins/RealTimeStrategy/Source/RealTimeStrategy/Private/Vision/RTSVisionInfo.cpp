@@ -34,7 +34,13 @@ void ARTSVisionInfo::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME_CONDITION(ARTSVisionInfo, TeamIndex, COND_InitialOnly);
+    // The fog the local player renders is selected by matching this against the player's team
+    // index, and the team->vision handshake is retried asynchronously (PlayerController timer,
+    // VisionManager Tick, OnLocalPlayerTeamChanged). COND_InitialOnly would make a missed/late
+    // initial value permanent (TeamIndex stuck at the 255 sentinel), so the client resolves the
+    // wrong VisionInfo and two players on different teams end up sharing one team's fog of war.
+    // Replicate unconditionally so ReceivedTeamIndex can correct a late value.
+    DOREPLIFETIME(ARTSVisionInfo, TeamIndex);
 }
 
 void ARTSVisionInfo::Initialize(ARTSVisionVolume* InVisionVolume)

@@ -180,10 +180,12 @@ void ARTSVisionManager::Tick(float DeltaSeconds)
                     continue;
                 }
 
-                // Get matching vision info.
-                if (VisionInfos.IsValidIndex(Team->GetTeamIndex()))
+                // Get matching vision info. Match by actual TeamIndex, never by array position:
+                // VisionInfos is filled in TActorIterator order, which need not equal team index order.
+                ARTSVisionInfo* TeamVision = GetVisionInfoForTeamIndex(Team->GetTeamIndex());
+
+                if (IsValid(TeamVision))
                 {
-                    ARTSVisionInfo* TeamVision = VisionInfos[Team->GetTeamIndex()];
                     ERTSVisionState NewVision = TeamVision->GetVision(TileLocation.X, TileLocation.Y);
 
                     for (AController* Player : Team->GetTeamMembers())
@@ -326,6 +328,19 @@ void ARTSVisionManager::RemoveVisionActor(AActor* Actor)
         ResetVisionForActor(VisionActors[IndexToRemove]);
         VisionActors.RemoveAt(IndexToRemove);
     }
+}
+
+ARTSVisionInfo* ARTSVisionManager::GetVisionInfoForTeamIndex(uint8 InTeamIndex) const
+{
+    for (ARTSVisionInfo* VisionInfo : VisionInfos)
+    {
+        if (IsValid(VisionInfo) && VisionInfo->GetTeamIndex() == InTeamIndex)
+        {
+            return VisionInfo;
+        }
+    }
+
+    return nullptr;
 }
 
 void ARTSVisionManager::UpdateVisionActor(const FRTSVisionActor& VisionActor)

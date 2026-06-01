@@ -22,7 +22,10 @@ void ARTSTeamInfo::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME_CONDITION(ARTSTeamInfo, TeamIndex, COND_InitialOnly);
+    // Team index drives both team relationships and which ARTSVisionInfo a client resolves for the
+    // fog of war. COND_InitialOnly leaves a missed/late value stuck at the 255 sentinel with no way
+    // to recover; replicate unconditionally so the value self-heals on clients.
+    DOREPLIFETIME(ARTSTeamInfo, TeamIndex);
 }
 
 void ARTSTeamInfo::AddToTeam(AController* Player)

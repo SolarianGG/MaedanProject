@@ -10,5 +10,14 @@
 			"LoadingPhase": "Default"
 		}
 	],
-	"Plugins": []
+	"Plugins": [
+		{
+			"Name": "OnlineSubsystemSteam",
+			"Enabled": true
+		},
+		{
+			"Name": "SteamRTS",
+			"Enabled": true
+		}
+	]
 }
