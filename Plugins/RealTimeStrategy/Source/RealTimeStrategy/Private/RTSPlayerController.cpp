@@ -46,6 +46,8 @@
 #include "NiagaraFunctionLibrary.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/RTSRallyPointIndicator.h"
+#include "UI/RTSRangeIndicator.h"
+#include "UI/RTSDirectionIndicator.h"
 #include "Economy/RTSPlayerResourcesComponent.h"
 #include "Economy/RTSResourceSourceComponent.h"
 #include "Libraries/RTSCollisionLibrary.h"
@@ -66,6 +68,7 @@
 #include "Orders/RTSStopOrder.h"
 #include "Production/RTSProductionComponent.h"
 #include "Production/RTSProductionCostComponent.h"
+#include "Upgrades/RTSPlayerUpgradeComponent.h"
 #include "UI/RTSMinimapVolume.h"
 #include "Vision/RTSVisibleComponent.h"
 #include "TimerManager.h"
@@ -118,6 +121,8 @@ ARTSPlayerController::ARTSPlayerController(const FObjectInitializer& ObjectIniti
 	AbilityTargetingIndex = -1;
 	AbilityTargetingActor = nullptr;
 	AbilityTargetingDecalActor = nullptr;
+	AbilityRangeIndicatorInstance = nullptr;
+	AbilityDirectionIndicatorInstance = nullptr;
 	bAbilityTargetingJustEntered = false;
 	bClickStartedOnTargetingWorld = false;
 	bAbilityTargetingCursorWasVisible = true;
@@ -2876,6 +2881,12 @@ void ARTSPlayerController::PlayerTick(float DeltaTime)
 				AbilityTargetingDecalActor->SetActorLocation(HoveredWorldPosition + FVector(0.0f, 0.0f, 10.0f));
 			}
 
+			// Update direction indicator endpoints.
+			if (IsValid(AbilityDirectionIndicatorInstance) && IsValid(AbilityTargetingActor))
+			{
+				AbilityDirectionIndicatorInstance->SetTarget(AbilityTargetingActor->GetActorLocation(), HoveredWorldPosition);
+			}
+
 			// Check if hit any actor.
 			if (HitResult.Actor == nullptr || Cast<ALandscape>(HitResult.Actor.Get()) != nullptr)
 			{
@@ -3016,6 +3027,24 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 		}
 	}
 
+	// Don't begin targeting if required upgrade hasn't been researched yet, or if ability is on cooldown.
+	{
+		const TArray<FRTSAbilityData>& Abilities = AbilitySystem->GetAbilities();
+		const FRTSAbilityData& AbilityData = Abilities[AbilityIndex];
+		if (AbilityData.RequiredUpgrade)
+		{
+			URTSPlayerUpgradeComponent* UpgradeComp = FindComponentByClass<URTSPlayerUpgradeComponent>();
+			if (!IsValid(UpgradeComp) || !UpgradeComp->HasUpgrade(AbilityData.RequiredUpgrade))
+			{
+				return;
+			}
+		}
+		if (AbilityData.RemainingCooldown > 0.0f)
+		{
+			return;
+		}
+	}
+
 	// Cancel building placement if active.
 	if (BuildingCursor)
 	{
@@ -3033,25 +3062,91 @@ void ARTSPlayerController::BeginAbilityTargeting(AActor* AbilityActor, int32 Abi
 		AbilityTargetingDecalActor = nullptr;
 	}
 
-	// Resolve circle radius: prefer TargetingCircleSize on the ability, fall back to the ability Range, then to the controller default.
-	float CircleRadius = AbilityTargetingCircleRadius;
+	// Clean up previous range indicator.
+	if (IsValid(AbilityRangeIndicatorInstance))
+	{
+		AbilityRangeIndicatorInstance->Destroy();
+		AbilityRangeIndicatorInstance = nullptr;
+	}
+
+	// Spawn range indicator centered on the caster if the ability has a finite range.
+	if (AbilityRangeIndicatorClass)
+	{
+		TArray<FRTSAbilityData> RangeAbilities = AbilitySystem->GetAbilities();
+		if (RangeAbilities.IsValidIndex(AbilityIndex) && RangeAbilities[AbilityIndex].AbilityClass)
+		{
+			const URTSAbility* RangeAbilityCDO = RangeAbilities[AbilityIndex].AbilityClass->GetDefaultObject<URTSAbility>();
+			if (RangeAbilityCDO->GetRange() > 0.0f)
+			{
+				FActorSpawnParameters RangeSpawnParams;
+				RangeSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				RangeSpawnParams.Owner = this;
+				RangeSpawnParams.ObjectFlags |= RF_Transient;
+
+				AbilityRangeIndicatorInstance = GetWorld()->SpawnActor<ARTSRangeIndicator>(
+					AbilityRangeIndicatorClass, AbilityActor->GetActorLocation(), FRotator(-90.0f, 0.0f, 0.0f), RangeSpawnParams);
+				if (IsValid(AbilityRangeIndicatorInstance))
+				{
+					AbilityRangeIndicatorInstance->AttachToActor(AbilityActor, FAttachmentTransformRules::KeepWorldTransform);
+					AbilityRangeIndicatorInstance->SetRange(RangeAbilityCDO->GetRange());
+				}
+			}
+		}
+	}
+
+	// Clean up previous direction indicator.
+	if (IsValid(AbilityDirectionIndicatorInstance))
+	{
+		AbilityDirectionIndicatorInstance->Destroy();
+		AbilityDirectionIndicatorInstance = nullptr;
+	}
+
+	// Spawn direction indicator for location-targeted abilities.
+	if (AbilityDirectionIndicatorClass)
+	{
+		TArray<FRTSAbilityData> DirAbilities = AbilitySystem->GetAbilities();
+		if (DirAbilities.IsValidIndex(AbilityIndex) && DirAbilities[AbilityIndex].AbilityClass)
+		{
+			const URTSAbility* DirAbilityCDO = DirAbilities[AbilityIndex].AbilityClass->GetDefaultObject<URTSAbility>();
+			if (DirAbilityCDO->GetTargetType() == ERTSAbilityTargetType::ABILITYTARGET_Actor)
+			{
+				FActorSpawnParameters DirSpawnParams;
+				DirSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				DirSpawnParams.Owner = this;
+				DirSpawnParams.ObjectFlags |= RF_Transient;
+
+				AbilityDirectionIndicatorInstance = GetWorld()->SpawnActor<ARTSDirectionIndicator>(
+					AbilityDirectionIndicatorClass, FVector::ZeroVector, FRotator::ZeroRotator, DirSpawnParams);
+				if (IsValid(AbilityDirectionIndicatorInstance))
+				{
+					AbilityDirectionIndicatorInstance->SetTarget(AbilityActor->GetActorLocation(), HoveredWorldPosition);
+				}
+			}
+		}
+	}
+
+	// Resolve circle radius. Only abilities that explicitly opt in via bShowTargetingCircle get a decal.
+	float CircleRadius = 0.0f;
 	{
 		TArray<FRTSAbilityData> Abilities = AbilitySystem->GetAbilities();
 		if (Abilities.IsValidIndex(AbilityIndex) && Abilities[AbilityIndex].AbilityClass)
 		{
 			const URTSAbility* AbilityCDO = Abilities[AbilityIndex].AbilityClass->GetDefaultObject<URTSAbility>();
-			const float CircleSize = AbilityCDO->GetTargetingCircleSize();
-			if (CircleSize > 0.0f)
+			if (AbilityCDO->IsShowTargetingCircle())
 			{
-				CircleRadius = CircleSize;
-			}
-			else if (AbilityCDO->GetRange() > 0.0f)
-			{
-				CircleRadius = AbilityCDO->GetRange();
-			}
-			else
-			{
-				CircleRadius = 0.0f;
+				const float CircleSize = AbilityCDO->GetTargetingCircleSize();
+				if (CircleSize > 0.0f)
+				{
+					CircleRadius = CircleSize;
+				}
+				else if (AbilityCDO->GetRange() > 0.0f)
+				{
+					CircleRadius = AbilityCDO->GetRange();
+				}
+				else
+				{
+					CircleRadius = AbilityTargetingCircleRadius;
+				}
 			}
 		}
 	}
@@ -3147,6 +3242,20 @@ void ARTSPlayerController::ConfirmAbilityTargeting()
 		AbilityTargetingDecalActor = nullptr;
 	}
 
+	// Destroy range indicator.
+	if (IsValid(AbilityRangeIndicatorInstance))
+	{
+		AbilityRangeIndicatorInstance->Destroy();
+		AbilityRangeIndicatorInstance = nullptr;
+	}
+
+	// Destroy direction indicator.
+	if (IsValid(AbilityDirectionIndicatorInstance))
+	{
+		AbilityDirectionIndicatorInstance->Destroy();
+		AbilityDirectionIndicatorInstance = nullptr;
+	}
+
 	// Restore system cursor.
 	bShowMouseCursor = bAbilityTargetingCursorWasVisible ? true : bShowMouseCursor;
 
@@ -3169,6 +3278,20 @@ void ARTSPlayerController::CancelAbilityTargeting()
 	{
 		AbilityTargetingDecalActor->Destroy();
 		AbilityTargetingDecalActor = nullptr;
+	}
+
+	// Destroy range indicator.
+	if (IsValid(AbilityRangeIndicatorInstance))
+	{
+		AbilityRangeIndicatorInstance->Destroy();
+		AbilityRangeIndicatorInstance = nullptr;
+	}
+
+	// Destroy direction indicator.
+	if (IsValid(AbilityDirectionIndicatorInstance))
+	{
+		AbilityDirectionIndicatorInstance->Destroy();
+		AbilityDirectionIndicatorInstance = nullptr;
 	}
 
 	// Restore system cursor.
@@ -3223,6 +3346,40 @@ void ARTSPlayerController::ServerUseAbility_Implementation(APawn* OrderedPawn, i
 	if (!IsValid(AbilitySystem))
 	{
 		return;
+	}
+
+	// If the ability has a range and the target is out of range, move toward it first
+	// and queue the ability to fire when the unit arrives.
+	const TArray<FRTSAbilityData>& Abilities = AbilitySystem->GetAbilities();
+	if (Abilities.IsValidIndex(AbilityIndex) && Abilities[AbilityIndex].AbilityClass)
+	{
+		const URTSAbility* AbilityCDO = Abilities[AbilityIndex].AbilityClass->GetDefaultObject<URTSAbility>();
+		const float Range = AbilityCDO->GetRange();
+		if (Range > 0.f)
+		{
+			const FVector MoveTarget = IsValid(TargetActor) ? TargetActor->GetActorLocation() : TargetLocation;
+			const float Distance = FVector::Dist2D(OrderedPawn->GetActorLocation(), MoveTarget);
+			if (Distance > Range)
+			{
+				ARTSPawnAIController* AIController = Cast<ARTSPawnAIController>(OrderedPawn->GetController());
+				if (IsValid(AIController))
+				{
+				// Move to 50% of range from the target — leaves a 50% buffer for NavMesh imprecision.
+					const FVector DirectionToUnit = (OrderedPawn->GetActorLocation() - MoveTarget).GetSafeNormal2D();
+					const FVector ApproachPoint = MoveTarget + DirectionToUnit * (Range * 0.5f);
+
+					FRTSOrderData MoveOrder;
+					MoveOrder.OrderClass = URTSMoveOrder::StaticClass();
+					MoveOrder.TargetLocation = ApproachPoint;
+
+					UE_LOG(LogRTS, Log, TEXT("[Ability Approach] %s: out of range (%.0f > %.0f), issuing approach move to %s"),
+						*OrderedPawn->GetName(), Distance, Range, *ApproachPoint.ToString());
+					AIController->IssueOrder(MoveOrder, false);
+					AIController->SetPendingAbility(AbilityIndex, TargetActor, TargetLocation);
+					return;
+				}
+			}
+		}
 	}
 
 	AbilitySystem->UseAbility(AbilityIndex, TargetActor, TargetLocation);

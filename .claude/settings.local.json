@@ -48,7 +48,10 @@
       "Bash(git -C \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\" branch -a)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\\\\Source\\\\RealTimeStrategy\" -Recurse -File -Filter \"*.h\" -o -Filter \"*.cpp\")",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\\\\Source\\\\RealTimeStrategy\" -Recurse -File | Where-Object { $_.Extension -eq '.h' -or $_.Extension -eq '.cpp' } | Select-Object -ExpandProperty FullName)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\\\\Source\\\\RealTimeStrategy\" -Recurse -File | Where-Object { $_.Extension -eq '.h' -or $_.Extension -eq '.cpp' } | Select-Object -ExpandProperty FullName)",
+      "Bash(Find \"C:\\\\Users\\\\nazar\\\\UE4\\\\MaedanProject\\\\Plugins\\\\RealTimeStrategy\" -type f \\\\\\( -name \"*.h\" -o -name \"*.cpp\" \\\\\\))",
+      "Bash(Select-String -Pattern \"BTTask|BehaviorTree|MoveTo|FindPath\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\nazar\\\\ue4\\\\MaedanProject\" -Directory)"
     ]
   }
 }

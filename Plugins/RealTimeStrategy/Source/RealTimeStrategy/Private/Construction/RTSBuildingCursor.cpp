@@ -1,6 +1,7 @@
 #include "Construction/RTSBuildingCursor.h"
 
 #include "NavigationSystem.h"
+#include "Components/ShapeComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/Texture2D.h"
@@ -31,6 +32,11 @@ ARTSBuildingCursor::ARTSBuildingCursor(const FObjectInitializer& ObjectInitializ
 
     GridWidthAndHeight = 0;
     GridTextureBuffer = nullptr;
+
+    bCircularMode = false;
+    bHasCachedShape = false;
+    CachedShapeHalfSizeX = CachedShapeHalfSizeY = CachedShapeHalfSizeZ = 0.0f;
+    CachedBuildingRadius = 0.0f;
 }
 
 void ARTSBuildingCursor::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -46,6 +52,36 @@ void ARTSBuildingCursor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void ARTSBuildingCursor::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+
+    if (bCircularMode)
+    {
+        bool bValid = true;
+
+        if (bCheckCollision && bHasCachedShape)
+        {
+            FCollisionObjectQueryParams CollisionObjectQueryParams(BuildingLocationDetectionChannels);
+            FCollisionQueryParams CollisionQueryParams;
+            CollisionQueryParams.AddIgnoredActor(this);
+
+            FCollisionShape Shape = FCollisionShape::MakeBox(
+                FVector(CachedShapeHalfSizeX, CachedShapeHalfSizeY, CachedShapeHalfSizeZ));
+
+            bValid = !GetWorld()->OverlapAnyTestByObjectType(
+                GetActorLocation(), FQuat::Identity,
+                CollisionObjectQueryParams, Shape, CollisionQueryParams);
+        }
+
+        if (bValid && bCheckNavigation)
+        {
+            FVector ProjectedLocation;
+            bValid = UNavigationSystemV1::K2_ProjectPointToNavigation(
+                this, GetActorLocation(), ProjectedLocation, nullptr,
+                NavigationQueryFilterClass, NavigationQueryExtent);
+        }
+
+        bAllCellsValid = bValid;
+        return;
+    }
 
     if (!HasGrid())
     {
@@ -112,6 +148,32 @@ void ARTSBuildingCursor::SetupForBuilding(TSubclassOf<AActor> BuildingClass)
             SetSkeletalMesh(SkeletalMeshComponent->SkeletalMesh, SkeletalMeshComponent->GetRelativeTransform());
         }
     }
+
+    // Cache collision shape for circular mode.
+    bHasCachedShape = false;
+    UShapeComponent* ShapeComponent = URTSGameplayLibrary::FindDefaultComponentByClass<UShapeComponent>(BuildingClass);
+    if (IsValid(ShapeComponent))
+    {
+        FCollisionShape Shape = ShapeComponent->GetCollisionShape();
+        if (Shape.IsBox())
+        {
+            CachedShapeHalfSizeX = Shape.Box.HalfExtentX;
+            CachedShapeHalfSizeY = Shape.Box.HalfExtentY;
+            CachedShapeHalfSizeZ = Shape.Box.HalfExtentZ;
+        }
+        else if (Shape.IsCapsule())
+        {
+            CachedShapeHalfSizeX = Shape.Capsule.Radius;
+            CachedShapeHalfSizeY = Shape.Capsule.Radius;
+            CachedShapeHalfSizeZ = Shape.Capsule.HalfHeight;
+        }
+        else
+        {
+            CachedShapeHalfSizeX = CachedShapeHalfSizeY = CachedShapeHalfSizeZ = Shape.Sphere.Radius;
+        }
+        bHasCachedShape = true;
+    }
+    CachedBuildingRadius = URTSCollisionLibrary::GetCollisionSize(BuildingClass) / 2.0f;
 
     // Update valid indicator.
     SetLocationValid(false);
@@ -217,11 +279,16 @@ bool ARTSBuildingCursor::AreAllCellsValid() const
     return bAllCellsValid;
 }
 
+float ARTSBuildingCursor::GetBuildingRadius() const
+{
+    return CachedBuildingRadius;
+}
+
 void ARTSBuildingCursor::SetCursorLocation(const FVector& NewWorldLocation)
 {
     FVector FinalLocation = NewWorldLocation;
 
-    if (HasGrid())
+    if (!bCircularMode && HasGrid())
     {
         // Snap to grid.
         float X = FMath::GridSnap(NewWorldLocation.X, GridCellSize);
@@ -252,13 +319,17 @@ bool ARTSBuildingCursor::CanConstructBuildingAt(const FVector& WorldLocation)
 {
     if (bCheckCollision)
     {
-        // Check for colliders.
+        // Box overlap covers the full cell area, catching objects missed by a vertical line trace.
         FCollisionObjectQueryParams CollisionObjectQueryParams(BuildingLocationDetectionChannels);
         FCollisionQueryParams CollisionQueryParams;
+        CollisionQueryParams.AddIgnoredActor(this);
 
-        if (GetWorld()->LineTraceTestByObjectType(WorldLocation + FVector(0.0f, 0.0f, 10000.0f),
-            WorldLocation - FVector(0.0f, 0.0f, 10000.0f),
-            CollisionObjectQueryParams, CollisionQueryParams))
+        FCollisionShape CellShape = FCollisionShape::MakeBox(
+            FVector(GridCellSize * 0.5f, GridCellSize * 0.5f, 500.0f));
+
+        if (GetWorld()->OverlapAnyTestByObjectType(
+                WorldLocation, FQuat::Identity,
+                CollisionObjectQueryParams, CellShape, CollisionQueryParams))
         {
             return false;
         }

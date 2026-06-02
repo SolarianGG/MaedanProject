@@ -96,6 +96,10 @@ public:
     UFUNCTION(BlueprintPure)
     float GetTargetingCircleSize() const;
 
+    /** Whether a targeting circle decal should be shown while the player picks a target location. */
+    UFUNCTION(BlueprintPure)
+    bool IsShowTargetingCircle() const;
+
     /** Gets the keyboard key that triggers this ability. EKeys::Invalid means no hotkey assigned. */
     UFUNCTION(BlueprintPure)
     FKey GetHotkey() const;
@@ -164,6 +168,10 @@ protected:
     /** World-space diameter (cm) of the targeting circle decal. Set this to match the Niagara effect's Uniform Sprite Size. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|VFX", meta = (ClampMin = 0))
     float TargetingCircleSize;
+
+    /** If true, a targeting circle decal follows the cursor while the player picks a target location. Enable for area/location-targeted abilities only (e.g. Vortex). */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|VFX")
+    bool bShowTargetingCircle = false;
 
     /** Keyboard key that triggers this ability when pressed. EKeys::Invalid means no hotkey. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Input")

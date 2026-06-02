@@ -56,6 +56,10 @@ public:
     UFUNCTION(BlueprintPure)
     bool AreAllCellsValid() const;
 
+    /** Returns the radius of the building's collision shape, used to size the circle indicator in Blueprint. */
+    UFUNCTION(BlueprintPure, Category = "RTS")
+    float GetBuildingRadius() const;
+
     /** Updates the location of this cursor, snapping to the grid if required. */
     void SetCursorLocation(const FVector& NewWorldLocation);
 
@@ -105,11 +109,26 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS|Range")
     TSubclassOf<ARTSRangeIndicator> RangeIndicatorClass;
 
+    /** If true, replaces the per-cell grid with a single shape overlap test and disables grid snapping. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS|Grid")
+    bool bCircularMode;
+
     /** Width and height of the grid, in cells. */
     int32 GridWidthAndHeight;
 
     /** Whether all grid cells are valid with respect to all checks. */
     bool bAllCellsValid;
+
+    /** Whether the cached building collision shape has been initialized. */
+    bool bHasCachedShape;
+
+    /** Half-extents of the cached building collision shape used in circular mode overlap test. */
+    float CachedShapeHalfSizeX;
+    float CachedShapeHalfSizeY;
+    float CachedShapeHalfSizeZ;
+
+    /** Radius of the building's collision, exposed to Blueprint for sizing the circle indicator. */
+    float CachedBuildingRadius;
 
     /** Buffer for updating the texture whose pixels highlight blocked grid cells. */
     uint8* GridTextureBuffer;

@@ -128,16 +128,19 @@ void URTSAbilitySystemComponent::UseAbility(int32 AbilityIndex, AActor* TargetAc
 	// Only the server should execute abilities.
 	if (!Owner->HasAuthority())
 	{
+		UE_LOG(LogRTS, Warning, TEXT("[UseAbility] %s: no authority, skipping."), *Owner->GetName());
 		return;
 	}
 
 	if (!Abilities.IsValidIndex(AbilityIndex))
 	{
+		UE_LOG(LogRTS, Warning, TEXT("[UseAbility] %s: ability index %d out of range."), *Owner->GetName(), AbilityIndex);
 		return;
 	}
 
 	if (!CanUseAbility(AbilityIndex))
 	{
+		UE_LOG(LogRTS, Warning, TEXT("[UseAbility] %s: CanUseAbility(%d) returned false."), *Owner->GetName(), AbilityIndex);
 		return;
 	}
 
@@ -158,8 +161,13 @@ void URTSAbilitySystemComponent::UseAbility(int32 AbilityIndex, AActor* TargetAc
 	// Validate target.
 	if (!AbilityCDO->IsValidAbilityTarget(Owner, TargetData))
 	{
+		const float Dist = FVector::Dist2D(Owner->GetActorLocation(), TargetLocation);
+		UE_LOG(LogRTS, Warning, TEXT("[UseAbility] %s: IsValidAbilityTarget failed. dist2D=%.0f range=%.0f loc=%s"),
+			*Owner->GetName(), Dist, AbilityCDO->GetRange(), *TargetLocation.ToString());
 		return;
 	}
+
+	UE_LOG(LogRTS, Log, TEXT("[UseAbility] %s: all checks passed, activating ability %d."), *Owner->GetName(), AbilityIndex);
 
 	// Consume mana.
 	if (AbilityCDO->GetManaCost() > 0)

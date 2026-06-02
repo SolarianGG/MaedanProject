@@ -55,6 +55,9 @@ public:
     UFUNCTION(BlueprintCallable)
     void IssueOrder(const FRTSOrderData& Order);
 
+    /** Stores an ability to fire automatically when the current move order completes. */
+    void SetPendingAbility(int32 AbilityIndex, AActor* TargetActor, const FVector& TargetLocation);
+
     /** Makes the pawn carry out the specified order, optionally appending to the queue instead of replacing the current order. */
     void IssueOrder(const FRTSOrderData& Order, bool bAppendToQueue);
 
@@ -136,6 +139,12 @@ private:
 
     /** The order currently being executed, stored for live validation. */
     FRTSOrderData CurrentOrder;
+
+    // Ability stored for firing when the current move-to-approach order finishes.
+    bool bHasPendingAbility = false;
+    int32 PendingAbilityIndex = -1;
+    TWeakObjectPtr<AActor> PendingAbilityTargetActor;
+    FVector PendingAbilityTargetLocation = FVector::ZeroVector;
 
     /** Applies an order directly to the blackboard and BT without touching the queue. Used internally by IssueOrder and FinishCurrentOrder. */
     void ApplyOrder(const FRTSOrderData& Order);

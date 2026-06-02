@@ -22,6 +22,8 @@ class ARTSBuildingCursor;
 class ARTSCameraBoundsVolume;
 class UNiagaraSystem;
 class ARTSRallyPointIndicator;
+class ARTSRangeIndicator;
+class ARTSDirectionIndicator;
 class URTSMusicSwitcherComponent;
 class URTSPlayerAdvantageComponent;
 class URTSPlayerResourcesComponent;
@@ -694,6 +696,22 @@ private:
 	/** Decal actor showing the ability targeting circle on the ground. */
 	UPROPERTY()
 	class ADecalActor* AbilityTargetingDecalActor;
+
+	/** Class to spawn as range indicator when entering ability targeting mode. Assign a Blueprint subclass of ARTSRangeIndicator. */
+	UPROPERTY(EditDefaultsOnly, Category = "RTS|Abilities")
+	TSubclassOf<ARTSRangeIndicator> AbilityRangeIndicatorClass;
+
+	/** Currently spawned range indicator actor (centered on the casting unit). */
+	UPROPERTY()
+	ARTSRangeIndicator* AbilityRangeIndicatorInstance;
+
+	/** Class to spawn as direction indicator for location-targeted abilities. Set in BP. */
+	UPROPERTY(EditDefaultsOnly, Category = "RTS|Abilities")
+	TSubclassOf<ARTSDirectionIndicator> AbilityDirectionIndicatorClass;
+
+	/** Currently spawned direction indicator actor (line from caster to cursor). */
+	UPROPERTY()
+	ARTSDirectionIndicator* AbilityDirectionIndicatorInstance;
 
 	/** Mouse position on screen when creating the selection frame started. */
 	FVector2D SelectionFrameMouseStartPosition;
