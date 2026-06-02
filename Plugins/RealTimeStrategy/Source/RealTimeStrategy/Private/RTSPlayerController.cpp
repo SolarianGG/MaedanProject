@@ -1785,25 +1785,16 @@ void ARTSPlayerController::ClientGameHasEnded_Implementation(bool bIsWinner)
 void ARTSPlayerController::StartSelectActors()
 {
 	bClickStartedOnProductionQueue = false;
-	bClickStartedOnAbilityIcons = false;
 	bClickStartedOnTargetingWorld = false;
 
 	// If we're in ability targeting mode, only record where the press started — confirm happens on release.
 	if (AbilityTargetingIndex >= 0)
 	{
-		float MouseX;
-		float MouseY;
-
-		if (GetMousePosition(MouseX, MouseY))
+		// Press on a command grid button (or any UMG widget) — let the widget handle switching
+		// the ability; don't treat it as a world press that would confirm the target.
+		if (IsMouseOverUserWidget())
 		{
-			ARTSHUD* HUD = Cast<ARTSHUD>(GetHUD());
-
-			// Press on another ability icon — NotifyHitBoxClick will handle the switch on release.
-			if (HUD && HUD->IsPositionOnAbilityIcons(MouseX, MouseY))
-			{
-				bClickStartedOnAbilityIcons = true;
-				return;
-			}
+			return;
 		}
 
 		// Press in the world — confirm on matching release.
@@ -1832,22 +1823,10 @@ void ARTSPlayerController::StartSelectActors()
 			return;
 		}
 
-		// Check if click is on ability icons.
-		if (HUD && HUD->IsPositionOnAbilityIcons(MouseX, MouseY))
+		// Check if mouse is over any UMG widget (e.g., command grid buttons, status window navigation).
+		if (IsMouseOverUserWidget())
 		{
-			bClickStartedOnAbilityIcons = true;
 			return;
-		}
-
-		// Check if mouse is over any UMG widget (e.g., status window navigation buttons).
-		TArray<UUserWidget*> FoundWidgets;
-		UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UUserWidget::StaticClass(), false);
-		for (UUserWidget* Widget : FoundWidgets)
-		{
-			if (Widget->IsHovered())
-			{
-				return;
-			}
 		}
 
 		SelectionFrameMouseStartPosition = FVector2D(MouseX, MouseY);
@@ -1865,16 +1844,7 @@ void ARTSPlayerController::FinishSelectActors()
 		if (bAbilityTargetingJustEntered)
 		{
 			bAbilityTargetingJustEntered = false;
-			bClickStartedOnAbilityIcons = false;
 			bClickStartedOnTargetingWorld = false;
-			bCreatingSelectionFrame = false;
-			return;
-		}
-
-		// Release while press was on an ability icon — let NotifyHitBoxClick handle the switch.
-		if (bClickStartedOnAbilityIcons)
-		{
-			bClickStartedOnAbilityIcons = false;
 			bCreatingSelectionFrame = false;
 			return;
 		}
@@ -1889,14 +1859,6 @@ void ARTSPlayerController::FinishSelectActors()
 		}
 
 		// Release without a matching press in the world (e.g., press happened before targeting began) — ignore.
-		bCreatingSelectionFrame = false;
-		return;
-	}
-
-	// If the click started on an ability icon, suppress selection.
-	if (bClickStartedOnAbilityIcons)
-	{
-		bClickStartedOnAbilityIcons = false;
 		bCreatingSelectionFrame = false;
 		return;
 	}
@@ -3217,6 +3179,20 @@ void ARTSPlayerController::CancelAbilityTargeting()
 		UE_LOG(LogRTS, Log, TEXT("Player cancelled ability targeting."));
 		NotifyOnAbilityTargetingCancelled(Actor, Index);
 	}
+}
+
+bool ARTSPlayerController::IsMouseOverUserWidget() const
+{
+	TArray<UUserWidget*> FoundWidgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(GetWorld(), FoundWidgets, UUserWidget::StaticClass(), false);
+	for (UUserWidget* Widget : FoundWidgets)
+	{
+		if (Widget->IsHovered())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 bool ARTSPlayerController::IssueAbilityOrder(AActor* AbilityActor, int32 AbilityIndex, AActor* TargetActor, FVector TargetLocation)

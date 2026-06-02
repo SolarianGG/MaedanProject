@@ -675,9 +675,6 @@ private:
 	/** Whether the current click started on the production queue UI. */
 	bool bClickStartedOnProductionQueue;
 
-	/** Whether the current click started on an ability icon. */
-	bool bClickStartedOnAbilityIcons;
-
 	/** Whether the current click started on the world while in ability targeting mode. Set on press, triggers confirm on release. */
 	bool bClickStartedOnTargetingWorld;
 
@@ -779,6 +776,9 @@ private:
 
     /** Cancels the current ability targeting. */
     void CancelAbilityTargeting();
+
+    /** Returns true if the mouse cursor is currently hovering any UMG user widget. */
+    bool IsMouseOverUserWidget() const;
 
 	/** Start producing the specified product at the specified actor. */
 	UFUNCTION(Reliable, Server, WithValidation)
