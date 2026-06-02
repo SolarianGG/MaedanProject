@@ -27,6 +27,7 @@ void URTSHostConfigWidget::NativeConstruct()
 	}
 
 	BindMapEntries();
+	UE_LOG(LogTemp, Warning, TEXT("Successfuly binded delegates in host config"));
 }
 
 void URTSHostConfigWidget::NativeDestruct()
