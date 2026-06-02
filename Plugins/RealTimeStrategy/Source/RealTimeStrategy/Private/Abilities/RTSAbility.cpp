@@ -154,6 +154,11 @@ float URTSAbility::GetTargetingCircleSize() const
     return TargetingCircleSize;
 }
 
+bool URTSAbility::IsShowTargetingCircle() const
+{
+    return bShowTargetingCircle;
+}
+
 FKey URTSAbility::GetHotkey() const
 {
     return Hotkey;

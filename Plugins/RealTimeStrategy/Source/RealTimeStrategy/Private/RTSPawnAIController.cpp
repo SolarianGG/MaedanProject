@@ -2,6 +2,7 @@
 
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "NavigationSystem.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 #include "RTSGameplayTagsComponent.h"
@@ -18,6 +19,7 @@
 #include "Orders/RTSGatherOrder.h"
 #include "Orders/RTSMoveOrder.h"
 #include "Orders/RTSReturnResourcesOrder.h"
+#include "Abilities/RTSAbilitySystemComponent.h"
 #include "Orders/RTSAttackMoveOrder.h"
 #include "Orders/RTSStopOrder.h"
 
@@ -201,7 +203,8 @@ void ARTSPawnAIController::IssueOrder(const FRTSOrderData& Order, bool bAppendTo
         return;
     }
 
-    // Non-queued orders clear any pending queue.
+    // Non-queued orders cancel any pending ability and clear the queue.
+    bHasPendingAbility = false;
     ClearOrderQueue();
     ApplyOrder(Order);
 }
@@ -216,10 +219,23 @@ void ARTSPawnAIController::ApplyOrder(const FRTSOrderData& Order)
     // Update blackboard.
     ERTSOrderType OrderType = OrderClassToType(Order.OrderClass);
 
+    // Project the order location onto the NavMesh so units can pathfind to points on elevated
+    // objects (e.g. a cube above the NavMesh). Raw Order.TargetLocation is kept for visual
+    // feedback; only the Blackboard value used by the BT for pathfinding is projected.
+    FVector NavTargetLocation = Order.TargetLocation;
+    if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+    {
+        FNavLocation ProjectedLocation;
+        if (NavSys->ProjectPointToNavigation(Order.TargetLocation, ProjectedLocation, FVector(500.f, 500.f, 10000.f)))
+        {
+            NavTargetLocation = ProjectedLocation.Location;
+        }
+    }
+
     Blackboard->SetValueAsEnum(TEXT("OrderType"), static_cast<uint8>(OrderType));
     Blackboard->SetValueAsClass(TEXT("OrderClass"), Order.OrderClass);
     Blackboard->SetValueAsObject(TEXT("TargetActor"), Order.TargetActor);
-    Blackboard->SetValueAsVector(TEXT("TargetLocation"), Order.TargetLocation);
+    Blackboard->SetValueAsVector(TEXT("TargetLocation"), NavTargetLocation);
     Blackboard->SetValueAsInt(TEXT("BuildingClass"), Order.Index);
 
     if (OrderType == ERTSOrderType::ORDER_None)
@@ -229,7 +245,7 @@ void ARTSPawnAIController::ApplyOrder(const FRTSOrderData& Order)
     else if (Order.OrderClass == URTSAttackMoveOrder::StaticClass())
     {
         // Chase radius is measured from the attack-move destination, not the spawn point.
-        Blackboard->SetValueAsVector(TEXT("HomeLocation"), Order.TargetLocation);
+        Blackboard->SetValueAsVector(TEXT("HomeLocation"), NavTargetLocation);
     }
     else
     {
@@ -260,8 +276,37 @@ void ARTSPawnAIController::ApplyOrder(const FRTSOrderData& Order)
     OnCurrentOrderChanged.Broadcast(GetOwner(), Order);
 }
 
+void ARTSPawnAIController::SetPendingAbility(int32 AbilityIndex, AActor* TargetActor, const FVector& TargetLocation)
+{
+    bHasPendingAbility = true;
+    PendingAbilityIndex = AbilityIndex;
+    PendingAbilityTargetActor = TargetActor;
+    PendingAbilityTargetLocation = TargetLocation;
+    UE_LOG(LogRTS, Log, TEXT("[Ability Approach] %s: pending ability %d set, target=%s"),
+        GetPawn() ? *GetPawn()->GetName() : TEXT("?"), AbilityIndex, *TargetLocation.ToString());
+}
+
 void ARTSPawnAIController::FinishCurrentOrder()
 {
+    UE_LOG(LogRTS, Log, TEXT("[Ability Approach] %s: FinishCurrentOrder called, bHasPendingAbility=%d"),
+        GetPawn() ? *GetPawn()->GetName() : TEXT("?"), (int32)bHasPendingAbility);
+
+    if (bHasPendingAbility)
+    {
+        bHasPendingAbility = false;
+        if (APawn* MyPawn = GetPawn())
+        {
+            if (URTSAbilitySystemComponent* AbilitySystem = MyPawn->FindComponentByClass<URTSAbilitySystemComponent>())
+            {
+                UE_LOG(LogRTS, Log, TEXT("[Ability Approach] %s: firing ability %d via FinishCurrentOrder"),
+                    *MyPawn->GetName(), PendingAbilityIndex);
+                AbilitySystem->UseAbility(PendingAbilityIndex, PendingAbilityTargetActor.Get(), PendingAbilityTargetLocation);
+            }
+        }
+        IssueStopOrder();
+        return;
+    }
+
     while (OrderQueue.Num() > 0)
     {
         FRTSOrderData NextOrder = OrderQueue[0];
@@ -487,6 +532,23 @@ void ARTSPawnAIController::IssueReturnResourcesOrder()
 
 void ARTSPawnAIController::IssueStopOrder()
 {
+    UE_LOG(LogRTS, Log, TEXT("[Ability Approach] %s: IssueStopOrder called, bHasPendingAbility=%d"),
+        GetPawn() ? *GetPawn()->GetName() : TEXT("?"), (int32)bHasPendingAbility);
+
+    if (bHasPendingAbility)
+    {
+        bHasPendingAbility = false;
+        if (APawn* MyPawn = GetPawn())
+        {
+            if (URTSAbilitySystemComponent* AbilitySystem = MyPawn->FindComponentByClass<URTSAbilitySystemComponent>())
+            {
+                UE_LOG(LogRTS, Log, TEXT("[Ability Approach] %s: firing ability %d via IssueStopOrder"),
+                    *MyPawn->GetName(), PendingAbilityIndex);
+                AbilitySystem->UseAbility(PendingAbilityIndex, PendingAbilityTargetActor.Get(), PendingAbilityTargetLocation);
+            }
+        }
+    }
+
     FRTSOrderData Order;
     Order.OrderClass = URTSStopOrder::StaticClass();
     IssueOrder(Order);
