@@ -11,7 +11,6 @@
 
 class AActor;
 class UAnimMontage;
-class USoundCue;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FRTSHealthComponentHealthChangedSignature, AActor*, Actor, float, OldHealth, float, NewHealth, AActor*, DamageCauser);
@@ -90,10 +89,6 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     ERTSActorDeathType ActorDeathType;
 
-    /** Sound to play when the actor is killed. */
-    UPROPERTY(EditDefaultsOnly, Category = "RTS")
-    USoundCue* DeathSound;
-
     /** Animation montage to play when the actor is killed. For DEATH_Destroy, the actor is destroyed after the montage finishes. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     UAnimMontage* DeathMontage;
@@ -123,4 +118,7 @@ private:
 
     UFUNCTION()
     void ReceivedCurrentHealth(float OldHealth);
+
+    /** Freezes the mesh on the final death pose instead of blending back to the idle/locomotion state when the montage ends. */
+    void OnDeathMontageBlendingOut(class UAnimMontage* Montage, bool bInterrupted);
 };

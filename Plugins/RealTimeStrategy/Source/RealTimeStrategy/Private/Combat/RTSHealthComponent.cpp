@@ -8,7 +8,6 @@
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "Sound/SoundCue.h"
 
 #include "RTSGameMode.h"
 #include "RTSGameplayTagsComponent.h"
@@ -204,12 +203,7 @@ void URTSHealthComponent::NotifyOnHealthChanged(AActor* Actor, float OldHealth, 
     // Notify listeners.
     OnHealthChanged.Broadcast(Actor, OldHealth, NewHealth, DamageCauser);
 
-    // Play sound — guard OldHealth so this fires exactly once on the alive→dead transition.
-    if (NewHealth <= 0.0f && OldHealth > 0.0f && IsValid(DeathSound))
-    {
-        UGameplayStatics::PlaySoundAtLocation(this, DeathSound,
-            Actor->GetActorLocation(), Actor->GetActorRotation());
-    }
+    // Death sound is played via an Anim Notify on DeathMontage, not from code.
 }
 
 void URTSHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
@@ -248,13 +242,17 @@ void URTSHealthComponent::ReceivedCurrentHealth(float OldHealth)
 
 void URTSHealthComponent::MulticastPlayDeathMontage_Implementation()
 {
-    if (!IsValid(DeathMontage))
+    AActor* Owner = GetOwner();
+    if (!IsValid(Owner))
     {
         return;
     }
 
-    AActor* Owner = GetOwner();
-    if (!IsValid(Owner))
+    // Stop interaction and movement on every machine, not just the server. Otherwise clients (which never
+    // run the death branch in SetCurrentHealth) keep the unit selectable and movable until the Destroy replicates.
+    URTSGameplayLibrary::StopGameplayFor(Owner);
+
+    if (!IsValid(DeathMontage))
     {
         return;
     }
@@ -272,4 +270,29 @@ void URTSHealthComponent::MulticastPlayDeathMontage_Implementation()
     }
 
     AnimInstance->Montage_Play(DeathMontage);
+
+    // Hold the final death pose when the montage starts blending out, instead of letting the Anim Blueprint
+    // pop the mesh back to its idle/locomotion state (which made the dead unit appear to "stand up").
+    FOnMontageBlendingOutStarted BlendingOutDelegate;
+    BlendingOutDelegate.BindUObject(this, &URTSHealthComponent::OnDeathMontageBlendingOut);
+    AnimInstance->Montage_SetBlendingOutDelegate(BlendingOutDelegate, DeathMontage);
+}
+
+void URTSHealthComponent::OnDeathMontageBlendingOut(UAnimMontage* Montage, bool bInterrupted)
+{
+    AActor* Owner = GetOwner();
+    if (!IsValid(Owner))
+    {
+        return;
+    }
+
+    USkeletalMeshComponent* Mesh = Owner->FindComponentByClass<USkeletalMeshComponent>();
+    if (Mesh == nullptr)
+    {
+        return;
+    }
+
+    // Pausing animation evaluation freezes the mesh on the last sampled pose (the end of the death montage),
+    // keeping the corpse lying down until the actor is destroyed.
+    Mesh->bPauseAnims = true;
 }
