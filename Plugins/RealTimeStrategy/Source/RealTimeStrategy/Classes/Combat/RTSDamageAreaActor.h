@@ -10,9 +10,11 @@
 #include "RTSDamageAreaActor.generated.h"
 
 
+class UAudioComponent;
 class UDecalComponent;
 class UNiagaraComponent;
 class USceneComponent;
+class USoundBase;
 
 
 /**
@@ -51,6 +53,13 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "RTS")
     UNiagaraComponent* AreaVfxComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "RTS")
+    UAudioComponent* AreaSoundComponent;
+
+    /** Looping sound played for the entire duration of the area. Assign a SoundCue in the Blueprint child class. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    USoundBase* AreaLoopingSound;
 
 private:
     void OnDamageTick();

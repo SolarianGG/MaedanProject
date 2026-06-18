@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 #include "Net/UnrealNetwork.h"
 
 #include "RTSGameMode.h"
@@ -270,6 +271,11 @@ void URTSHealthComponent::MulticastPlayDeathMontage_Implementation()
     }
 
     AnimInstance->Montage_Play(DeathMontage);
+
+    if (IsValid(DeathSound))
+    {
+        UGameplayStatics::PlaySoundAtLocation(this, DeathSound, Owner->GetActorLocation());
+    }
 
     // Hold the final death pose when the montage starts blending out, instead of letting the Anim Blueprint
     // pop the mesh back to its idle/locomotion state (which made the dead unit appear to "stand up").

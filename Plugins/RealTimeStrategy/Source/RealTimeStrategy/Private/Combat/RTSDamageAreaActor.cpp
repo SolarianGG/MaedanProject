@@ -1,5 +1,6 @@
 #include "Combat/RTSDamageAreaActor.h"
 
+#include "Components/AudioComponent.h"
 #include "Components/DecalComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
@@ -37,6 +38,10 @@ ARTSDamageAreaActor::ARTSDamageAreaActor()
     AreaVfxComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("AreaVfx"));
     AreaVfxComponent->SetupAttachment(RootSceneComponent);
     AreaVfxComponent->bAutoActivate = false;
+
+    AreaSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AreaSound"));
+    AreaSoundComponent->SetupAttachment(RootSceneComponent);
+    AreaSoundComponent->bAutoActivate = false;
 }
 
 void ARTSDamageAreaActor::Initialize(
@@ -97,6 +102,12 @@ void ARTSDamageAreaActor::BeginPlay()
     if (AreaVfxComponent)
     {
         AreaVfxComponent->Activate();
+    }
+
+    if (IsValid(AreaLoopingSound) && AreaSoundComponent)
+    {
+        AreaSoundComponent->SetSound(AreaLoopingSound);
+        AreaSoundComponent->Play();
     }
 }
 

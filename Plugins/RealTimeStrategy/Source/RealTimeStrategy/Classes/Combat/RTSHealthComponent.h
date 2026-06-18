@@ -11,6 +11,7 @@
 
 class AActor;
 class UAnimMontage;
+class USoundBase;
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FRTSHealthComponentHealthChangedSignature, AActor*, Actor, float, OldHealth, float, NewHealth, AActor*, DamageCauser);
@@ -92,6 +93,10 @@ private:
     /** Animation montage to play when the actor is killed. For DEATH_Destroy, the actor is destroyed after the montage finishes. */
     UPROPERTY(EditDefaultsOnly, Category = "RTS")
     UAnimMontage* DeathMontage;
+
+    /** Sound to play when the actor is killed. Assign a SoundCue or SoundWave in the unit Blueprint. */
+    UPROPERTY(EditDefaultsOnly, Category = "RTS")
+    USoundBase* DeathSound;
 
     /** Flat HP bonus from upgrades. Replicated so clients display correct HP bars. */
     UPROPERTY(Replicated)
